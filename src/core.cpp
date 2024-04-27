@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-#include <SDL.h>
+// #include <SDL.h>
+#include <SDL2/SDL.h>
 
 Core::Core() {
     // Initialize the core application
@@ -18,9 +19,6 @@ bool Core::run() {
         update();
         render();
 
-        //temporary sleep in order to show the window
-        SDL_Delay(5000);
-        running_ = false;
     }
 
     return true;
@@ -37,12 +35,26 @@ bool Core::init() {
     }
     std::cout << "SDL2 video initialized." << std::endl;
     running_ = true;
-    window_ = SDL_CreateWindow("GameOfLife", 0, 0, 800, 600, SDL_WINDOW_SHOWN);
+    window_ = SDL_CreateWindow("GameOfLife", 50, 50, 800, 600, SDL_WINDOW_SHOWN);
     return true;
 }
 
 void Core::processEvents() {
     // If escape pressed, stop the game
+    SDL_Event event;
+
+    while(SDL_PollEvent(&event)) {
+
+        switch(event.type)
+        {
+            case SDL_QUIT:
+                running_ = false;
+                break;
+            case SDL_KEYDOWN:
+                handleSDL_KEYDOWN(event);
+                break;
+        }
+    }
 }
 
 void Core::update() {
@@ -52,8 +64,22 @@ void Core::update() {
 void Core::render() {
 }
 
+void Core::handleSDL_KEYDOWN(SDL_Event& event) {
+    switch(event.key.keysym.sym)
+    {
+        case SDLK_ESCAPE:
+            running_ = false;
+            std::cout << "Escape key pressed: Exiting application." << std::endl;
+            break;
+        default:
+            break;
+    }
+}
+
 Core::~Core() {
     //Because SDL is a C library, we need to call SDL methods to clean up
-    SDL_DestroyRenderer(renderer_);
+    // SDL_DestroyRenderer(renderer_);
     SDL_DestroyWindow(window_);
+
+    SDL_Quit();
 }
