@@ -2,31 +2,27 @@
 
 #include <iostream>
 
-// #include <SDL.h>
 #include <SDL2/SDL.h>
 
 Core::Core() {
-    // Initialize the core application
-    // renderer_ = 
 }
 
 bool Core::run() {
-    // Initialize the game
     if(!init()) return false;
 
     while (running_) {
         processEvents();
         update();
         render();
-
     }
 
     return true;
 }
 
 bool Core::init() {
-    // Initialize the game
-    
+    //Temporary surface 
+    surface_ = SDL_LoadBMP("resources/fern.bmp");
+
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         // If SDL fails to initialize, print an error message
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
@@ -35,12 +31,12 @@ bool Core::init() {
     }
     std::cout << "SDL2 video initialized." << std::endl;
     running_ = true;
-    window_ = SDL_CreateWindow("GameOfLife", 50, 50, 800, 600, SDL_WINDOW_SHOWN);
+    window_ = SDL_CreateWindow("GameOfLife", 50, 50, 800, 600, SDL_WINDOW_RESIZABLE);
+    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
     return true;
 }
 
 void Core::processEvents() {
-    // If escape pressed, stop the game
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
@@ -62,6 +58,15 @@ void Core::update() {
 }
 
 void Core::render() {
+    
+    int windowWidth, windowHeight;
+    SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
+    SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
+
+    texture_ = SDL_CreateTextureFromSurface(renderer_, surface_);
+
+    SDL_RenderCopy(renderer_, texture_, NULL, &destinationRect);
+    SDL_RenderPresent(renderer_);
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
@@ -78,8 +83,10 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
 
 Core::~Core() {
     //Because SDL is a C library, we need to call SDL methods to clean up
-    // SDL_DestroyRenderer(renderer_);
+    SDL_DestroyRenderer(renderer_);
     SDL_DestroyWindow(window_);
+    SDL_DestroyTexture(texture_);
+    SDL_FreeSurface(surface_);
 
     SDL_Quit();
 }

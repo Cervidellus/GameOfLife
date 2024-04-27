@@ -31,4 +31,15 @@ target_include_directories(gameoflife PRIVATE include)
 target_link_libraries(gameoflife SDL2::SDL2)
 # target_link_libraries()
 
+#copy resources to build directory
+# file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+# message(STATUS "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+# message(STATUS "CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
+# message(STATUS "CMAKE_CURRENT_exe_DIR: ${CMAKE_CURRENT_}")
 
+add_custom_command(
+        TARGET gameoflife POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/resources
+                $<TARGET_FILE_DIR:gameoflife>/resources)

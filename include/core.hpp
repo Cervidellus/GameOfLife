@@ -1,8 +1,9 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
-// class SDL_Renderer;
-// class SDL_Surface;
+struct SDL_Renderer;
+struct SDL_Surface;
+struct SDL_Texture;
 struct SDL_Window;
 union SDL_Event;
 
@@ -22,8 +23,9 @@ private:
 
     bool running_ = false;
     SDL_Window* window_ = nullptr;
-    // SDL_Renderer* renderer_ = nullptr;
-    // SDL_Surface* surface_ = nullptr;
+    SDL_Renderer* renderer_ = nullptr;
+    SDL_Surface* surface_ = nullptr;
+    SDL_Texture* texture_ = nullptr;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
