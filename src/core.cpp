@@ -13,7 +13,14 @@ Core::Core() {
 bool Core::run() {
     if(!init()) return false;
 
-    while (running_) {
+    int lastTime = SDL_GetTicks();//returns milliseconds 
+
+    while (running_) {  
+        int now = SDL_GetTicks();
+        if(now - lastTime < 1000/desiredFPS_) continue;
+        measuredFPS_ = 1000/(now - lastTime);
+        lastTime = now;
+
         processEvents();
         update();
         render();
@@ -96,6 +103,8 @@ void Core::render() {
 
     ImGui::Begin("GameOfLife");
     ImGui::Text("Hello, world!");
+    ImGui::SliderInt("Desired FPS", &desiredFPS_, 1, 120);
+    ImGui::Text("Measured FPS: %d", measuredFPS_);
     ImGui::End();
     ImGui::Render();
 
