@@ -3,6 +3,9 @@
 #include <iostream>
 
 #include <SDL2/SDL.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
+#include <imgui.h>
 
 Core::Core() {
 }
@@ -20,6 +23,8 @@ bool Core::run() {
 }
 
 bool Core::init() {
+
+    //Configure SDL2
     //Temporary surface 
     surface_ = SDL_LoadBMP("resources/fern.bmp");
 
@@ -30,9 +35,28 @@ bool Core::init() {
         return false;
     }
     std::cout << "SDL2 video initialized." << std::endl;
+    
+    window_ = SDL_CreateWindow(
+        "GameOfLife", 
+        50, 
+        50, 
+        800, 
+        600, 
+        SDL_WINDOW_RESIZABLE);
+        
+    renderer_ = SDL_CreateRenderer(
+        window_, 
+        -1, 
+        SDL_RENDERER_ACCELERATED);
+
+    //Configure ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    auto io = ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_);
+    ImGui_ImplSDLRenderer2_Init(renderer_);
+
     running_ = true;
-    window_ = SDL_CreateWindow("GameOfLife", 50, 50, 800, 600, SDL_WINDOW_RESIZABLE);
-    renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
     return true;
 }
 
@@ -40,7 +64,7 @@ void Core::processEvents() {
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
-
+        //SDL 
         switch(event.type)
         {
             case SDL_QUIT:
@@ -50,6 +74,8 @@ void Core::processEvents() {
                 handleSDL_KEYDOWN(event);
                 break;
         }
+        //ImGui
+        ImGui_ImplSDL2_ProcessEvent(&event);
     }
 }
 
@@ -63,9 +89,33 @@ void Core::render() {
     SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
     SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
 
-    texture_ = SDL_CreateTextureFromSurface(renderer_, surface_);
+    //IMGUI
+    ImGui_ImplSDLRenderer2_NewFrame();
+    ImGui_ImplSDL2_NewFrame(window_);
+    ImGui::NewFrame();
 
+    ImGui::Begin("GameOfLife");
+    ImGui::Text("Hello, world!");
+    ImGui::End();
+    ImGui::Render();
+
+
+    texture_ = SDL_CreateTextureFromSurface(renderer_, surface_);
+    // texture_ = SDL_CreateTexture(renderer_, 
+    //                             SDL_PIXELFORMAT_RGBA8888, 
+    //                             SDL_TEXTUREACCESS_TARGET, 
+    //                             windowWidth, 
+    //                             windowHeight);
+
+    SDL_SetRenderTarget(renderer_, texture_);
+    SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
+    SDL_RenderClear(renderer_);
     SDL_RenderCopy(renderer_, texture_, NULL, &destinationRect);
+    //ImGui goes after we clear the screen, but before RenderPresent
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+    // SDL_SetRenderTarget(renderer_, NULL);
+
+    
     SDL_RenderPresent(renderer_);
 }
 
@@ -82,7 +132,12 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
 }
 
 Core::~Core() {
-    //Because SDL is a C library, we need to call SDL methods to clean up
+    //Need to shutdown ImGui first
+    ImGui_ImplSDLRenderer2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
+    //shutdown SDL
     SDL_DestroyRenderer(renderer_);
     SDL_DestroyWindow(window_);
     SDL_DestroyTexture(texture_);

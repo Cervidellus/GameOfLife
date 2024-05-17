@@ -23,6 +23,8 @@ set(CMAKE_TOOLCHAIN_FILE "${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake" CACHE S
 
 find_package(sdl2 CONFIG REQUIRED)
 message(STATUS "SDL2 found: ${SDL2_FOUND}")
+find_package(imgui CONFIG REQUIRED)
+message(STATUS "imgui found: ${imgui_FOUND}")
 
 add_executable(gameoflife src/main.cpp src/core.cpp)
 

@@ -1,6 +1,7 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
+// struct ImGuiContext;
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
@@ -26,6 +27,7 @@ private:
     SDL_Renderer* renderer_ = nullptr;
     SDL_Surface* surface_ = nullptr;
     SDL_Texture* texture_ = nullptr;
+    // ImGuiContext* imguiContext_ = nullptr;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
