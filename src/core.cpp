@@ -15,7 +15,7 @@ bool Core::run() {
 
     int lastTime = SDL_GetTicks();//returns milliseconds 
 
-    while (running_) {  
+    while (coreAppRunning_) {  
         int now = SDL_GetTicks();
         if(now - lastTime < 1000/desiredFPS_) continue;
         measuredFPS_ = 1000/(now - lastTime);
@@ -38,7 +38,7 @@ bool Core::init() {
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         // If SDL fails to initialize, print an error message
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
-        running_ = false;
+        coreAppRunning_ = false;
         return false;
     }
     std::cout << "SDL2 video initialized." << std::endl;
@@ -63,7 +63,7 @@ bool Core::init() {
     ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_);
     ImGui_ImplSDLRenderer2_Init(renderer_);
 
-    running_ = true;
+    coreAppRunning_ = true;
     return true;
 }
 
@@ -75,7 +75,7 @@ void Core::processEvents() {
         switch(event.type)
         {
             case SDL_QUIT:
-                running_ = false;
+                coreAppRunning_ = false;
                 break;
             case SDL_KEYDOWN:
                 handleSDL_KEYDOWN(event);
@@ -91,7 +91,6 @@ void Core::update() {
 }
 
 void Core::render() {
-    
     int windowWidth, windowHeight;
     SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
     SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
@@ -101,43 +100,93 @@ void Core::render() {
     ImGui_ImplSDL2_NewFrame(window_);
     ImGui::NewFrame();
 
-    ImGui::Begin("GameOfLife");
+    ImGui::Begin("Options");
     ImGui::Text("Hello, world!");
     ImGui::SliderInt("Desired FPS", &desiredFPS_, 1, 120);
     ImGui::Text("Measured FPS: %d", measuredFPS_);
+    if (modelRunning_) {
+        if (ImGui::Button("Pause Model")) {
+            modelRunning_ = false;
+        }
+    } else {
+        if (ImGui::Button("Generate Model")) {
+            surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Start Model")) {
+            modelRunning_ = true;
+        }
+    }
+
+    // if(modelRunning_){
+    //     ImGuiInputTextFlags inputFlags = 
+    // }
+    ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
+
+    ImGui::InputInt("Width", &matrixWidth_, 100, 100, modelInputFlags);
+    // ImGui::SameLine();
+    ImGui::InputInt("Height", &matrixHeight_, 100, 100, modelInputFlags);
+
     ImGui::End();
     ImGui::Render();
+    
 
-
-    texture_ = SDL_CreateTextureFromSurface(renderer_, surface_);
+    auto texture = SDL_CreateTextureFromSurface(renderer_, surface_);
     // texture_ = SDL_CreateTexture(renderer_, 
     //                             SDL_PIXELFORMAT_RGBA8888, 
     //                             SDL_TEXTUREACCESS_TARGET, 
     //                             windowWidth, 
     //                             windowHeight);
 
-    SDL_SetRenderTarget(renderer_, texture_);
+    SDL_SetRenderTarget(renderer_, texture);
     SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
     SDL_RenderClear(renderer_);
-    SDL_RenderCopy(renderer_, texture_, NULL, &destinationRect);
-    //ImGui goes after we clear the screen, but before RenderPresent
+    SDL_RenderCopy(renderer_, texture, NULL, &destinationRect);
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-    // SDL_SetRenderTarget(renderer_, NULL);
-
     
     SDL_RenderPresent(renderer_);
+
+    SDL_DestroyTexture(texture);
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     switch(event.key.keysym.sym)
     {
         case SDLK_ESCAPE:
-            running_ = false;
+            coreAppRunning_ = false;
             std::cout << "Escape key pressed: Exiting application." << std::endl;
             break;
         default:
             break;
     }
+}
+
+SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor) {
+    //Create and single bit surface to represent black and white values
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 1, SDL_PIXELFORMAT_INDEX1MSB);//single bit per pixel image format
+    if(surface == nullptr) {
+        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
+        return nullptr;
+    }
+    //Set the color palette
+    const SDL_Color colors[2] = {
+        {0, 0, 0, 255},
+        {255, 255, 255, 255}
+    };
+    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
+
+    //Fill with random data
+    srand(static_cast<unsigned>(time(nullptr)));
+    for(int y = 0; y < height; y++) {
+        for(int x = 0; x < width; x++) {
+            if(rand() < fillFactor * RAND_MAX) {
+                SDL_Rect rect{x, y, 1, 1};
+                SDL_FillRect(surface, &rect, 1);
+            }
+        }
+    }
+
+    return surface;
 }
 
 Core::~Core() {
@@ -149,7 +198,6 @@ Core::~Core() {
     //shutdown SDL
     SDL_DestroyRenderer(renderer_);
     SDL_DestroyWindow(window_);
-    SDL_DestroyTexture(texture_);
     SDL_FreeSurface(surface_);
 
     SDL_Quit();
