@@ -94,13 +94,6 @@ void Core::processEvents() {
 }
 
 void Core::update() {
-    //for each pixel:
-//     Any live cell with fewer than two live neighbours dies (referred to as underpopulation).
-// Any live cell with more than three live neighbours dies (referred to as overpopulation).
-// Any live cell with two or three live neighbours lives, unchanged, to the next generation.
-// Any dead cell with exactly three live neighbours comes to life.
-
-
     // 1. Count the number of neighbor pixels that are alive. Will have to handle edge cases.
 
     // 2. If pixel is alive and has 2 or 3 neighbors, do nothing.
@@ -108,135 +101,41 @@ void Core::update() {
     // 3. If pixel is alive and has less than 2 or more than 3 neighbors, kill it.  
 
     // 4. If pixel is dead and has exactly 3 neighbors, bring it to life.
-
+    bool cellAlive = false;
     for (int row = 0; row < matrixHeight_; row++) {
         for (int column = 0; column < matrixWidth_; column++) {
             //Uint8 pixelValue = *((Uint8*)surface_->pixels + row * surface_->pitch + column );
             //std::cout << "Pixel value: " << static_cast<int16_t>(pixelValue) << " at column:" << column << std::endl;
 			//Count the number of living neighbors
 			int livingNeighbors = 0;
+            bool cellAlive = false;
             //I might be able to expand this to different scan window sizes? e.g. 5x5
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //center pixel
-                    if (neighborRow == 0 && neighborColumn == 0) continue;
+                    if (neighborRow == 0 && neighborColumn == 0) {
+                        cellAlive = *((Uint8*)surface_->pixels + row * surface_->pitch + column);
+                        continue;
+                    }
                     //out of range rows
                     if (row + neighborRow < 0 || row + neighborRow >= matrixHeight_) continue;
                     //out of range columns
                     if (column + neighborColumn < 0 || column + neighborColumn >= matrixWidth_) continue;
+                    //count
                     if (*((Uint8*)surface_->pixels + (row + neighborRow) * surface_->pitch + column + neighborColumn) == 1) livingNeighbors++;
                 }
             }
 
-            //if (row == 1 && column < 20) {
-            //    std::cout << "Neighbors:" << livingNeighbors << " at column:" << column << " row: " << row << std::endl;
-            //}
-            
-   //         for (int dy = -1; dy <= 1; dy++) {
-   //             for (int dx = -1; dx <= 1; dx++) {
-			//		if(dx == 0 && dy == 0) continue;
-			//		if(column + dx < 0 || column + dx >= matrixWidth_) continue;
-			//		if(row + dy < 0 || row + dy >= matrixHeight_) continue;
-   //                 if (*((Uint8*)surface_->pixels + (row + dy) * surface_->pitch + (column + dx) / 8) & (1 << ((column + dx) % 8))) {
-			//			neighbors++;
-			//		}
-			//	}
-			//}
+            //If not alive and has 3 neighbors, become alive
+            if (!cellAlive) {
+                if (livingNeighbors == 3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
+                //break;
+            }
+            //If neighbors are less than 2 or more than 3, kill it.
+            else  if(livingNeighbors < 2 || livingNeighbors >3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
 
-			////If pixel is alive
-   //         if (*((Uint8*)surface_->pixels + row * surface_->pitch + column / 8) & (1 << (column % 8))) {
-   //             if (neighbors < 2 || neighbors > 3) {
-			//		//Kill the pixel
-			//		*((Uint8*)surface_->pixels + row * surface_->pitch + column / 8) &= ~(1 << (column % 8));
-			//	}
-   //         }
-   //         else {
-   //             if (neighbors == 3) {
-			//		//Bring the pixel to life
-			//		*((Uint8*)surface_->pixels + row * surface_->pitch + column / 8) |= 1 << (column % 8);
-			//	}
-			//}
 		}   
     }
-
-
-     //for (int pixelIndex = 0; pixelIndex < matrixWidth_ * matrixHeight_; pixelIndex++) {
-     //    // int x = pixelIndex % matrixWidth_;
-     //    // int y = pixelIndex / matrixWidth_;
-     //    //Count the number of neighbors
-     //    int neighbors = 0;
-     //    // surface_
-     //    // auto pixel = ;
-     //    // if ((Uint8*)surface_->pixels + pixelIndex)
-
-     //    surface_->
-     //    Uint8 *pixelValue = (Uint8*)surface_->pixels + pixelIndex * 8;
-     //    auto pixelValue2 = *pixelValue;
-     //    bool alive = *((Uint8*)surface_->pixels + pixelIndex) & 1;
-     //    //just to verify I will just turn it off if it is alive, or turn it on if it is dead
-     //    //if (alive) {
-     //    //    *((Uint8*)surface_->pixels + pixelIndex) &= ~1;
-     //    //} else {
-     //    //    *((Uint8*)surface_->pixels + pixelIndex) |= 1;
-     //    //}
-
-     //}
-        // bool alive = *((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) & (1 << (x % 8));
-        // for(int dy = -1; dy <= 1; dy++) {
-        //     for(int dx = -1; dx <= 1; dx++) {
-        //         if(dx == 0 && dy == 0) continue;
-        //         if(x + dx < 0 || x + dx >= matrixWidth_) continue;
-        //         if(y + dy < 0 || y + dy >= matrixHeight_) continue;
-        //         if(*((Uint8*)surface_->pixels + (y + dy) * surface_->pitch + (x + dx) / 8) & (1 << ((x + dx) % 8))) {
-        //             neighbors++;
-        //         }
-        //     }
-        // }
-
-    //     // If pixel is alive
-    //     if(*((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) & (1 << (x % 8))) {
-    //         if(neighbors < 2 || neighbors > 3) {
-    //             //Kill the pixel
-    //             *((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) &= ~(1 << (x % 8));
-    //         }
-    //     } else {
-    //         if(neighbors == 3) {
-    //             //Bring the pixel to life
-    //             *((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) |= 1 << (x % 8);
-    //         }
-    //     }
-    // }
-    
-    // for(int row = 0; row < matrixHeight_; row++) {
-    //     for(int x = 0; x < matrixWidth_; x++) {
-    //         //Count the number of neighbors
-    //         int neighbors = 0;
-    //         for(int dy = -1; dy <= 1; dy++) {
-    //             for(int dx = -1; dx <= 1; dx++) {
-    //                 if(dx == 0 && dy == 0) continue;
-    //                 if(x + dx < 0 || x + dx >= matrixWidth_) continue;
-    //                 if(y + dy < 0 || y + dy >= matrixHeight_) continue;
-    //                 if(*((Uint8*)surface_->pixels + (y + dy) * surface_->pitch + (x + dx) / 8) & (1 << ((x + dx) % 8))) {
-    //                     neighbors++;
-    //                 }
-    //             }
-    //         }
-
-    //         //If pixel is alive
-    //         if(*((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) & (1 << (x % 8))) {
-    //             if(neighbors < 2 || neighbors > 3) {
-    //                 //Kill the pixel
-    //                 *((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) &= ~(1 << (x % 8));
-    //             }
-    //         } else {
-    //             if(neighbors == 3) {
-    //                 //Bring the pixel to life
-    //                 *((Uint8*)surface_->pixels + y * surface_->pitch + x / 8) |= 1 << (x % 8);
-    //             }
-    //         }
-    //     }
-    // }
-
 }
 
 void Core::render() {
@@ -280,7 +179,6 @@ void Core::render() {
 
     ImGui::End();
     ImGui::Render();
-    
 
     auto texture = SDL_CreateTextureFromSurface(renderer_, surface_);
     // texture_ = SDL_CreateTexture(renderer_, 

@@ -30,13 +30,11 @@ private:
 
     int matrixWidth_ = 100;
     int matrixHeight_ = 100;
-    float fillFactor_ = 0.2f;
+    float fillFactor_ = 0.05f;
     
     SDL_Window* window_ = nullptr;
     SDL_Renderer* renderer_ = nullptr;
     SDL_Surface* surface_ = nullptr;
-    // SDL_Texture* texture_ = nullptr;
-    // ImGuiContext* imguiContext_ = nullptr;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
