@@ -20,6 +20,7 @@ private:
     void render();
 
     SDL_Surface* generateModelSurface(int width, int height, float fillFactor);
+    SDL_Surface* generateBlinkerTestSurface();
 
     void handleSDL_KEYDOWN(SDL_Event& event);
 
@@ -28,9 +29,9 @@ private:
     int desiredFPS_ = 60;
     int measuredFPS_ = 0;
 
-    int matrixWidth_ = 100;
-    int matrixHeight_ = 100;
-    float fillFactor_ = 0.05f;
+    int matrixWidth_ = 200;
+    int matrixHeight_ = 200;
+    float fillFactor_ = 0.2f;
     
     SDL_Window* window_ = nullptr;
     SDL_Renderer* renderer_ = nullptr;

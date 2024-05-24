@@ -94,48 +94,37 @@ void Core::processEvents() {
 }
 
 void Core::update() {
-    // 1. Count the number of neighbor pixels that are alive. Will have to handle edge cases.
+    SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
 
-    // 2. If pixel is alive and has 2 or 3 neighbors, do nothing.
-
-    // 3. If pixel is alive and has less than 2 or more than 3 neighbors, kill it.  
-
-    // 4. If pixel is dead and has exactly 3 neighbors, bring it to life.
-    bool cellAlive = false;
     for (int row = 0; row < matrixHeight_; row++) {
+        int livingNeighbors = 0;
+        bool cellAlive = false;
         for (int column = 0; column < matrixWidth_; column++) {
-            //Uint8 pixelValue = *((Uint8*)surface_->pixels + row * surface_->pitch + column );
-            //std::cout << "Pixel value: " << static_cast<int16_t>(pixelValue) << " at column:" << column << std::endl;
-			//Count the number of living neighbors
-			int livingNeighbors = 0;
-            bool cellAlive = false;
-            //I might be able to expand this to different scan window sizes? e.g. 5x5
+            cellAlive = *((Uint8*)previousState->pixels + row * previousState->pitch + column);
+            livingNeighbors = 0;
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
-                    //center pixel
-                    if (neighborRow == 0 && neighborColumn == 0) {
-                        cellAlive = *((Uint8*)surface_->pixels + row * surface_->pitch + column);
-                        continue;
-                    }
                     //out of range rows
                     if (row + neighborRow < 0 || row + neighborRow >= matrixHeight_) continue;
                     //out of range columns
                     if (column + neighborColumn < 0 || column + neighborColumn >= matrixWidth_) continue;
+                    ////center pixel
+                    if (neighborRow == 0 && neighborColumn == 0) continue;
                     //count
-                    if (*((Uint8*)surface_->pixels + (row + neighborRow) * surface_->pitch + column + neighborColumn) == 1) livingNeighbors++;
+                    if (*((Uint8*)previousState->pixels + ((row + neighborRow) * previousState->pitch) + column + neighborColumn) == 1) livingNeighbors++;
                 }
             }
-
+            
             //If not alive and has 3 neighbors, become alive
             if (!cellAlive) {
                 if (livingNeighbors == 3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
-                //break;
             }
             //If neighbors are less than 2 or more than 3, kill it.
-            else  if(livingNeighbors < 2 || livingNeighbors >3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
-
-		}   
+            else  if(livingNeighbors < 2 || livingNeighbors > 3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
+		}  
+        
     }
+    SDL_FreeSurface(previousState);
 }
 
 void Core::render() {
@@ -161,20 +150,20 @@ void Core::render() {
             surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
         }
         ImGui::SameLine();
+        if (ImGui::Button("Generate Blinker")) {
+			surface_ = generateBlinkerTestSurface();
+		}   
+        ImGui::SameLine();
         if (ImGui::Button("Start Model")) {
             modelRunning_ = true;
         }
     }
 
-    // if(modelRunning_){
-    //     ImGuiInputTextFlags inputFlags = 
-    // }
     ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
 
     //TODO:: limit to positive values
     //TODO:: endure that input is 4-byte aligned
     ImGui::InputInt("Width", &matrixWidth_, 100, 100, modelInputFlags);
-    // ImGui::SameLine();
     ImGui::InputInt("Height", &matrixHeight_, 100, 100, modelInputFlags);
 
     ImGui::End();
@@ -237,6 +226,28 @@ SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor)
     }
 
     return surface;
+}
+
+SDL_Surface* Core::generateBlinkerTestSurface(){
+    matrixHeight_ = 5;
+    matrixWidth_ = 5;
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, matrixWidth_, matrixHeight_, 1, SDL_PIXELFORMAT_INDEX8);
+    if (surface == nullptr) {
+        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
+        return nullptr;
+    }
+    //Set the color palette
+    const SDL_Color colors[2] = {
+        {0, 0, 0, 255},
+        {255, 255, 255, 255}
+    };
+    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
+    *((Uint8*)surface->pixels + 2 * surface->pitch + 1) = 1;
+    *((Uint8*)surface->pixels + 2 * surface->pitch + 2) = 1;
+    *((Uint8*)surface->pixels + 2 * surface->pitch + 3) = 1;
+
+    return surface;
+
 }
 
 Core::~Core() {
