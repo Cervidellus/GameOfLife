@@ -31,13 +31,19 @@ target_include_directories(gameoflife PRIVATE include)
 # endif()
 
 
-
-
-
 target_link_libraries(gameoflife SDL2::SDL2)
 
+#copy resources
 add_custom_command(
         TARGET gameoflife POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_SOURCE_DIR}/resources
                 $<TARGET_FILE_DIR:gameoflife>/resources)
+
+
+# Set the "Use Debug Libraries" property for Debug configuration
+if(MSVC)
+    set_target_properties(your_target PROPERTIES
+        VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
+    )
+endif()
