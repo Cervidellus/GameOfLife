@@ -30,7 +30,7 @@ private:
 
     int matrixWidth_ = 100;
     int matrixHeight_ = 100;
-    float fillFactor_ = 0.1f;
+    float fillFactor_ = 0.2f;
     
     SDL_Window* window_ = nullptr;
     SDL_Renderer* renderer_ = nullptr;
