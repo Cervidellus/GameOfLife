@@ -43,7 +43,7 @@ add_custom_command(
 
 # Set the "Use Debug Libraries" property for Debug configuration
 if(MSVC)
-    set_target_properties(your_target PROPERTIES
+    set_target_properties(gameoflife PROPERTIES
         VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
     )
 endif()
