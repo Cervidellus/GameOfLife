@@ -13,19 +13,31 @@ Core::Core() {
 
 bool Core::run() {
     if(!init()) return false;
-
-    int lastTime = SDL_GetTicks();//returns milliseconds 
+    int lastDisplayUpdate, lastModelUpdate, now;
+    now = lastDisplayUpdate = lastModelUpdate = SDL_GetTicks();
+    //int lastTime = SDL_GetTicks();//returns milliseconds 
 
     while (coreAppRunning_) {  
-        int now = SDL_GetTicks();
-        if(now - lastTime < 1000/desiredFPS_) continue;
-        measuredFPS_ = 1000/(now - lastTime);
-        lastTime = now;
+        now = SDL_GetTicks();
+        //if(now - lastTime < 1000/desiredFPS_) continue;
+        //measuredFPS_ = 1000/(now - lastTime);
+        //lastTime = now;
 
         processEvents();
-        if(modelRunning_) update();//only update if the model is running (otherwise it is paused
-        // update();
-        render();
+        if (modelRunning_ && now - lastModelUpdate > 1000 / modelFPS_)
+        {
+            update();
+            measuredModelFPS_ = 1000 / (now - lastModelUpdate);
+            lastModelUpdate = now;
+        }
+        if (now - lastDisplayUpdate > 1000 / displayFPS_)
+        {
+            render();
+            lastDisplayUpdate = now;
+        }
+        //wait function so we don't burn too much cpu
+        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / modelFPS_ - (now - lastModelUpdate));
+        if (waitTime > 0) SDL_Delay(waitTime);
     }
 
     return true;
@@ -35,7 +47,8 @@ bool Core::init() {
 
     //Configure SDL2
     //Temporary surface 
-    surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");//not loading from debug?
+    //surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");
+    surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
@@ -57,8 +70,6 @@ bool Core::init() {
         -1, 
         SDL_RENDERER_ACCELERATED);
 
-    //auto driver = SDL_GetCurrentVideoDriver();
-
     //Configure ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -68,7 +79,6 @@ bool Core::init() {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_);
     ImGui_ImplSDLRenderer2_Init(renderer_);
-    ImGui_ImplSDLRenderer2_CreateDeviceObjects();
 
     coreAppRunning_ = true;
     return true;
@@ -138,21 +148,17 @@ void Core::render() {
     ImGui::NewFrame();
 
     ImGui::Begin("Options");
-    ImGui::Text("Hello, world!");
-    ImGui::SliderInt("Desired FPS", &desiredFPS_, 1, 120);
-    ImGui::Text("Measured FPS: %d", measuredFPS_);
+    ImGui::SliderInt("Desired Model FPS", &modelFPS_, 1, 120);
+    ImGui::Text("Measured FPS: %d", measuredModelFPS_);
     if (modelRunning_) {
         if (ImGui::Button("Pause Model")) {
             modelRunning_ = false;
         }
     } else {
+        ImGui::SliderFloat("Model Fill Factor", &fillFactor_, 0.001, 1);
         if (ImGui::Button("Generate Model")) {
             surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Generate Blinker")) {
-			surface_ = generateBlinkerTestSurface();
-		}   
         ImGui::SameLine();
         if (ImGui::Button("Start Model")) {
             modelRunning_ = true;
@@ -162,19 +168,17 @@ void Core::render() {
     ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
 
     //TODO:: limit to positive values
-    //TODO:: endure that input is 4-byte aligned
+    //TODO:: ensure that input is 4-byte aligned
     ImGui::InputInt("Width", &matrixWidth_, 100, 100, modelInputFlags);
     ImGui::InputInt("Height", &matrixHeight_, 100, 100, modelInputFlags);
 
     ImGui::End();
     ImGui::Render();
 
+    //Is this the right way, or should I be passing to an existing texture?
+    //SDL_updateTexture could be the way.. 
+    //I won't worry about this for now as this would change if I move to GPU. 
     auto texture = SDL_CreateTextureFromSurface(renderer_, surface_);
-    // texture_ = SDL_CreateTexture(renderer_, 
-    //                             SDL_PIXELFORMAT_RGBA8888, 
-    //                             SDL_TEXTUREACCESS_TARGET, 
-    //                             windowWidth, 
-    //                             windowHeight);
 
     SDL_SetRenderTarget(renderer_, texture);
     SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
@@ -199,10 +203,6 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     }
 }
 
-//This can be a bit slow for large surfaces..
-//Cuda  could speed this up
-//Large models also really decrease frame rate...
-//working directly with a texture could be much faster
 SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor) {
     //Create and single bit surface to represent black and white values
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 1, SDL_PIXELFORMAT_INDEX8);//single bit per pixel image format
@@ -228,6 +228,7 @@ SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor)
     return surface;
 }
 
+//I used this for testing. I could delete it, but I'll leave it in just in case I need it in future.
 SDL_Surface* Core::generateBlinkerTestSurface(){
     matrixHeight_ = 5;
     matrixWidth_ = 5;

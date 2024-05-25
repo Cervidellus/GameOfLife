@@ -26,8 +26,9 @@ private:
 
     bool coreAppRunning_ = false;
     bool modelRunning_ = false;
-    int desiredFPS_ = 60;
-    int measuredFPS_ = 0;
+    const int displayFPS_ = 60;
+    int modelFPS_ = 60;
+    int measuredModelFPS_ = 0;
 
     int matrixWidth_ = 200;
     int matrixHeight_ = 200;

@@ -24,13 +24,6 @@ add_executable(gameoflife src/main.cpp src/core.cpp include/core.hpp)
 
 target_include_directories(gameoflife PRIVATE include)
 
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     target_link_libraries(my_app debug_library1 debug_library2)
-# else()
-#     target_link_libraries(gameoflife SDL2::SDL2)
-# endif()
-
-
 target_link_libraries(gameoflife SDL2::SDL2)
 
 #copy resources
