@@ -33,6 +33,10 @@ private:
     int matrixWidth_ = 200;
     int matrixHeight_ = 200;
     float fillFactor_ = 0.2f;
+    int rule1_ = 2; //fewer than 2 neighbors, an alive cell dies
+    //Rule 2 is implied by rules 1 and 3
+    int rule3_ = 3; //more than 3 neighbors, an alive cell dies
+    int rule4_ = 3; //dead cell with 3 neighbors becomes alive
     
     SDL_Window* window_ = nullptr;
     SDL_Renderer* renderer_ = nullptr;

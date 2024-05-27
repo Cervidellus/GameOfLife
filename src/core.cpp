@@ -127,10 +127,10 @@ void Core::update() {
             
             //If not alive and has 3 neighbors, become alive
             if (!cellAlive) {
-                if (livingNeighbors == 3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
+                if (livingNeighbors == rule4_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
             }
             //If neighbors are less than 2 or more than 3, kill it.
-            else  if(livingNeighbors < 2 || livingNeighbors > 3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
+            else  if(livingNeighbors < rule1_ || livingNeighbors > rule3_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
 		}  
         
     }
@@ -156,6 +156,7 @@ void Core::render() {
         }
     } else {
         ImGui::SliderFloat("Model Fill Factor", &fillFactor_, 0.001, 1);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
         if (ImGui::Button("Generate Model")) {
             surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
         }
@@ -171,6 +172,31 @@ void Core::render() {
     //TODO:: ensure that input is 4-byte aligned
     ImGui::InputInt("Width", &matrixWidth_, 100, 100, modelInputFlags);
     ImGui::InputInt("Height", &matrixHeight_, 100, 100, modelInputFlags);
+
+    ImGuiInputTextFlags ruleInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
+
+    if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1_, 1, 1))
+    {
+		if (rule1_ < 0) rule1_ = 0;
+		if (rule1_ > 8) rule1_ = 8;
+        if (rule1_ >= rule3_) rule1_ = rule3_-1;
+    };
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
+
+    if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3_, 1, 1))
+    {
+        if (rule3_<1) rule3_ = 1;
+        if (rule3_>8) rule3_ = 8;
+        if (rule3_ <= rule1_) rule3_ = rule1_+1;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
+
+    if (ImGui::InputInt("Conway Rule 4", &rule4_, 1, 1))
+    {
+        if (rule4_ < 0) rule4_ = 0;
+        if (rule4_ > 8) rule4_ = 8;
+    };
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
 
     ImGui::End();
     ImGui::Render();
