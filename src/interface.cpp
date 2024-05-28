@@ -27,10 +27,6 @@ bool Interface::init(
 	return true;
 }
 
-//void Interface::setGenerateModelCallback(std::function<void()> callback) {
-//    generateModelCallback_ = std::make_unique<std::function<void()>>(std::move(callback));
-//}
-
 void Interface::render(
     int& modelFPS,
     const int measuredModelFPS,

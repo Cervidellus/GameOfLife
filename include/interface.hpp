@@ -13,9 +13,6 @@ class Interface {
 	public:
 		Interface();
 		~Interface();
-		//void render(bool modelRunning = false, int& );
-
-		//void setGenerateModelCallback(std::function<void()> callback);
 
 		bool init(
 			SDL_Window* window, 

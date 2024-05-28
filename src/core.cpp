@@ -153,65 +153,6 @@ void Core::render() {
         rule4_
     );
 
-  //  //IMGUI
-  //  ImGui_ImplSDLRenderer2_NewFrame();
-  //  ImGui_ImplSDL2_NewFrame();
-  //  ImGui::NewFrame();
-
-  //  ImGui::Begin("Options");
-  //  ImGui::SliderInt("Desired Model FPS", &modelFPS_, 1, 120);
-  //  ImGui::Text("Measured FPS: %d", measuredModelFPS_);
-  //  if (modelRunning_) {
-  //      if (ImGui::Button("Pause Model")) {
-  //          modelRunning_ = false;
-  //      }
-  //  } else {
-  //      ImGui::SliderFloat("Model Fill Factor", &fillFactor_, 0.001, 1);
-  //      if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-  //      if (ImGui::Button("Generate Model")) {
-  //          surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_);
-  //      }
-  //      ImGui::SameLine();
-  //      if (ImGui::Button("Start Model")) {
-  //          modelRunning_ = true;
-  //      }
-  //  }
-
-  //  ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
-
-  //  //TODO:: limit to positive values
-  //  //TODO:: ensure that input is 4-byte aligned
-  //  ImGui::InputInt("Width", &modelWidth_, 100, 100, modelInputFlags);
-  //  ImGui::InputInt("Height", &modelHeight_, 100, 100, modelInputFlags);
-
-  //  ImGuiInputTextFlags ruleInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
-
-  //  if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1_, 1, 1))
-  //  {
-		//if (rule1_ < 0) rule1_ = 0;
-		//if (rule1_ > 8) rule1_ = 8;
-  //      if (rule1_ >= rule3_) rule1_ = rule3_-1;
-  //  };
-  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
-
-  //  if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3_, 1, 1))
-  //  {
-  //      if (rule3_<1) rule3_ = 1;
-  //      if (rule3_>8) rule3_ = 8;
-  //      if (rule3_ <= rule1_) rule3_ = rule1_+1;
-  //  }
-  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
-
-  //  if (ImGui::InputInt("Conway Rule 4", &rule4_, 1, 1))
-  //  {
-  //      if (rule4_ < 0) rule4_ = 0;
-  //      if (rule4_ > 8) rule4_ = 8;
-  //  };
-  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
-
-  //  ImGui::End();
-  //  ImGui::Render();
-
     //Is this the right way, or should I be passing to an existing texture?
     //SDL_updateTexture could be the way.. 
     //I won't worry about this for now as this would change if I move to GPU. 
