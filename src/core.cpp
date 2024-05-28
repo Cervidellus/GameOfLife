@@ -1,4 +1,5 @@
 #include <core.hpp>
+#include <interface.hpp>
 
 #include <iostream>
 #include <vector>
@@ -9,6 +10,7 @@
 #include <imgui.h>
 
 Core::Core() {
+    interface_ = std::make_unique<Interface>();
 }
 
 bool Core::run() {
@@ -48,7 +50,7 @@ bool Core::init() {
     //Configure SDL2
     //Temporary surface 
     //surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");
-    surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
+    surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_);
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
@@ -70,15 +72,11 @@ bool Core::init() {
         -1, 
         SDL_RENDERER_ACCELERATED);
 
-    //Configure ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-    ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_);
-    ImGui_ImplSDLRenderer2_Init(renderer_);
+    interface_->init(
+        window_, 
+        renderer_,
+        [&]() {surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_); }
+    );
 
     coreAppRunning_ = true;
     return true;
@@ -106,18 +104,18 @@ void Core::processEvents() {
 void Core::update() {
     SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
 
-    for (int row = 0; row < matrixHeight_; row++) {
+    for (int row = 0; row < modelHeight_; row++) {
         int livingNeighbors = 0;
         bool cellAlive = false;
-        for (int column = 0; column < matrixWidth_; column++) {
+        for (int column = 0; column < modelWidth_; column++) {
             cellAlive = *((Uint8*)previousState->pixels + row * previousState->pitch + column);
             livingNeighbors = 0;
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //out of range rows
-                    if (row + neighborRow < 0 || row + neighborRow >= matrixHeight_) continue;
+                    if (row + neighborRow < 0 || row + neighborRow >= modelHeight_) continue;
                     //out of range columns
-                    if (column + neighborColumn < 0 || column + neighborColumn >= matrixWidth_) continue;
+                    if (column + neighborColumn < 0 || column + neighborColumn >= modelWidth_) continue;
                     ////center pixel
                     if (neighborRow == 0 && neighborColumn == 0) continue;
                     //count
@@ -142,64 +140,77 @@ void Core::render() {
     SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
     SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
 
-    //IMGUI
-    ImGui_ImplSDLRenderer2_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
+    interface_->render
+    (
+        modelFPS_,
+        measuredModelFPS_,
+        modelRunning_,
+        fillFactor_,
+        modelWidth_,
+        modelHeight_,
+        rule1_,
+        rule3_,
+        rule4_
+    );
 
-    ImGui::Begin("Options");
-    ImGui::SliderInt("Desired Model FPS", &modelFPS_, 1, 120);
-    ImGui::Text("Measured FPS: %d", measuredModelFPS_);
-    if (modelRunning_) {
-        if (ImGui::Button("Pause Model")) {
-            modelRunning_ = false;
-        }
-    } else {
-        ImGui::SliderFloat("Model Fill Factor", &fillFactor_, 0.001, 1);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-        if (ImGui::Button("Generate Model")) {
-            surface_ = generateModelSurface(matrixWidth_, matrixHeight_, fillFactor_);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Start Model")) {
-            modelRunning_ = true;
-        }
-    }
+  //  //IMGUI
+  //  ImGui_ImplSDLRenderer2_NewFrame();
+  //  ImGui_ImplSDL2_NewFrame();
+  //  ImGui::NewFrame();
 
-    ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
+  //  ImGui::Begin("Options");
+  //  ImGui::SliderInt("Desired Model FPS", &modelFPS_, 1, 120);
+  //  ImGui::Text("Measured FPS: %d", measuredModelFPS_);
+  //  if (modelRunning_) {
+  //      if (ImGui::Button("Pause Model")) {
+  //          modelRunning_ = false;
+  //      }
+  //  } else {
+  //      ImGui::SliderFloat("Model Fill Factor", &fillFactor_, 0.001, 1);
+  //      if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
+  //      if (ImGui::Button("Generate Model")) {
+  //          surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_);
+  //      }
+  //      ImGui::SameLine();
+  //      if (ImGui::Button("Start Model")) {
+  //          modelRunning_ = true;
+  //      }
+  //  }
 
-    //TODO:: limit to positive values
-    //TODO:: ensure that input is 4-byte aligned
-    ImGui::InputInt("Width", &matrixWidth_, 100, 100, modelInputFlags);
-    ImGui::InputInt("Height", &matrixHeight_, 100, 100, modelInputFlags);
+  //  ImGuiInputTextFlags modelInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
 
-    ImGuiInputTextFlags ruleInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
+  //  //TODO:: limit to positive values
+  //  //TODO:: ensure that input is 4-byte aligned
+  //  ImGui::InputInt("Width", &modelWidth_, 100, 100, modelInputFlags);
+  //  ImGui::InputInt("Height", &modelHeight_, 100, 100, modelInputFlags);
 
-    if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1_, 1, 1))
-    {
-		if (rule1_ < 0) rule1_ = 0;
-		if (rule1_ > 8) rule1_ = 8;
-        if (rule1_ >= rule3_) rule1_ = rule3_-1;
-    };
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
+  //  ImGuiInputTextFlags ruleInputFlags = modelRunning_ ? ImGuiInputTextFlags_ReadOnly : 0;
 
-    if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3_, 1, 1))
-    {
-        if (rule3_<1) rule3_ = 1;
-        if (rule3_>8) rule3_ = 8;
-        if (rule3_ <= rule1_) rule3_ = rule1_+1;
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
+  //  if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1_, 1, 1))
+  //  {
+		//if (rule1_ < 0) rule1_ = 0;
+		//if (rule1_ > 8) rule1_ = 8;
+  //      if (rule1_ >= rule3_) rule1_ = rule3_-1;
+  //  };
+  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
 
-    if (ImGui::InputInt("Conway Rule 4", &rule4_, 1, 1))
-    {
-        if (rule4_ < 0) rule4_ = 0;
-        if (rule4_ > 8) rule4_ = 8;
-    };
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
+  //  if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3_, 1, 1))
+  //  {
+  //      if (rule3_<1) rule3_ = 1;
+  //      if (rule3_>8) rule3_ = 8;
+  //      if (rule3_ <= rule1_) rule3_ = rule1_+1;
+  //  }
+  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
 
-    ImGui::End();
-    ImGui::Render();
+  //  if (ImGui::InputInt("Conway Rule 4", &rule4_, 1, 1))
+  //  {
+  //      if (rule4_ < 0) rule4_ = 0;
+  //      if (rule4_ > 8) rule4_ = 8;
+  //  };
+  //  if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
+
+  //  ImGui::End();
+  //  ImGui::Render();
 
     //Is this the right way, or should I be passing to an existing texture?
     //SDL_updateTexture could be the way.. 
@@ -256,9 +267,9 @@ SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor)
 
 //I used this for testing. I could delete it, but I'll leave it in just in case I need it in future.
 SDL_Surface* Core::generateBlinkerTestSurface(){
-    matrixHeight_ = 5;
-    matrixWidth_ = 5;
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, matrixWidth_, matrixHeight_, 1, SDL_PIXELFORMAT_INDEX8);
+    modelHeight_ = 5;
+    modelWidth_ = 5;
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);
     if (surface == nullptr) {
         std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
         return nullptr;
@@ -278,10 +289,8 @@ SDL_Surface* Core::generateBlinkerTestSurface(){
 }
 
 Core::~Core() {
-    //Need to shutdown ImGui first
-    ImGui_ImplSDLRenderer2_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+    //ImGui interface must be deleted before SDL
+    interface_.reset();
 
     //shutdown SDL
     SDL_DestroyRenderer(renderer_);

@@ -1,11 +1,15 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
+#include <memory>
+
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 union SDL_Event;
+
+class Interface;
 
 class Core {
 public:
@@ -30,8 +34,8 @@ private:
     int modelFPS_ = 60;
     int measuredModelFPS_ = 0;
 
-    int matrixWidth_ = 200;
-    int matrixHeight_ = 200;
+    int modelWidth_ = 200;
+    int modelHeight_ = 200;
     float fillFactor_ = 0.2f;
     int rule1_ = 2; //fewer than 2 neighbors, an alive cell dies
     //Rule 2 is implied by rules 1 and 3
@@ -41,6 +45,8 @@ private:
     SDL_Window* window_ = nullptr;
     SDL_Renderer* renderer_ = nullptr;
     SDL_Surface* surface_ = nullptr;
+
+    std::unique_ptr<Interface> interface_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
