@@ -24,7 +24,6 @@ add_executable(gameoflife
     src/main.cpp 
     src/core.cpp 
     src/interface.cpp 
-    src/modelpresets.cpp
     include/core.hpp 
     include/interface.hpp 
     include/modelparameters.hpp

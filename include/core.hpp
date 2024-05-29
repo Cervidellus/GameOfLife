@@ -29,10 +29,10 @@ private:
     void render();
 
     //TODO: I should really have this just passing the parameters, then core has to know less.
-    void handleGenerateModelRequest(ModelPresets::ModelPresetName preset);
+    void handleGenerateModelRequest(const ModelParameters& params);
     SDL_Surface* generateModelPresetSurface(const ModelParameters& modelParameters);
-    SDL_Surface* generateRandomModelSurface();
-    SDL_Surface* generateBlinkerTestSurface();
+    //SDL_Surface* generateRandomModelSurface();
+    //SDL_Surface* generateBlinkerTestSurface();
 
     void handleSDL_KEYDOWN(SDL_Event& event);
 

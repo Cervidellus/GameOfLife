@@ -26,7 +26,7 @@ class Interface {
 		bool init(
 			SDL_Window* window, 
 			SDL_Renderer* renderer,
-			std::function<void(ModelPresets::ModelPresetName preset)> generateModelButtonCallback);
+			std::function<void(ModelParameters presetParameters)> presetCallback);
 
 		void render(
 			int& modelFPS, 
@@ -41,7 +41,7 @@ class Interface {
 			);
 
 	private:
-		std::unique_ptr<std::function<void(ModelPresets::ModelPresetName preset)>> generateModelCallback_;
+		std::unique_ptr<std::function<void(ModelParameters presetParameters)>> presetCallback_;
 };
 
 #endif //GAMEOFLIFE_INTERFACE_HPP

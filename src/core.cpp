@@ -52,7 +52,7 @@ bool Core::init() {
     //Configure SDL2
     //Temporary surface 
     //surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");
-    surface_ = generateRandomModelSurface();
+    surface_ = generateModelPresetSurface(ModelPresets::randomParams);
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
@@ -77,7 +77,7 @@ bool Core::init() {
     interface_->init(
         window_, 
         renderer_,
-        [&](ModelPresets::ModelPresetName preset) {handleGenerateModelRequest(preset); }
+        [&](ModelParameters params) {handleGenerateModelRequest(params); }
     );
 
     coreAppRunning_ = true;
@@ -183,30 +183,8 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     }
 }
 
-void Core::handleGenerateModelRequest(ModelPresets::ModelPresetName preset) {
-    switch (preset) {
-        case ModelPresets::ModelPresetName::random:
-			surface_ = generateRandomModelSurface();
-			break;
-		case ModelPresets::ModelPresetName::swiss_cheese:
-            //modelFPS_ = 15;
-            //fillFactor_ = 0.9f;
-            //rule1_ = 5;
-            //rule3_ = 8;
-            //rule4_ = 1;
-            //surface_ = generateRandomModelSurface();
-            //ModelPresets::ModelPresetName::swiss_cheese;
-            surface_ = generateModelPresetSurface(ModelPresets::swissCheeseParams);
-			break;
-		case ModelPresets::ModelPresetName::decomposition:
-			modelFPS_ = 40;
-			fillFactor_ = 0.9f;
-			rule1_ = 5;
-			rule3_ = 8;
-			rule4_ = 3;
-			surface_ = generateRandomModelSurface();
-			break;
-	}
+void Core::handleGenerateModelRequest(const ModelParameters& params) {
+    surface_ = generateModelPresetSurface(params);
 }
 
 SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
@@ -248,54 +226,6 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     }
 
     return surface;
-}
-
-SDL_Surface* Core::generateRandomModelSurface() {
-    //Create and single bit surface to represent black and white values
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);//single bit per pixel image format
-    if(surface == nullptr) {
-        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
-        return nullptr;
-    }
-    //Set the color palette
-    const SDL_Color colors[2] = {
-        {0, 0, 0, 255},
-        {255, 255, 255, 255}
-    };
-    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
-
-    //Fill with random data
-    srand(static_cast<unsigned>(time(nullptr)));
-    for(int row = 0; row < modelHeight_; row++) {
-        for(int column = 0; column < modelWidth_; column++) {
-            *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < fillFactor_ * (float)RAND_MAX) ? 1 : 0;
-        }
-    }
-
-    return surface;
-}
-
-//I used this for testing. I could delete it, but I'll leave it in just in case I need it in future.
-SDL_Surface* Core::generateBlinkerTestSurface(){
-    modelHeight_ = 5;
-    modelWidth_ = 5;
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);
-    if (surface == nullptr) {
-        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
-        return nullptr;
-    }
-    //Set the color palette
-    const SDL_Color colors[2] = {
-        {0, 0, 0, 255},
-        {255, 255, 255, 255}
-    };
-    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
-    *((Uint8*)surface->pixels + 2 * surface->pitch + 1) = 1;
-    *((Uint8*)surface->pixels + 2 * surface->pitch + 2) = 1;
-    *((Uint8*)surface->pixels + 2 * surface->pitch + 3) = 1;
-
-    return surface;
-
 }
 
 Core::~Core() {

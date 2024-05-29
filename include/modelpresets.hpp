@@ -5,11 +5,12 @@
 
 #include <string_view>
 
-class SDL_Surface;
+//Preset parameters for models.
+//In order to add a new model, add a new ModelPresetName, a new getModelPresetStringView, and a new getModelPresetParameters
+//If this gets to unwieldly, we can have the parmeters in a separate file.
+//Buttons for the presets will be generated in the GUI using the ModelPresetName enum and the getModelPresetStringView function.
 
 namespace ModelPresets {
-
-	//SDL_Surface* generateModelPresetSurface(const ModelParameters& modelParameters); 
 
 	enum class ModelPresetName {
 		random,

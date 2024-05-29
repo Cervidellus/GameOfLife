@@ -16,7 +16,7 @@ Interface::Interface() {
 bool Interface::init(
     SDL_Window* window, 
     SDL_Renderer* renderer,
-    std::function<void(ModelPresets::ModelPresetName preset)> generateModelButtonCallback)
+    std::function<void(ModelParameters presetParameters)> presetCallback)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -27,7 +27,7 @@ bool Interface::init(
     if(!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) return false;
     if(!ImGui_ImplSDLRenderer2_Init(renderer)) return false;
 
-    generateModelCallback_ = std::make_unique<std::function<void(ModelPresets::ModelPresetName preset)>>(std::move(generateModelButtonCallback));
+    presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
 
 	return true;
 }
@@ -111,14 +111,14 @@ void Interface::render(
 
     if (ImGui::CollapsingHeader("Presets"))
     {
-        if (ImGui::Button("Random")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPresets::ModelPresetName::random);
+        if (ImGui::Button("random")) {
+			if(presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
 		}
         if (ImGui::Button("Swiss Cheese")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPresets::ModelPresetName::swiss_cheese);
+			if(presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
 		}
         if (ImGui::Button("Decomposition")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPresets::ModelPresetName::decomposition);
+			if(presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
 		}
 	}
 
