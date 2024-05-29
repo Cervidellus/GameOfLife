@@ -9,6 +9,12 @@ struct SDL_Renderer;
 
 //template <typename Callback>
 
+enum class ModelPreset {
+	random,
+	swiss_cheese,
+	decomposition
+};
+
 class Interface {
 	public:
 		Interface();
@@ -17,7 +23,7 @@ class Interface {
 		bool init(
 			SDL_Window* window, 
 			SDL_Renderer* renderer,
-			std::function<void()> generateModelButtonCallback);
+			std::function<void(ModelPreset preset)> generateModelButtonCallback);
 
 		void render(
 			int& modelFPS, 
@@ -32,7 +38,7 @@ class Interface {
 			);
 
 	private:
-		std::unique_ptr<std::function<void()>> generateModelCallback_;
+		std::unique_ptr<std::function<void(ModelPreset preset)>> generateModelCallback_;
 };
 
 #endif //GAMEOFLIFE_INTERFACE_HPP

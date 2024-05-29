@@ -50,7 +50,7 @@ bool Core::init() {
     //Configure SDL2
     //Temporary surface 
     //surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");
-    surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_);
+    surface_ = generateRandomModelSurface();
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
@@ -75,7 +75,7 @@ bool Core::init() {
     interface_->init(
         window_, 
         renderer_,
-        [&]() {surface_ = generateModelSurface(modelWidth_, modelHeight_, fillFactor_); }
+        [&](ModelPreset preset) {handleGenerateModelRequest(preset); }
     );
 
     coreAppRunning_ = true;
@@ -181,9 +181,33 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     }
 }
 
-SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor) {
+void Core::handleGenerateModelRequest(ModelPreset preset) {
+    switch (preset) {
+		case ModelPreset::random:
+			surface_ = generateRandomModelSurface();
+			break;
+		case ModelPreset::swiss_cheese:
+            modelFPS_ = 15;
+            fillFactor_ = 0.9f;
+            rule1_ = 5;
+            rule3_ = 8;
+            rule4_ = 1;
+            surface_ = generateRandomModelSurface();
+			break;
+		case ModelPreset::decomposition:
+			modelFPS_ = 40;
+			fillFactor_ = 0.9f;
+			rule1_ = 5;
+			rule3_ = 8;
+			rule4_ = 3;
+			surface_ = generateRandomModelSurface();
+			break;
+	}
+}
+
+SDL_Surface* Core::generateRandomModelSurface() {
     //Create and single bit surface to represent black and white values
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 1, SDL_PIXELFORMAT_INDEX8);//single bit per pixel image format
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);//single bit per pixel image format
     if(surface == nullptr) {
         std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
         return nullptr;
@@ -197,9 +221,9 @@ SDL_Surface* Core::generateModelSurface(int width, int height, float fillFactor)
 
     //Fill with random data
     srand(static_cast<unsigned>(time(nullptr)));
-    for(int row = 0; row < height; row++) {
-        for(int column = 0; column < width; column++) {
-            *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < fillFactor * (float)RAND_MAX) ? 1 : 0;
+    for(int row = 0; row < modelHeight_; row++) {
+        for(int column = 0; column < modelWidth_; column++) {
+            *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < fillFactor_ * (float)RAND_MAX) ? 1 : 0;
         }
     }
 

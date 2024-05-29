@@ -3,13 +3,16 @@
 
 #include <memory>
 
+#include <interface.hpp>
+
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 union SDL_Event;
 
-class Interface;
+//class Interface;
+//enum Class ModelPreset;
 
 class Core {
 public:
@@ -23,7 +26,9 @@ private:
     void update();
     void render();
 
-    SDL_Surface* generateModelSurface(int width, int height, float fillFactor);
+    void handleGenerateModelRequest(ModelPreset preset);
+
+    SDL_Surface* generateRandomModelSurface();
     SDL_Surface* generateBlinkerTestSurface();
 
     void handleSDL_KEYDOWN(SDL_Event& event);

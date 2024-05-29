@@ -12,7 +12,7 @@ Interface::Interface() {
 bool Interface::init(
     SDL_Window* window, 
     SDL_Renderer* renderer,
-    std::function<void()> generateModelButtonCallback) {
+    std::function<void(ModelPreset preset)> generateModelButtonCallback) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -22,7 +22,7 @@ bool Interface::init(
     if(!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) return false;
     if(!ImGui_ImplSDLRenderer2_Init(renderer)) return false;
 
-    generateModelCallback_ = std::make_unique<std::function<void()>>(std::move(generateModelButtonCallback));
+    generateModelCallback_ = std::make_unique<std::function<void(ModelPreset preset)>>(std::move(generateModelButtonCallback));
 
 	return true;
 }
@@ -52,48 +52,70 @@ void Interface::render(
         }
     }
     else {
+        if (ImGui::Button("Start Model")) {
+			modelRunning = true;
+		}
+	}
+
+
+    ImGuiInputTextFlags modelRunningFlag = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+    
+    if (ImGui::CollapsingHeader("Parameters")) {
+
+        //TODO:: limit to positive values
+        //TODO:: ensure that input is 4-byte aligned
+        ImGui::InputInt("Width", &modelWidth, 100, 100, modelRunningFlag);
+        ImGui::InputInt("Height", &modelHeight, 100, 100, modelRunningFlag);
+
         ImGui::SliderFloat("Model Fill Factor", &fillFactor, 0.001, 1);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-        if (ImGui::Button("Generate Model")) {
-            if(generateModelCallback_) (*generateModelCallback_)();
+        //if (ImGui::Button("Generate Model")) {
+        //    if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
+        //}
+        //ImGui::SameLine();
+        //if (ImGui::Button("Start Model")) {
+        //    modelRunning = true;
+        //}
+
+        //ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+
+        if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1, 1, 1))
+        {
+            if (rule1 < 0) rule1 = 0;
+            if (rule1 > 8) rule1 = 8;
+            if (rule1 >= rule3) rule1 = rule3 - 1;
+        };
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
+
+        if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3, 1, 1))
+        {
+            if (rule3 < 1) rule3 = 1;
+            if (rule3 > 8) rule3 = 8;
+            if (rule3 <= rule1) rule3 = rule1 + 1;
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Start Model")) {
-            modelRunning = true;
-        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
+
+        if (ImGui::InputInt("Conway Rule 4", &rule4, 1, 1))
+        {
+            if (rule4 < 0) rule4 = 0;
+            if (rule4 > 8) rule4 = 8;
+        };
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
+
     }
 
-    ImGuiInputTextFlags modelInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
-
-    //TODO:: limit to positive values
-    //TODO:: ensure that input is 4-byte aligned
-    ImGui::InputInt("Width", &modelWidth, 100, 100, modelInputFlags);
-    ImGui::InputInt("Height", &modelHeight, 100, 100, modelInputFlags);
-
-    ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
-
-    if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1, 1, 1))
+    if (ImGui::CollapsingHeader("Presets"))
     {
-        if (rule1 < 0) rule1 = 0;
-        if (rule1 > 8) rule1 = 8;
-        if (rule1 >= rule3) rule1 = rule3 - 1;
-    };
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
-
-    if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3, 1, 1))
-    {
-        if (rule3 < 1) rule3 = 1;
-        if (rule3 > 8) rule3 = 8;
-        if (rule3 <= rule1) rule3 = rule1 + 1;
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
-
-    if (ImGui::InputInt("Conway Rule 4", &rule4, 1, 1))
-    {
-        if (rule4 < 0) rule4 = 0;
-        if (rule4 > 8) rule4 = 8;
-    };
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
+        if (ImGui::Button("Random")) {
+			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
+		}
+        if (ImGui::Button("Swiss Cheese")) {
+			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::swiss_cheese);
+		}
+        if (ImGui::Button("Decomposition")) {
+			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::decomposition);
+		}
+	}
 
     ImGui::End();
     ImGui::Render();
