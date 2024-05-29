@@ -1,5 +1,7 @@
 #include <core.hpp>
 #include <interface.hpp>
+#include <modelparameters.hpp>
+//#include <modelpresets.hpp>
 
 #include <iostream>
 #include <vector>
@@ -75,7 +77,7 @@ bool Core::init() {
     interface_->init(
         window_, 
         renderer_,
-        [&](ModelPreset preset) {handleGenerateModelRequest(preset); }
+        [&](ModelPresets::ModelPresetName preset) {handleGenerateModelRequest(preset); }
     );
 
     coreAppRunning_ = true;
@@ -181,20 +183,22 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     }
 }
 
-void Core::handleGenerateModelRequest(ModelPreset preset) {
+void Core::handleGenerateModelRequest(ModelPresets::ModelPresetName preset) {
     switch (preset) {
-		case ModelPreset::random:
+        case ModelPresets::ModelPresetName::random:
 			surface_ = generateRandomModelSurface();
 			break;
-		case ModelPreset::swiss_cheese:
-            modelFPS_ = 15;
-            fillFactor_ = 0.9f;
-            rule1_ = 5;
-            rule3_ = 8;
-            rule4_ = 1;
-            surface_ = generateRandomModelSurface();
+		case ModelPresets::ModelPresetName::swiss_cheese:
+            //modelFPS_ = 15;
+            //fillFactor_ = 0.9f;
+            //rule1_ = 5;
+            //rule3_ = 8;
+            //rule4_ = 1;
+            //surface_ = generateRandomModelSurface();
+            //ModelPresets::ModelPresetName::swiss_cheese;
+            surface_ = generateModelPresetSurface(ModelPresets::swissCheeseParams);
 			break;
-		case ModelPreset::decomposition:
+		case ModelPresets::ModelPresetName::decomposition:
 			modelFPS_ = 40;
 			fillFactor_ = 0.9f;
 			rule1_ = 5;
@@ -203,6 +207,47 @@ void Core::handleGenerateModelRequest(ModelPreset preset) {
 			surface_ = generateRandomModelSurface();
 			break;
 	}
+}
+
+SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
+    //First set the members to correspond with the parameters
+    if (params.modelFPS > 0) modelFPS_ = params.modelFPS;
+    if(modelWidth_ < params.minWidth) modelWidth_ = params.minWidth;
+    if(modelHeight_ < params.minHeight) modelHeight_ = params.minHeight;
+    if (params.modelWidth >  0) modelWidth_ = params.modelWidth;
+    if (params.modelHeight > 0) modelHeight_ = params.modelHeight;
+    if (params.fillFactor > 0) fillFactor_ = params.fillFactor;
+    if (params.rule1 > 0) rule1_ = params.rule1;
+    if (params.rule3 > 0) rule3_ = params.rule3;
+    if (params.rule4 > 0) rule4_ = params.rule4;
+
+    //Generate surface from parameters
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);
+    if (surface == nullptr) {
+        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
+        return nullptr;
+    }
+    //Set the color palette
+    const SDL_Color colors[2] = {
+        {0, 0, 0, 255},
+        {255, 255, 255, 255}
+    };
+    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
+
+    if (params.random) {
+        srand(static_cast<unsigned>(time(nullptr)));
+        for (int row = 0; row < modelHeight_; row++) {
+            for (int column = 0; column < modelWidth_; column++) {
+                *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < params.fillFactor * (float)RAND_MAX) ? 1 : 0;
+            }
+        }
+    }
+
+    for (auto pixel : params.aliveCells) {
+        *((Uint8*)surface->pixels + pixel.second * surface->pitch + pixel.first) = 1;
+    }
+
+    return surface;
 }
 
 SDL_Surface* Core::generateRandomModelSurface() {

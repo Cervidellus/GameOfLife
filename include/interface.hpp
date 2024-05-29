@@ -1,19 +1,22 @@
 #ifndef GAMEOFLIFE_INTERFACE_HPP
 #define GAMEOFLIFE_INTERFACE_HPP
 
+#include <modelpresets.hpp>
+
 #include <functional>
 #include <memory>
 
+//class ModelPresets::ModelPresetName;
 struct SDL_Window;
 struct SDL_Renderer;
 
 //template <typename Callback>
 
-enum class ModelPreset {
-	random,
-	swiss_cheese,
-	decomposition
-};
+//enum class ModelPresetName {
+//	random,
+//	swiss_cheese,
+//	decomposition
+//};
 
 class Interface {
 	public:
@@ -23,7 +26,7 @@ class Interface {
 		bool init(
 			SDL_Window* window, 
 			SDL_Renderer* renderer,
-			std::function<void(ModelPreset preset)> generateModelButtonCallback);
+			std::function<void(ModelPresets::ModelPresetName preset)> generateModelButtonCallback);
 
 		void render(
 			int& modelFPS, 
@@ -38,7 +41,7 @@ class Interface {
 			);
 
 	private:
-		std::unique_ptr<std::function<void(ModelPreset preset)>> generateModelCallback_;
+		std::unique_ptr<std::function<void(ModelPresets::ModelPresetName preset)>> generateModelCallback_;
 };
 
 #endif //GAMEOFLIFE_INTERFACE_HPP
