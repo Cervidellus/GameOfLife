@@ -120,6 +120,22 @@ namespace ModelPresets {
 	"$53b2obo$56bo$3b2o51b2o$3b2o$9b2o32b2o$9b2o33bo$43bo$43b2o$7b2o$7b2o5b"
 	"2o$14b2o!"
 	};
+
+const ModelParameters gabrielsPOneThirtyEightParams = {
+	false,
+	-1,
+	-1,
+	-1,
+	-1,
+	2,
+	3,
+	3,
+	33,
+	33,
+	{},
+	"8b3o10b$7bo2bo10b$7bo2bo10b$7b2o12b4$17b3ob$17bo2bo$20bo$3o15b3o$o20b$"
+	"o2bo17b$b3o17b4$12b2o7b$10bo2bo7b$10bo2bo7b$10b3o!"
+	};
 }
 
 #endif //GAMEOFLIFE_MODELPRESETS_H

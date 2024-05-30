@@ -253,84 +253,37 @@ void Core::populateSurfaceFromRLEString(
         //First handle the edge cases
         
         if(*modelIterator == '!') break;
-        else if (*modelIterator == '$')
+
+        int count = 1;
+        if (isdigit(*modelIterator))
         {
-            column = startColumn;
-            row++;
-        }
-        else {
-            int count = 1;
-            if (isdigit(*modelIterator))
+            std::string stringInteger = "";
+            while (isdigit(*modelIterator) && modelIterator != model.end())
             {
-                std::string stringInteger = "";
-                while (isdigit(*modelIterator) && modelIterator != model.end())
-                {
-                    stringInteger += *modelIterator;
-                    modelIterator++;
-                }
-                count = std::stoi(stringInteger);
+                stringInteger += *modelIterator;
+                modelIterator++;
             }
-            if (*modelIterator == 'b') {
-                for (int i = 0; i < count; i++) {
-                    column++;
-                }
-            }
-            else if (*modelIterator == 'o') {
-                for (int i = 0; i < count; i++) {
-                    *((Uint8*)surface->pixels + row * surface->pitch + column) = 1;
-                    column++;
-                }
-            }
-
-
+            count = std::stoi(stringInteger);
         }
-
-
-       
-
-
-        //if (*modelIterator == 'b') column++;
-        //else if (*modelIterator == 'o')
-        //{
-        //    *((Uint8*)surface->pixels + (startRow + row) * surface->pitch + startColumn + column) = 1;
-        //    column++;
-        //}
-
-
+        if (*modelIterator == 'b') {
+            for (int i = 0; i < count; i++) {
+                column++;
+            }
+        }
+        else if (*modelIterator == 'o') {
+            for (int i = 0; i < count; i++) {
+                *((Uint8*)surface->pixels + row * surface->pitch + column) = 1;
+                column++;
+            }
+        }
+        else if (*modelIterator == '$')
+		{
+            column = startColumn;
+            for (int i = 0; i < count; i++) {
+                row++;
+            }
+		}
     }
-	/*for (char c : model) {
-		if (c == 'b') {
-			column++;
-		}
-		else if (c == 'o') {
-			*((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
-			column++;
-		}
-		else if (c == '$') {
-			row++;
-			column = startColumn;
-		}
-		else if (c == '!') {
-			break;
-		}
-		else if (isdigit(c)) {
-			int count = c - '0';
-			while (isdigit(model[1])) {
-				count = count * 10 + (model[1] - '0');
-				model.erase(1, 1);
-			}
-			for (int i = 0; i < count; i++) {
-				if (model[0] == 'b') {
-					column++;
-				}
-				else if (model[0] == 'o') {
-					*((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
-					column++;
-				}
-			}
-		}
-	}*/
-
 }
 
 Core::~Core() {

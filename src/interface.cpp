@@ -145,6 +145,11 @@ void Interface::render(
             if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
+
+        if (ImGui::Button("Gabriel's P138 Oscillator")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::gabrielsPOneThirtyEightParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cool period 138 oscillator discovered by Gabriel Nivasch on October 13, 2002.");
 	}
 
     ImGui::End();
