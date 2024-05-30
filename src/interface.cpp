@@ -114,12 +114,37 @@ void Interface::render(
         if (ImGui::Button("random")) {
 			if(presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("A randomly generated field to observe Conway's Game of Life.");
+
         if (ImGui::Button("Swiss Cheese")) {
 			if(presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
         if (ImGui::Button("Decomposition")) {
 			if(presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
+        if (ImGui::Button("Blinker")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::blinkerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest oscillator in Conway's Game of Life.");
+
+        if (ImGui::Button("Lightweight Spaceship")) {
+			if (presetCallback_) (*presetCallback_)(ModelPresets::lightweightSpaceshipParams);
+		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest orthoganal spaceship in Conway's Game of Life.");
+
+        if (ImGui::Button("Blocker")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::blockerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blocker.");
+
+        if (ImGui::Button("Nihonium")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
 	}
 
     ImGui::End();

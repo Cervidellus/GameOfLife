@@ -31,8 +31,11 @@ private:
     //TODO: I should really have this just passing the parameters, then core has to know less.
     void handleGenerateModelRequest(const ModelParameters& params);
     SDL_Surface* generateModelPresetSurface(const ModelParameters& modelParameters);
-    //SDL_Surface* generateRandomModelSurface();
-    //SDL_Surface* generateBlinkerTestSurface();
+    void populateSurfaceFromRLEString(
+        SDL_Surface* surface,
+        std::string model, 
+        int startColumn, 
+        int startRow);
 
     void handleSDL_KEYDOWN(SDL_Event& event);
 

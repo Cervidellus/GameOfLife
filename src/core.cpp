@@ -4,6 +4,7 @@
 //#include <modelpresets.hpp>
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <SDL2/SDL.h>
@@ -19,13 +20,9 @@ bool Core::run() {
     if(!init()) return false;
     int lastDisplayUpdate, lastModelUpdate, now;
     now = lastDisplayUpdate = lastModelUpdate = SDL_GetTicks();
-    //int lastTime = SDL_GetTicks();//returns milliseconds 
 
     while (coreAppRunning_) {  
         now = SDL_GetTicks();
-        //if(now - lastTime < 1000/desiredFPS_) continue;
-        //measuredFPS_ = 1000/(now - lastTime);
-        //lastTime = now;
 
         processEvents();
         if (modelRunning_ && now - lastModelUpdate > 1000 / modelFPS_)
@@ -48,10 +45,6 @@ bool Core::run() {
 }
 
 bool Core::init() {
-
-    //Configure SDL2
-    //Temporary surface 
-    //surface_ = SDL_LoadBMP("C:/src/GameOfLife/resources/fern.bmp");
     surface_ = generateModelPresetSurface(ModelPresets::randomParams);
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -63,16 +56,19 @@ bool Core::init() {
     
     window_ = SDL_CreateWindow(
         "GameOfLife", 
-        50, 
-        50, 
-        800, 
-        600, 
-        SDL_WINDOW_RESIZABLE);
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        1280, 
+        720, 
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
         
     renderer_ = SDL_CreateRenderer(
         window_, 
         -1, 
         SDL_RENDERER_ACCELERATED);
+
+    //Make modelwidth and modelheight the same as window size
+    //SDL_GetRendererOutputSize(renderer_, &modelWidth_, &modelHeight_);
 
     interface_->init(
         window_, 
@@ -213,6 +209,7 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
 
     if (params.random) {
+
         srand(static_cast<unsigned>(time(nullptr)));
         for (int row = 0; row < modelHeight_; row++) {
             for (int column = 0; column < modelWidth_; column++) {
@@ -220,12 +217,120 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
             }
         }
     }
+    else {
+        int startColumn = (modelWidth_ / 2) - (params.minWidth / 2);
+        int startRow = modelHeight_ / 2 - (params.minHeight / 2);
+        //std::vector encoding
+        if (params.aliveCells.size() > 0) {
+            for (auto pixel : params.aliveCells) {
+                *((Uint8*)surface->pixels + (startRow + pixel.second) * surface->pitch + startColumn + pixel.first) = 1;
+            }
+        }
 
-    for (auto pixel : params.aliveCells) {
-        *((Uint8*)surface->pixels + pixel.second * surface->pitch + pixel.first) = 1;
+        //RLE encoding
+        if (!params.runLengthEncoding.empty()) {
+            populateSurfaceFromRLEString(
+                surface,
+                params.runLengthEncoding,
+                startColumn,
+                startRow
+            );
+        }
     }
-
     return surface;
+}
+
+void Core::populateSurfaceFromRLEString(
+    SDL_Surface* surface,
+    std::string model, 
+    int startColumn, 
+    int startRow) 
+{
+    int row = startRow;
+	int column = startColumn;
+
+    for (std::string::iterator modelIterator = model.begin(); modelIterator != model.end(); modelIterator++) {
+        //First handle the edge cases
+        
+        if(*modelIterator == '!') break;
+        else if (*modelIterator == '$')
+        {
+            column = startColumn;
+            row++;
+        }
+        else {
+            int count = 1;
+            if (isdigit(*modelIterator))
+            {
+                std::string stringInteger = "";
+                while (isdigit(*modelIterator) && modelIterator != model.end())
+                {
+                    stringInteger += *modelIterator;
+                    modelIterator++;
+                }
+                count = std::stoi(stringInteger);
+            }
+            if (*modelIterator == 'b') {
+                for (int i = 0; i < count; i++) {
+                    column++;
+                }
+            }
+            else if (*modelIterator == 'o') {
+                for (int i = 0; i < count; i++) {
+                    *((Uint8*)surface->pixels + row * surface->pitch + column) = 1;
+                    column++;
+                }
+            }
+
+
+        }
+
+
+       
+
+
+        //if (*modelIterator == 'b') column++;
+        //else if (*modelIterator == 'o')
+        //{
+        //    *((Uint8*)surface->pixels + (startRow + row) * surface->pitch + startColumn + column) = 1;
+        //    column++;
+        //}
+
+
+    }
+	/*for (char c : model) {
+		if (c == 'b') {
+			column++;
+		}
+		else if (c == 'o') {
+			*((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
+			column++;
+		}
+		else if (c == '$') {
+			row++;
+			column = startColumn;
+		}
+		else if (c == '!') {
+			break;
+		}
+		else if (isdigit(c)) {
+			int count = c - '0';
+			while (isdigit(model[1])) {
+				count = count * 10 + (model[1] - '0');
+				model.erase(1, 1);
+			}
+			for (int i = 0; i < count; i++) {
+				if (model[0] == 'b') {
+					column++;
+				}
+				else if (model[0] == 'o') {
+					*((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
+					column++;
+				}
+			}
+		}
+	}*/
+
 }
 
 Core::~Core() {
