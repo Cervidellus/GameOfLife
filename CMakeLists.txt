@@ -23,11 +23,11 @@ message(STATUS "imgui found: ${imgui_FOUND}")
 add_executable(gameoflife 
     src/main.cpp 
     src/core.cpp 
-    src/interface.cpp 
-    include/core.hpp 
-    include/interface.hpp 
-    include/modelparameters.hpp
-    include/modelpresets.hpp
+    src/core.hpp 
+    src/model/modelparameters.hpp
+    src/presets/modelpresets.hpp
+    src/ui/interface.cpp 
+    src/ui/interface.hpp 
 )
 
 target_include_directories(gameoflife PRIVATE include)

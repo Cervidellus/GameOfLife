@@ -1,7 +1,7 @@
 #ifndef GAMEOFLIFE_MODELPRESETS_H
 #define GAMEOFLIFE_MODELPRESETS_H
 
-#include <modelparameters.hpp>
+#include <model\modelparameters.hpp>
 
 #include <string_view>
 

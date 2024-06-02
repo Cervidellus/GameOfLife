@@ -1,7 +1,6 @@
 #include <core.hpp>
-#include <interface.hpp>
-#include <modelparameters.hpp>
-//#include <modelpresets.hpp>
+#include <ui\interface.hpp>
+#include <model\modelparameters.hpp>
 
 #include <iostream>
 #include <string>
@@ -137,6 +136,7 @@ void Core::render() {
     int windowWidth, windowHeight;
     SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
     SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
+    SDL_Rect sourceRect{0, 0, 50, 50};
 
     interface_->render
     (
@@ -159,7 +159,7 @@ void Core::render() {
     SDL_SetRenderTarget(renderer_, texture);
     SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
     SDL_RenderClear(renderer_);
-     SDL_RenderCopy(renderer_, texture, NULL, &destinationRect);
+    SDL_RenderCopy(renderer_, texture, &sourceRect, &destinationRect);
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
     
     SDL_RenderPresent(renderer_);
