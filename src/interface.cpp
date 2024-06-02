@@ -1,4 +1,7 @@
 #include <interface.hpp>
+#include <modelpresets.hpp>
+
+
 #include <iostream>
 
 #include <imgui_impl_sdl2.h>
@@ -9,10 +12,12 @@ Interface::Interface() {
     std::cout << "Interface created" << std::endl;
 }
 
+
 bool Interface::init(
     SDL_Window* window, 
     SDL_Renderer* renderer,
-    std::function<void(ModelPreset preset)> generateModelButtonCallback) {
+    std::function<void(ModelParameters presetParameters)> presetCallback)
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -22,7 +27,7 @@ bool Interface::init(
     if(!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) return false;
     if(!ImGui_ImplSDLRenderer2_Init(renderer)) return false;
 
-    generateModelCallback_ = std::make_unique<std::function<void(ModelPreset preset)>>(std::move(generateModelButtonCallback));
+    presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
 
 	return true;
 }
@@ -106,15 +111,45 @@ void Interface::render(
 
     if (ImGui::CollapsingHeader("Presets"))
     {
-        if (ImGui::Button("Random")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
+        if (ImGui::Button("random")) {
+			if(presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("A randomly generated field to observe Conway's Game of Life.");
+
         if (ImGui::Button("Swiss Cheese")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::swiss_cheese);
+			if(presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
         if (ImGui::Button("Decomposition")) {
-			if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::decomposition);
+			if(presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
 		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
+        if (ImGui::Button("Blinker")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::blinkerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest oscillator in Conway's Game of Life.");
+
+        if (ImGui::Button("Lightweight Spaceship")) {
+			if (presetCallback_) (*presetCallback_)(ModelPresets::lightweightSpaceshipParams);
+		}
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest orthoganal spaceship in Conway's Game of Life.");
+
+        if (ImGui::Button("Blocker")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::blockerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blocker.");
+
+        if (ImGui::Button("Nihonium")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
+
+        if (ImGui::Button("Gabriel's P138 Oscillator")) {
+            if (presetCallback_) (*presetCallback_)(ModelPresets::gabrielsPOneThirtyEightParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cool period 138 oscillator discovered by Gabriel Nivasch on October 13, 2002.");
 	}
 
     ImGui::End();

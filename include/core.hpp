@@ -4,7 +4,9 @@
 #include <memory>
 
 #include <interface.hpp>
+#include <modelpresets.hpp>
 
+enum class ModelPresets::ModelPresetName;
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
@@ -26,10 +28,14 @@ private:
     void update();
     void render();
 
-    void handleGenerateModelRequest(ModelPreset preset);
-
-    SDL_Surface* generateRandomModelSurface();
-    SDL_Surface* generateBlinkerTestSurface();
+    //TODO: I should really have this just passing the parameters, then core has to know less.
+    void handleGenerateModelRequest(const ModelParameters& params);
+    SDL_Surface* generateModelPresetSurface(const ModelParameters& modelParameters);
+    void populateSurfaceFromRLEString(
+        SDL_Surface* surface,
+        std::string model, 
+        int startColumn, 
+        int startRow);
 
     void handleSDL_KEYDOWN(SDL_Event& event);
 
@@ -39,8 +45,8 @@ private:
     int modelFPS_ = 60;
     int measuredModelFPS_ = 0;
 
-    int modelWidth_ = 200;
-    int modelHeight_ = 200;
+    int modelWidth_ = 500;
+    int modelHeight_ = 500;
     float fillFactor_ = 0.2f;
     int rule1_ = 2; //fewer than 2 neighbors, an alive cell dies
     //Rule 2 is implied by rules 1 and 3

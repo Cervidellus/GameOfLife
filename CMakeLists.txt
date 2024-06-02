@@ -20,7 +20,15 @@ message(STATUS "SDL2 found: ${SDL2_FOUND}")
 find_package(imgui CONFIG REQUIRED)
 message(STATUS "imgui found: ${imgui_FOUND}")
 
-add_executable(gameoflife src/main.cpp src/core.cpp include/core.hpp interface.cpp include/interface.hpp)
+add_executable(gameoflife 
+    src/main.cpp 
+    src/core.cpp 
+    src/interface.cpp 
+    include/core.hpp 
+    include/interface.hpp 
+    include/modelparameters.hpp
+    include/modelpresets.hpp
+)
 
 target_include_directories(gameoflife PRIVATE include)
 
