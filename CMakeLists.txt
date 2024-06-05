@@ -26,11 +26,19 @@ add_executable(gameoflife
     src/core.hpp 
     src/model/modelparameters.hpp
     src/presets/modelpresets.hpp
+    src/sdl_manager.cpp
+    src/sdl_manager.hpp
+    src/ui/imgui_manager.cpp
+    src/ui/imgui_manager.hpp
     src/ui/interface.cpp 
     src/ui/interface.hpp 
+    src/ui/mainwindow.cpp 
+    src/ui/mainwindow.hpp
+    src/ui/ui.cpp
+    src/ui/ui.hpp
 )
 
-target_include_directories(gameoflife PRIVATE include)
+target_include_directories(gameoflife PRIVATE src)
 
 target_link_libraries(gameoflife SDL2::SDL2)
 

@@ -29,6 +29,7 @@ bool Interface::init(
 
     presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
 
+    isInitialized_ = true;
 	return true;
 }
 
@@ -158,7 +159,9 @@ void Interface::render(
 
 
 Interface::~Interface() {
-    ImGui_ImplSDLRenderer2_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+    if (isInitialized_) {
+		ImGui_ImplSDLRenderer2_Shutdown();
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
+	}
 }

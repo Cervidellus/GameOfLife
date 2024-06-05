@@ -1,5 +1,7 @@
 #include <core.hpp>
+#include <ui\mainwindow.hpp>
 #include <ui\interface.hpp>
+#include "ui\ui.hpp"
 #include <model\modelparameters.hpp>
 
 #include <iostream>
@@ -7,32 +9,37 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 
-Core::Core() {
-    interface_ = std::make_unique<Interface>();
+Core::Core() :
+    sdlManager_()/*,
+    ui_()*/
+
+{
+    //interface_ = std::make_unique<Interface>();//initializes for second time!
 }
 
 bool Core::run() {
-    if(!init()) return false;
+    if(!init_()) return false;
     int lastDisplayUpdate, lastModelUpdate, now;
     now = lastDisplayUpdate = lastModelUpdate = SDL_GetTicks();
 
     while (coreAppRunning_) {  
         now = SDL_GetTicks();
 
-        processEvents();
+        processEvents_();
         if (modelRunning_ && now - lastModelUpdate > 1000 / modelFPS_)
         {
-            update();
+            update_();
             measuredModelFPS_ = 1000 / (now - lastModelUpdate);
             lastModelUpdate = now;
         }
         if (now - lastDisplayUpdate > 1000 / displayFPS_)
         {
-            render();
+            render_();
             lastDisplayUpdate = now;
         }
         //wait function so we don't burn too much cpu
@@ -43,43 +50,34 @@ bool Core::run() {
     return true;
 }
 
-bool Core::init() {
+bool Core::init_() {
     surface_ = generateModelPresetSurface(ModelPresets::randomParams);
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
-        coreAppRunning_ = false;
-        return false;
-    }
-    std::cout << "SDL2 video initialized..." << std::endl;
-    
-    window_ = SDL_CreateWindow(
-        "GameOfLife", 
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        1280, 
-        720, 
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
-        
-    renderer_ = SDL_CreateRenderer(
-        window_, 
-        -1, 
-        SDL_RENDERER_ACCELERATED);
+    if (!sdlManager_.isInitialized()) {
+		coreAppRunning_ = false;
+		return false;
+	}
 
-    //Make modelwidth and modelheight the same as window size
-    //SDL_GetRendererOutputSize(renderer_, &modelWidth_, &modelHeight_);
 
-    interface_->init(
-        window_, 
-        renderer_,
-        [&](ModelParameters params) {handleGenerateModelRequest(params); }
-    );
+    //if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+    //    std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
+    //    coreAppRunning_ = false;
+    //    return false;
+    //}
+    //std::cout << "SDL2 video initialized..." << std::endl;
+
+    //interface_->init(
+    //    window_.getSDLWindow().get(),
+    //    window_.getSDLRenderer().get(),
+    //    [&](ModelParameters params) {handleGenerateModelRequest(params); }
+    //);
+    //modelTexture_ = std::make_shared<SDL_Texture>(SDL_CreateTextureFromSurface(window_.getSDLRenderer().get(), surface_), SDL_DestroyTexture);
 
     coreAppRunning_ = true;
     return true;
 }
 
-void Core::processEvents() {
+void Core::processEvents_() {
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
@@ -94,11 +92,11 @@ void Core::processEvents() {
                 break;
         }
         //ImGui
-        ImGui_ImplSDL2_ProcessEvent(&event);
+        //ImGui_ImplSDL2_ProcessEvent(&event);
     }
 }
 
-void Core::update() {
+void Core::update_() {
     SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
 
     for (int row = 0; row < modelHeight_; row++) {
@@ -132,39 +130,42 @@ void Core::update() {
     SDL_FreeSurface(previousState);
 }
 
-void Core::render() {
-    int windowWidth, windowHeight;
-    SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
-    SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
-    SDL_Rect sourceRect{0, 0, 50, 50};
+void Core::render_() {
+    MainWindowSize windowSize = window_.getSize();
+    SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
+     
+    //I should change this to have an update method, and then a simple render call.
+    //interface_->render
+    //(
+    //    modelFPS_,
+    //    measuredModelFPS_,
+    //    modelRunning_,
+    //    fillFactor_,
+    //    modelWidth_,
+    //    modelHeight_,
+    //    rule1_,
+    //    rule3_,
+    //    rule4_
+    //);
 
-    interface_->render
-    (
-        modelFPS_,
-        measuredModelFPS_,
-        modelRunning_,
-        fillFactor_,
-        modelWidth_,
-        modelHeight_,
-        rule1_,
-        rule3_,
-        rule4_
-    );
 
+    //THIS WILL ALL MOVE TO THE WINDOW AND WE WILL CALL MainWindow::render(texture)
+    //I might also provide in MainWindow something to get the texture, so you don't have to do the SDL call here...
+    // And I should just use a single texture so that I don't allocate all of the time.  
     //Is this the right way, or should I be passing to an existing texture?
     //SDL_updateTexture could be the way.. 
     //I won't worry about this for now as this would change if I move to GPU. 
-    auto texture = SDL_CreateTextureFromSurface(renderer_, surface_);
+    /*auto texture = SDL_CreateTextureFromSurface(window_.getSDLRenderer().get(), surface_);*/
 
-    SDL_SetRenderTarget(renderer_, texture);
-    SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
-    SDL_RenderClear(renderer_);
-    SDL_RenderCopy(renderer_, texture, &sourceRect, &destinationRect);
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-    
-    SDL_RenderPresent(renderer_);
+    //SDL_SetRenderTarget(window_.getSDLRenderer().get(), modelTexture_.get());
+    //SDL_SetRenderDrawColor(window_.getSDLRenderer().get(), 0, 255, 0, 255);
+    //SDL_RenderClear(window_.getSDLRenderer().get());
+    //SDL_RenderCopy(window_.getSDLRenderer().get(), modelTexture_.get(), NULL, &destinationRect);
+    //ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+    //
+    //SDL_RenderPresent(window_.getSDLRenderer().get());
 
-    SDL_DestroyTexture(texture);
+    //SDL_DestroyTexture(modelTexture_.get());
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
@@ -291,9 +292,10 @@ Core::~Core() {
     interface_.reset();
 
     //shutdown SDL
-    SDL_DestroyRenderer(renderer_);
-    SDL_DestroyWindow(window_);
+    //SDL_DestroyRenderer(renderer_);
+    //SDL_DestroyWindow(window_);
     SDL_FreeSurface(surface_);
 
-    SDL_Quit();
+    sdlManager_.shutdown();
+    //SDL_Quit();
 }

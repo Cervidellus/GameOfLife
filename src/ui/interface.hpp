@@ -10,14 +10,6 @@
 struct SDL_Window;
 struct SDL_Renderer;
 
-//template <typename Callback>
-
-//enum class ModelPresetName {
-//	random,
-//	swiss_cheese,
-//	decomposition
-//};
-
 class Interface {
 	public:
 		Interface();
@@ -27,6 +19,11 @@ class Interface {
 			SDL_Window* window, 
 			SDL_Renderer* renderer,
 			std::function<void(ModelParameters presetParameters)> presetCallback);
+
+		//I should make separate update and render functions.
+		//I have some kind of callback for when inividual parameters are changed..
+
+		//render should just take a modelParameters reference
 
 		void render(
 			int& modelFPS, 
@@ -41,6 +38,7 @@ class Interface {
 			);
 
 	private:
+		bool isInitialized_ = false;
 		std::unique_ptr<std::function<void(ModelParameters presetParameters)>> presetCallback_;
 };
 

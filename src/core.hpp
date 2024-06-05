@@ -3,14 +3,20 @@
 
 #include <memory>
 
-#include <ui\interface.hpp>
-#include <presets\modelpresets.hpp>
+#include "ui\mainwindow.hpp"
 
+#include "ui\interface.hpp"
+#include "ui\ui.hpp"
+#include "presets\modelpresets.hpp"
+#include "sdl_manager.hpp"
+
+
+class UI;
+
+//class MainWindow;
 enum class ModelPresets::ModelPresetName;
-struct SDL_Renderer;
 struct SDL_Surface;
-struct SDL_Texture;
-struct SDL_Window;
+class SDL_Texture;
 union SDL_Event;
 
 //class Interface;
@@ -23,10 +29,10 @@ public:
     bool run();
 
 private:
-    bool init();
-    void processEvents();
-    void update();
-    void render();
+    bool init_();
+    void processEvents_();
+    void update_();
+    void render_();
 
     //TODO: I should really have this just passing the parameters, then core has to know less.
     void handleGenerateModelRequest(const ModelParameters& params);
@@ -53,11 +59,18 @@ private:
     int rule3_ = 3; //more than 3 neighbors, an alive cell dies
     int rule4_ = 3; //dead cell with 3 neighbors becomes alive
     
-    SDL_Window* window_ = nullptr;
-    SDL_Renderer* renderer_ = nullptr;
+    MainWindow window_;
+
     SDL_Surface* surface_ = nullptr;
+    std::shared_ptr<SDL_Texture> modelTexture_ = nullptr;
 
     std::unique_ptr<Interface> interface_;
+
+
+
+    //New stuff
+    SDLManager sdlManager_;
+    UI ui_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
