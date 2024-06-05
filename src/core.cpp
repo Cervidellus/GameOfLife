@@ -1,7 +1,6 @@
 #include <core.hpp>
-#include <ui\mainwindow.hpp>
-#include <ui\interface.hpp>
-#include "ui\ui.hpp"
+#include <gui\mainwindow.hpp>
+#include <gui\interface.hpp>
 #include <model\modelparameters.hpp>
 
 #include <iostream>
@@ -14,12 +13,8 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 
-Core::Core() :
-    sdlManager_()/*,
-    ui_()*/
-
+Core::Core() 
 {
-    //interface_ = std::make_unique<Interface>();//initializes for second time!
 }
 
 bool Core::run() {
@@ -58,14 +53,6 @@ bool Core::init_() {
 		return false;
 	}
 
-
-    //if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-    //    std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
-    //    coreAppRunning_ = false;
-    //    return false;
-    //}
-    //std::cout << "SDL2 video initialized..." << std::endl;
-
     //interface_->init(
     //    window_.getSDLWindow().get(),
     //    window_.getSDLRenderer().get(),
@@ -78,6 +65,9 @@ bool Core::init_() {
 }
 
 void Core::processEvents_() {
+    //Eventually I will have a SDL_Event handler
+    //You will be able to register callbacks for events
+    //For example the sidebar, which uses ImGui, will be able to use ImGui_ImplSDL2_ProcessEvent(&event) as a callback.
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
@@ -91,8 +81,8 @@ void Core::processEvents_() {
                 handleSDL_KEYDOWN(event);
                 break;
         }
-        //ImGui
-        //ImGui_ImplSDL2_ProcessEvent(&event);
+        
+        gui_.mainWindow.processEvent(event);
     }
 }
 
@@ -131,7 +121,7 @@ void Core::update_() {
 }
 
 void Core::render_() {
-    MainWindowSize windowSize = window_.getSize();
+    MainWindowSize windowSize = gui_.mainWindow.getSize();
     SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
      
     //I should change this to have an update method, and then a simple render call.
@@ -289,13 +279,13 @@ void Core::populateSurfaceFromRLEString(
 
 Core::~Core() {
     //ImGui interface must be deleted before SDL
-    interface_.reset();
+    //interface_.reset();
 
     //shutdown SDL
     //SDL_DestroyRenderer(renderer_);
     //SDL_DestroyWindow(window_);
+
     SDL_FreeSurface(surface_);
 
     sdlManager_.shutdown();
-    //SDL_Quit();
 }

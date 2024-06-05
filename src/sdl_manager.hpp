@@ -3,9 +3,6 @@
 
 //Handles the intialization and shutdown of SDL.
 
-class SDL_Renderer;
-class SDL_Window;
-
 class SDLManager {
 public:
 	SDLManager();

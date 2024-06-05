@@ -28,14 +28,12 @@ add_executable(gameoflife
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
-    src/ui/imgui_manager.cpp
-    src/ui/imgui_manager.hpp
-    src/ui/interface.cpp 
-    src/ui/interface.hpp 
-    src/ui/mainwindow.cpp 
-    src/ui/mainwindow.hpp
-    src/ui/ui.cpp
-    src/ui/ui.hpp
+    src/gui/interface.cpp 
+    src/gui/interface.hpp 
+    src/gui/mainwindow.cpp 
+    src/gui/mainwindow.hpp
+    src/gui/gui.cpp
+    src/gui/gui.hpp
 )
 
 target_include_directories(gameoflife PRIVATE src)
@@ -51,8 +49,14 @@ add_custom_command(
 
 
 # Set the "Use Debug Libraries" property for Debug configuration
+# doesn't seem to work.
+#if(MSVC)
+#    set_target_properties(gameoflife PROPERTIES
+#       VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
+ #   )
+#endif()
+
+#ImGui conflicts with window default libraries
 if(MSVC)
-    set_target_properties(gameoflife PROPERTIES
-        VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
-    )
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
 endif()

@@ -3,24 +3,17 @@
 
 #include <memory>
 
-#include "ui\mainwindow.hpp"
+//#include "gui\mainwindow.hpp"
 
-#include "ui\interface.hpp"
-#include "ui\ui.hpp"
+#include "gui\interface.hpp"
+#include "gui\gui.hpp"
 #include "presets\modelpresets.hpp"
 #include "sdl_manager.hpp"
 
-
-class UI;
-
-//class MainWindow;
 enum class ModelPresets::ModelPresetName;
 struct SDL_Surface;
 class SDL_Texture;
 union SDL_Event;
-
-//class Interface;
-//enum Class ModelPreset;
 
 class Core {
 public:
@@ -59,18 +52,15 @@ private:
     int rule3_ = 3; //more than 3 neighbors, an alive cell dies
     int rule4_ = 3; //dead cell with 3 neighbors becomes alive
     
-    MainWindow window_;
+   
 
     SDL_Surface* surface_ = nullptr;
     std::shared_ptr<SDL_Texture> modelTexture_ = nullptr;
 
-    std::unique_ptr<Interface> interface_;
-
-
-
     //New stuff
+    //SDLManager should be constructed before GUI
     SDLManager sdlManager_;
-    UI ui_;
+    GUI gui_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
