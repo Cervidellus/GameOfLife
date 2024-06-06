@@ -8,6 +8,7 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 
+
 Interface::Interface() {
     std::cout << "Interface created" << std::endl;
 }
@@ -16,33 +17,20 @@ Interface::Interface() {
 bool Interface::init(
     SDL_Window* window, 
     SDL_Renderer* renderer,
-    std::function<void(ModelParameters presetParameters)> presetCallback)
+    std::function<void(ModelParameters presetParameters)> presetCallback, 
+    std::function<SDL_Texture* ()> getWindowTextureCallback)
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-    if(!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) return false;
-    if(!ImGui_ImplSDLRenderer2_Init(renderer)) return false;
-
     presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
+    getWindowTextureCallback_ = std::make_unique<std::function<SDL_Texture*()>>(std::move(getWindowTextureCallback));
 
     isInitialized_ = true;
 	return true;
 }
 
-void Interface::render(
-    int& modelFPS,
-    const int measuredModelFPS,
-    bool& modelRunning,
-    float& fillFactor,
-    int& modelWidth,
-    int& modelHeight,
-    int& rule1,
-    int& rule3,
-    int& rule4)
+void Interface::draw(
+    ModelParameters& modelParams,
+    const int measuredModelFPS
+)
 {
     //IMGUI
     ImGui_ImplSDLRenderer2_NewFrame();
@@ -50,30 +38,29 @@ void Interface::render(
     ImGui::NewFrame();
 
     ImGui::Begin("Options");
-    ImGui::SliderInt("Desired Model FPS", &modelFPS, 1, 120);
+    ImGui::SliderInt("Desired Model FPS", &modelParams.modelFPS, 1, 120);
     ImGui::Text("Measured FPS: %d", measuredModelFPS);
-    if (modelRunning) {
+    if (modelParams.isRunning) {
         if (ImGui::Button("Pause Model")) {
-            modelRunning = false;
+            modelParams.isRunning = false;
         }
     }
     else {
         if (ImGui::Button("Start Model")) {
-			modelRunning = true;
+            modelParams.isRunning = true;
 		}
 	}
 
-
-    ImGuiInputTextFlags modelRunningFlag = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+    ImGuiInputTextFlags modelRunningFlag = modelParams.isRunning ? ImGuiInputTextFlags_ReadOnly : 0;
     
     if (ImGui::CollapsingHeader("Parameters")) {
 
         //TODO:: limit to positive values
         //TODO:: ensure that input is 4-byte aligned
-        ImGui::InputInt("Width", &modelWidth, 100, 100, modelRunningFlag);
-        ImGui::InputInt("Height", &modelHeight, 100, 100, modelRunningFlag);
+        ImGui::InputInt("Width", &modelParams.modelWidth, 100, 100, modelRunningFlag);
+        ImGui::InputInt("Height", &modelParams.modelHeight, 100, 100, modelRunningFlag);
 
-        ImGui::SliderFloat("Model Fill Factor", &fillFactor, 0.001, 1);
+        ImGui::SliderFloat("Model Fill Factor", &modelParams.fillFactor, 0.001, 1);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
         //if (ImGui::Button("Generate Model")) {
         //    if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
@@ -85,26 +72,26 @@ void Interface::render(
 
         //ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
 
-        if (ImGui::InputInt("Conway Rule 1 Cutoff", &rule1, 1, 1))
+        if (ImGui::InputInt("Conway Rule 1 Cutoff", &modelParams.rule1, 1, 1))
         {
-            if (rule1 < 0) rule1 = 0;
-            if (rule1 > 8) rule1 = 8;
-            if (rule1 >= rule3) rule1 = rule3 - 1;
+            if (modelParams.rule1 < 0) modelParams.rule1 = 0;
+            if (modelParams.rule1 > 8) modelParams.rule1 = 8;
+            if (modelParams.rule1 >= modelParams.rule3) modelParams.rule1 = modelParams.rule3 - 1;
         };
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
 
-        if (ImGui::InputInt("Conway Rule 3 Cutoff", &rule3, 1, 1))
+        if (ImGui::InputInt("Conway Rule 3 Cutoff", &modelParams.rule3, 1, 1))
         {
-            if (rule3 < 1) rule3 = 1;
-            if (rule3 > 8) rule3 = 8;
-            if (rule3 <= rule1) rule3 = rule1 + 1;
+            if (modelParams.rule3 < 1) modelParams.rule3 = 1;
+            if (modelParams.rule3 > 8) modelParams.rule3 = 8;
+            if (modelParams.rule3 <= modelParams.rule1) modelParams.rule3 = modelParams.rule1 + 1;
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
 
-        if (ImGui::InputInt("Conway Rule 4", &rule4, 1, 1))
+        if (ImGui::InputInt("Conway Rule 4", &modelParams.rule4, 1, 1))
         {
-            if (rule4 < 0) rule4 = 0;
-            if (rule4 > 8) rule4 = 8;
+            if (modelParams.rule4 < 0) modelParams.rule4 = 0;
+            if (modelParams.rule4 > 8) modelParams.rule4 = 8;
         };
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
 
@@ -155,6 +142,8 @@ void Interface::render(
 
     ImGui::End();
     ImGui::Render();
+
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 }
 
 

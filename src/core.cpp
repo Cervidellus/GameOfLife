@@ -26,7 +26,7 @@ bool Core::run() {
         now = SDL_GetTicks();
 
         processEvents_();
-        if (modelRunning_ && now - lastModelUpdate > 1000 / modelFPS_)
+        if (activeModelParams_.isRunning && now - lastModelUpdate > 1000 / activeModelParams_.modelFPS)
         {
             update_();
             measuredModelFPS_ = 1000 / (now - lastModelUpdate);
@@ -38,7 +38,7 @@ bool Core::run() {
             lastDisplayUpdate = now;
         }
         //wait function so we don't burn too much cpu
-        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / modelFPS_ - (now - lastModelUpdate));
+        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / activeModelParams_.modelFPS - (now - lastModelUpdate));
         if (waitTime > 0) SDL_Delay(waitTime);
     }
 
@@ -53,12 +53,10 @@ bool Core::init_() {
 		return false;
 	}
 
-    //interface_->init(
-    //    window_.getSDLWindow().get(),
-    //    window_.getSDLRenderer().get(),
-    //    [&](ModelParameters params) {handleGenerateModelRequest(params); }
-    //);
-    //modelTexture_ = std::make_shared<SDL_Texture>(SDL_CreateTextureFromSurface(window_.getSDLRenderer().get(), surface_), SDL_DestroyTexture);
+    gui_.initialize(
+		"Game of Life",
+		[&](ModelParameters params) {handleGenerateModelRequest(params);}
+	);
 
     coreAppRunning_ = true;
     return true;
@@ -89,18 +87,18 @@ void Core::processEvents_() {
 void Core::update_() {
     SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
 
-    for (int row = 0; row < modelHeight_; row++) {
+    for (int row = 0; row < activeModelParams_.modelHeight; row++) {
         int livingNeighbors = 0;
         bool cellAlive = false;
-        for (int column = 0; column < modelWidth_; column++) {
+        for (int column = 0; column < activeModelParams_.modelWidth; column++) {
             cellAlive = *((Uint8*)previousState->pixels + row * previousState->pitch + column);
             livingNeighbors = 0;
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //out of range rows
-                    if (row + neighborRow < 0 || row + neighborRow >= modelHeight_) continue;
+                    if (row + neighborRow < 0 || row + neighborRow >= activeModelParams_.modelHeight) continue;
                     //out of range columns
-                    if (column + neighborColumn < 0 || column + neighborColumn >= modelWidth_) continue;
+                    if (column + neighborColumn < 0 || column + neighborColumn >= activeModelParams_.modelWidth) continue;
                     ////center pixel
                     if (neighborRow == 0 && neighborColumn == 0) continue;
                     //count
@@ -110,10 +108,10 @@ void Core::update_() {
             
             //If not alive and has 3 neighbors, become alive
             if (!cellAlive) {
-                if (livingNeighbors == rule4_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
+                if (livingNeighbors == activeModelParams_.rule4) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
             }
             //If neighbors are less than 2 or more than 3, kill it.
-            else  if(livingNeighbors < rule1_ || livingNeighbors > rule3_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
+            else  if(livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
 		}  
         
     }
@@ -121,8 +119,12 @@ void Core::update_() {
 }
 
 void Core::render_() {
-    MainWindowSize windowSize = gui_.mainWindow.getSize();
-    SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
+    gui_.mainWindow.clear();
+    gui_.interface.draw(activeModelParams_, measuredModelFPS_);
+    gui_.mainWindow.renderPresent();
+
+    //MainWindowSize windowSize = gui_.mainWindow.getSize();
+    //SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
      
     //I should change this to have an update method, and then a simple render call.
     //interface_->render
@@ -156,6 +158,7 @@ void Core::render_() {
     //SDL_RenderPresent(window_.getSDLRenderer().get());
 
     //SDL_DestroyTexture(modelTexture_.get());
+    //gui_.mainWindow.render(modelTexture_);
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
@@ -176,18 +179,24 @@ void Core::handleGenerateModelRequest(const ModelParameters& params) {
 
 SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     //First set the members to correspond with the parameters
-    if (params.modelFPS > 0) modelFPS_ = params.modelFPS;
-    if(modelWidth_ < params.minWidth) modelWidth_ = params.minWidth;
-    if(modelHeight_ < params.minHeight) modelHeight_ = params.minHeight;
-    if (params.modelWidth >  0) modelWidth_ = params.modelWidth;
-    if (params.modelHeight > 0) modelHeight_ = params.modelHeight;
-    if (params.fillFactor > 0) fillFactor_ = params.fillFactor;
-    if (params.rule1 > 0) rule1_ = params.rule1;
-    if (params.rule3 > 0) rule3_ = params.rule3;
-    if (params.rule4 > 0) rule4_ = params.rule4;
+    if (params.modelFPS > 0) activeModelParams_.modelFPS = params.modelFPS;
+    if(activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
+    if(activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
+    if (params.modelWidth >  0) activeModelParams_.modelWidth= params.modelWidth;
+    if (params.modelHeight > 0) activeModelParams_.modelHeight = params.modelHeight;
+    if (params.fillFactor > 0) activeModelParams_.fillFactor = params.fillFactor;
+    if (params.rule1 > 0) activeModelParams_.rule1 = params.rule1;
+    if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
+    if (params.rule4 > 0) activeModelParams_.rule4 = params.rule4;
 
     //Generate surface from parameters
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(
+        0, 
+        activeModelParams_.modelWidth, 
+        activeModelParams_.modelHeight, 
+        1, 
+        SDL_PIXELFORMAT_INDEX8);
+
     if (surface == nullptr) {
         std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
         return nullptr;
@@ -202,15 +211,15 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     if (params.random) {
 
         srand(static_cast<unsigned>(time(nullptr)));
-        for (int row = 0; row < modelHeight_; row++) {
-            for (int column = 0; column < modelWidth_; column++) {
+        for (int row = 0; row < activeModelParams_.modelHeight; row++) {
+            for (int column = 0; column < activeModelParams_.modelWidth; column++) {
                 *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < params.fillFactor * (float)RAND_MAX) ? 1 : 0;
             }
         }
     }
     else {
-        int startColumn = (modelWidth_ / 2) - (params.minWidth / 2);
-        int startRow = modelHeight_ / 2 - (params.minHeight / 2);
+        int startColumn = (activeModelParams_.modelWidth / 2) - (params.minWidth / 2);
+        int startRow = activeModelParams_.modelHeight / 2 - (params.minHeight / 2);
         //std::vector encoding
         if (params.aliveCells.size() > 0) {
             for (auto pixel : params.aliveCells) {

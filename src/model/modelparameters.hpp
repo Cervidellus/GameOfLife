@@ -5,6 +5,7 @@
 #include <vector>
 //For most values, negative values will be ignored
 struct ModelParameters {
+	bool isRunning = false;
 	bool random = true;
 	int modelFPS = -1;
 	int modelWidth = -1;

@@ -39,18 +39,35 @@ private:
     void handleSDL_KEYDOWN(SDL_Event& event);
 
     bool coreAppRunning_ = false;
-    bool modelRunning_ = false;
+    //bool isRunning = false;
+    //bool random = true;
+    //int modelFPS = -1;
+    //int modelWidth = -1;
+    //int modelHeight = -1;
+    //float fillFactor = 0.2f;
+    //int rule1 = 2;
+    //int rule3 = 3;
+    //int rule4 = 3;
+    //int minWidth = 10;
+    //int minHeight = 10;
+    //std::vector<std::pair <int, int>> aliveCells = {};
+    //std::string runLengthEncoding = "";
+
+
+    ModelParameters activeModelParams_{false, true};
+
+    //bool modelRunning_ = false;
     const int displayFPS_ = 60;
-    int modelFPS_ = 60;
+    //int modelFPS_ = 60;
     int measuredModelFPS_ = 0;
 
-    int modelWidth_ = 500;
-    int modelHeight_ = 500;
-    float fillFactor_ = 0.2f;
-    int rule1_ = 2; //fewer than 2 neighbors, an alive cell dies
-    //Rule 2 is implied by rules 1 and 3
-    int rule3_ = 3; //more than 3 neighbors, an alive cell dies
-    int rule4_ = 3; //dead cell with 3 neighbors becomes alive
+    //int modelWidth_ = 500;
+    //int modelHeight_ = 500;
+    //float fillFactor_ = 0.2f;
+    //int rule1_ = 2; //fewer than 2 neighbors, an alive cell dies
+    ////Rule 2 is implied by rules 1 and 3
+    //int rule3_ = 3; //more than 3 neighbors, an alive cell dies
+    //int rule4_ = 3; //dead cell with 3 neighbors becomes alive
     
    
 

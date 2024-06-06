@@ -34,6 +34,7 @@ namespace ModelPresets {
 	const ModelParameters randomParams = ModelParameters();
 
 	const ModelParameters swissCheeseParams = ModelParameters(
+		false,
 		true,
 		15,
 		-1,
@@ -45,6 +46,7 @@ namespace ModelPresets {
 	);
 
 	const ModelParameters decompositionParams = ModelParameters(
+		false,
 		true,
 		40,
 		-1,
@@ -56,6 +58,7 @@ namespace ModelPresets {
 	);
 
 	const ModelParameters blinkerParams = ModelParameters(
+		false,
 		false,
 		-1,
 		-1,
@@ -73,6 +76,7 @@ namespace ModelPresets {
 
 	const ModelParameters lightweightSpaceshipParams = ModelParameters(
 		false,
+		false,
 		-1,
 		-1,
 		-1,
@@ -89,6 +93,7 @@ namespace ModelPresets {
 
 	const ModelParameters blockerParams = {
 		false,
+		false,
 		-1,
 		-1,
 		-1,
@@ -103,6 +108,7 @@ namespace ModelPresets {
 	};
 
 	const ModelParameters nihoniumParams = {
+		false,
 	false,
 	-1,
 	-1,
@@ -122,6 +128,7 @@ namespace ModelPresets {
 	};
 
 const ModelParameters gabrielsPOneThirtyEightParams = {
+	false,
 	false,
 	-1,
 	-1,

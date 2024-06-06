@@ -2,12 +2,18 @@
 #define GAMEOFLIFE_MAINWINDOW_H
 
 #include <memory>
+#include <string>
+
+//Window creates and destroys the SDL window and renderer.
+//It returns properties of the window.
+//It initializes the window for use with ImGui and passes events to ImGui.
 
 //If you don't forward declare SDL, you get linkage errors due to an SDL macro that messes with the main function on windows.
 
-struct ImGuiContext;
+//struct ImGuiContext;
 union SDL_Event;
 struct SDL_Renderer;
+//class SDL_Surface;
 class SDL_Texture;
 struct SDL_Window;
 
@@ -20,27 +26,31 @@ struct MainWindowSize
 class MainWindow
 {
 public:
-	MainWindow(
-		const char* windowName = "Game of Life"
-		) ;
+	MainWindow() ;
 
 	~MainWindow();
 
-	void initialize();
+	void initialize(std::string windowName);
 
+	//I'm not quite sure where this belongs. This processes the event globally, so If I have more than one window it will repeat. 
 	void processEvent(SDL_Event& event);
 
-	//void render(SDL_Texture* texture);
-	//void display();
+	//void renderTexture(SDL_Texture* texture);
+	//void renderSurface(SDL_Surface* surface);
 
 	MainWindowSize getSize();
-	//std::shared_ptr<SDL_Window> getSDLWindow() { return window_; }
-	//std::shared_ptr<SDL_Renderer> getSDLRenderer() { return renderer_; }
+	SDL_Texture* getTextureFromWindow(uint32_t format);
 
+	void clear();
+	void renderPresent();
+
+	//Not super happy about the raw pointers.
+	SDL_Window* sdlWindow = nullptr;
+	SDL_Renderer* sdlRenderer = nullptr;
+	SDL_Texture* windowTexture = nullptr;
 
 private:
-	SDL_Window* window_;//shared so I can pass it to the interface.
-	SDL_Renderer* renderer_;//shared so I can pass it to the interface.
+
 };
 
 #endif //GAMEOFLIFE_MAINWINDOW_H
