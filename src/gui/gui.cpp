@@ -6,25 +6,7 @@
 #include <SDL2/sdl_pixels.h>
 
 
-GUI::GUI() 
-{
-	//This ImGui context is shared by all windows
-	//IMGUI_CHECKVERSION();
-	//ImGui::CreateContext();
-	//ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-
-	//mainWindow.initialize();
-
-	//interface.init(
-	//	mainWindow.sdlWindow,
-	//	mainWindow.sdlRenderer,
-	//	[&](ModelParameters params) {handleGenerateModelRequest(params); },
-	//	[&]() {return gui_.mainWindow.getWindowTexture(); }
-	//)
-};
+GUI::GUI() {};
 
 bool GUI::initialize(
 	std::string windowTitle,

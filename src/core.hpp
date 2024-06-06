@@ -53,8 +53,29 @@ private:
     //std::vector<std::pair <int, int>> aliveCells = {};
     //std::string runLengthEncoding = "";
 
+    //struct ModelParameters {
+    //    bool isRunning = false;
+    //    bool random = true;
+    //    int modelFPS = -1;
+    //    int modelWidth = -1;
+    //    int modelHeight = -1;
+    //    float fillFactor = 0.2f;
+    //    int rule1 = 2;
+    //    int rule3 = 3;
+    //    int rule4 = 3;
+    //    int minWidth = 10;
+    //    int minHeight = 10;
+    //    std::vector<std::pair <int, int>> aliveCells = {};
+    //    std::string runLengthEncoding = "";
+    //};
 
-    ModelParameters activeModelParams_{false, true};
+    ModelParameters activeModelParams_{
+        false, 
+        true, 
+        60,
+        1260,
+        720
+    };
 
     //bool modelRunning_ = false;
     const int displayFPS_ = 60;

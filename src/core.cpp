@@ -46,8 +46,6 @@ bool Core::run() {
 }
 
 bool Core::init_() {
-    surface_ = generateModelPresetSurface(ModelPresets::randomParams);
-
     if (!sdlManager_.isInitialized()) {
 		coreAppRunning_ = false;
 		return false;
@@ -57,6 +55,8 @@ bool Core::init_() {
 		"Game of Life",
 		[&](ModelParameters params) {handleGenerateModelRequest(params);}
 	);
+
+    surface_ = generateModelPresetSurface(ModelPresets::randomParams);
 
     coreAppRunning_ = true;
     return true;
@@ -120,31 +120,21 @@ void Core::update_() {
 
 void Core::render_() {
     gui_.mainWindow.clear();
+    //Draw the model    
+    SDL_Rect destinationRect = {0, 0, activeModelParams_.modelWidth, activeModelParams_.modelHeight};
+    auto modelTexture = SDL_CreateTextureFromSurface(gui_.mainWindow.sdlRenderer, surface_);
+    gui_.mainWindow.drawTexture(modelTexture, destinationRect);
+    SDL_DestroyTexture(modelTexture);//I should make this a member so that I am not constantly creating and destroying it.5
+
     gui_.interface.draw(activeModelParams_, measuredModelFPS_);
     gui_.mainWindow.renderPresent();
 
-    //MainWindowSize windowSize = gui_.mainWindow.getSize();
-    //SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
-     
-    //I should change this to have an update method, and then a simple render call.
-    //interface_->render
-    //(
-    //    modelFPS_,
-    //    measuredModelFPS_,
-    //    modelRunning_,
-    //    fillFactor_,
-    //    modelWidth_,
-    //    modelHeight_,
-    //    rule1_,
-    //    rule3_,
-    //    rule4_
-    //);
-
+    
 
     //THIS WILL ALL MOVE TO THE WINDOW AND WE WILL CALL MainWindow::render(texture)
     //I might also provide in MainWindow something to get the texture, so you don't have to do the SDL call here...
     // And I should just use a single texture so that I don't allocate all of the time.  
-    //Is this the right way, or should I be passing to an existing texture?
+    //Is this the right way, or should I be pass5ng to an existing texture?
     //SDL_updateTexture could be the way.. 
     //I won't worry about this for now as this would change if I move to GPU. 
     /*auto texture = SDL_CreateTextureFromSurface(window_.getSDLRenderer().get(), surface_);*/
@@ -189,7 +179,7 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
     if (params.rule4 > 0) activeModelParams_.rule4 = params.rule4;
 
-    //Generate surface from parameters
+    //Generate surface from parameters...
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(
         0, 
         activeModelParams_.modelWidth, 

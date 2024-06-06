@@ -48,38 +48,28 @@ SDL_Texture* MainWindow::getTextureFromWindow(uint32_t format)
 	return SDL_CreateTexture(sdlRenderer, format, SDL_TEXTUREACCESS_TARGET, windowSize.width, windowSize.height);
 }
 
+void MainWindow::drawTexture(SDL_Texture* texture, SDL_Rect destination)
+{
+	SDL_RenderCopy(sdlRenderer, texture, NULL, &destination);
+}
+
+
 void MainWindow::clear() {
-	SDL_SetRenderTarget(sdlRenderer, windowTexture);
+	//SDL_SetRenderTarget(sdlRenderer, windowTexture);//This messes things up?
 	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(sdlRenderer);
 }
 
 void MainWindow::renderPresent()
 {
-	//ImGui::Render();
-	//ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 	SDL_RenderPresent(sdlRenderer);
 }
-
-//void MainWindow::render(SDL_Texture* texture)
-//{
-//	MainWindowSize windowSize = getSize();
-//	SDL_Rect destinationRect{0, 0, windowSize.width, windowSize.height};
-//	//SDL_SetRenderTarget(window_.getSDLRenderer().get(), modelTexture_.get());
-//	//SDL_SetRenderDrawColor(window_.getSDLRenderer().get(), 0, 255, 0, 255);
-//	SDL_RenderClear(renderer_);
-//	SDL_RenderCopy(renderer_, texture, NULL, &destinationRect);
-//	//ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-//	//
-//	SDL_RenderPresent(renderer_);
-//
-//	//SDL_DestroyTexture(modelTexture_.get());
-//}
 
 MainWindow::~MainWindow() 
 {
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
+	if (windowTexture != nullptr) SDL_DestroyTexture(windowTexture);
 	SDL_DestroyRenderer(sdlRenderer);
 	SDL_DestroyWindow(sdlWindow);
 }

@@ -12,6 +12,7 @@
 
 //struct ImGuiContext;
 union SDL_Event;
+struct SDL_Rect;
 struct SDL_Renderer;
 //class SDL_Surface;
 class SDL_Texture;
@@ -41,6 +42,7 @@ public:
 	MainWindowSize getSize();
 	SDL_Texture* getTextureFromWindow(uint32_t format);
 
+	void drawTexture(SDL_Texture* texture, SDL_Rect destination);
 	void clear();
 	void renderPresent();
 
