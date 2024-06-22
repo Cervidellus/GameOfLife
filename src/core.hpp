@@ -28,6 +28,7 @@ private:
     void render_();
 
     //TODO: I should really have this just passing the parameters, then core has to know less.
+    //TODO: These will be moved to the models to further simplify the core.
     void handleGenerateModelRequest(const ModelParameters& params);
     SDL_Surface* generateModelPresetSurface(const ModelParameters& modelParameters);
     void populateSurfaceFromRLEString(

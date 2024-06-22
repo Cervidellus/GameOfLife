@@ -25,6 +25,8 @@ add_executable(gameoflife
     src/core.cpp 
     src/core.hpp 
     src/model/modelparameters.hpp
+    src/model/CpuModel.cpp
+    src/model/CpuModel.hpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp

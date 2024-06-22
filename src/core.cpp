@@ -2,6 +2,7 @@
 #include <gui\mainwindow.hpp>
 #include <gui\interface.hpp>
 #include <model\modelparameters.hpp>
+#include "model\CpuModel.h"
 
 #include <iostream>
 #include <string>
@@ -121,6 +122,17 @@ void Core::update_() {
 void Core::render_() {
     gui_.mainWindow.clear();
     //Draw the model    
+    // 
+    // I will separte the model from the view. Instead of an SDL_Surface, I will store the cell data in a vector.
+    // 
+    // 
+    //Next: I need to have a modelView object where I can call draw.
+    //It will handle the scale and position of the model, so that I can have a zoom and pan feature.
+    //I'll connect it to the gui, as well as mouse movements. 
+
+    //I can have different views in order to display the model in different ways. Maybe I should abstract things as a strategy pattern.
+
+    
     SDL_Rect destinationRect = {0, 0, activeModelParams_.modelWidth, activeModelParams_.modelHeight};
     auto modelTexture = SDL_CreateTextureFromSurface(gui_.mainWindow.sdlRenderer, surface_);
     gui_.mainWindow.drawTexture(modelTexture, destinationRect);
@@ -199,9 +211,16 @@ SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
     SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
 
     if (params.random) {
+        //I should switch to a random number generator that is not rand()
+        //I should also switch to a random number generator that is not rand()
 
-        srand(static_cast<unsigned>(time(nullptr)));
+
+
+
+        //srand(static_cast<unsigned>(time(nullptr)));
         for (int row = 0; row < activeModelParams_.modelHeight; row++) {
+
+
             for (int column = 0; column < activeModelParams_.modelWidth; column++) {
                 *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < params.fillFactor * (float)RAND_MAX) ? 1 : 0;
             }
