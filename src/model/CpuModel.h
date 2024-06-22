@@ -15,6 +15,7 @@ public:
 	void initialize() override;
 	void update() override;
 	void draw(SDL_Texture* texture) override;
+	void setParameters(const ModelParameters& modelParameters);
 
 	//void setModelParameters(ModelParameters modelParameters);
 
@@ -26,8 +27,8 @@ private:
 	//void handleGenerateModelRequest_(const ModelParameters& params);
 	void generateModel_(const ModelParameters& modelParameters);
 	void populateFromRLEString_(std::string model, const int startRow = 0, const int startColumn = 0);
-	void resizeModel_();
-	void clearModel_();
+	void resizeGrid_();
+	void clearGrid_();
 
 
 private:
