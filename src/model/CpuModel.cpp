@@ -1,9 +1,9 @@
 #include "CpuModel.hpp"
 
+#include <iostream>
 #include <random>
 
 #include <SDL.h>
-
 
 void CpuModel::initialize()
 {
@@ -30,34 +30,45 @@ void CpuModel::setParameters(const ModelParameters& modelParameters)
 	activeModelParams_ = modelParameters;
 }
 
+ModelParameters CpuModel::getParameters()
+{
+	return activeModelParams_;
+}
+
 void CpuModel::update()
 {
     std::vector<std::vector<uint8_t>> previousState = grid_;
     int livingNeighbors = 0;
     bool cellAlive = false;
-    for (int rowIndex = 0; rowIndex < grid_.size(); rowIndex++) {
-        for (int columnIndex = 0; columnIndex < grid_[rowIndex].size(); columnIndex++) {
+    int rowCount = grid_.size();
+    int columnCount = grid_[0].size();
+    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
             cellAlive = (grid_[rowIndex][columnIndex] == aliveValue_) ? aliveValue_ : deadValue_;
             livingNeighbors = 0;
             //count living neighbors
+
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 int neighborRowIndex = rowIndex + neighborRow;
 
                 //wrap the rows
-                if (neighborRowIndex < 0) neighborRowIndex = grid_.size() - 1;
-                if (neighborRowIndex >= grid_.size()) neighborRowIndex = 0;
+                if (neighborRowIndex < 0) neighborRowIndex = rowCount - 1;
+                if (neighborRowIndex >= rowCount) neighborRowIndex = 0;
 
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //skip center pixel
                     if (neighborRow == 0 && neighborColumn == 0) continue;
-                    neighborColumn = columnIndex + neighborColumn;
+
+                    int neighborColumnIndex = columnIndex + neighborColumn;
+
+                    //neighborColumn = columnIndex + neighborColumn;
 
                     //wrap the columns
-                    if (neighborColumn < 0) neighborColumn = grid_[rowIndex].size() - 1;
-                    if (neighborColumn >= grid_[rowIndex].size()) neighborColumn = 0;
+                    if (neighborColumnIndex < 0) neighborColumnIndex = columnCount - 1;
+                    if (neighborColumnIndex >= columnCount) neighborColumnIndex = 0;
 
                     //count
-                    if (previousState[neighborRowIndex][neighborColumn] == aliveValue_) livingNeighbors++;
+                    if (previousState[neighborRowIndex][neighborColumnIndex] == aliveValue_) livingNeighbors++;
                 }
             }
 
@@ -71,21 +82,38 @@ void CpuModel::update()
     }
 }
 
-void CpuModel::draw(SDL_Texture* texture)
+void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
     //to test this quickly, I can just create a surface and draw it to the texture to see if everything else is working.
     //If that works, I'll draw squares for each cell.
     //Once THAT works I can pull it out into a draw strategy so I can do things differently.
+    
+    //First I can iterate over all and see if it works.
+    //Then I can put in place what i need to only draw what is on screen.
+    //Then I can add the ability to zoom.
+    //Then I can add the ability to pan.
+    
+    //Figure out number of rows and columns to draw
+    int rowsToDraw = std::min<int>(grid_.size(), height);
+    int columnsToDraw = std::min<int>(grid_[0].size(), width);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+    for(int rowIndex = 0; rowIndex < rowsToDraw; rowIndex++)
+	{
+		for(int columnIndex = 0; columnIndex < columnsToDraw; columnIndex++)
+		{
+			if(grid_[rowIndex][columnIndex] == aliveValue_)
+			{
+				//SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_Rect rect = { posX + columnIndex, posY + rowIndex, 1, 1 };
+                SDL_RenderFillRect(renderer, &rect);
+			}
+
+
+		}
+	}
 }
-
-//
-//
-//
-//
-//void Core::handleGenerateModelRequest(const ModelParameters& params) {
-//    surface_ = generateModelPresetSurface(params);
-//}
-
 
 void CpuModel::generateModel_(const ModelParameters& params) {
     //First set the members to correspond with the parameters
@@ -111,11 +139,12 @@ void CpuModel::generateModel_(const ModelParameters& params) {
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-        for (auto row : grid_) {
-            for (auto cell : row) {
-				cell = distribution(rng) < params.fillFactor ? 255 : 0;
+        for (auto& row : grid_) {
+            for (auto& cell : row) {
+				cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
 			}
 		}
+        std::cout << "Random model generated" << std::endl;
     }
     else {
         //if incoded in a std::vector<std::pair<int, int>> we want it centered.

@@ -10,7 +10,7 @@
 
 #include "modelparameters.hpp"
 
-class SDL_Texture;
+struct SDL_Renderer;
 
 class AbstractModel {
 public:
@@ -21,13 +21,12 @@ public:
 	ModelParameters modelParameters;
 
 	virtual void initialize() = 0;
+	//virtual void processEvents(const SDL_Event& event) = 0;
 	virtual void update() = 0;	
-	//Some interface for rendering. Should it be an SDL? Or should I give it the window texture?
-
 
 	//I could also have a drawing strategy pattern.. so if I want to do squares, or circles, or have things run into each other. 
 	//I don't think the different drawing strategies belong in the abstract class though.
-	virtual void draw(SDL_Texture* texture) = 0;
+	virtual void draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height) = 0;
 
 	//Scale from 0 to 1
 	void setRenderScale(double scale)

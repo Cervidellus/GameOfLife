@@ -4,9 +4,10 @@
 #include "abstract_model.hpp"
 #include "modelparameters.hpp"
 
+
 #include <vector>
 
-class SDL_Texture;
+//class SDL_Texture;
 
 class CpuModel : public AbstractModel 
 {
@@ -15,9 +16,20 @@ public:
 	~CpuModel() = default;
 
 	void initialize() override;
+
+	//void processEvents(const SDL_Event& event) override;
 	void update() override;
-	void draw(SDL_Texture* texture) override;
+
+	void draw(
+		SDL_Renderer* renderer, 
+		const int posX, 
+		const int posY, 
+		const int width, 
+		const int height) override;
+
 	void setParameters(const ModelParameters& modelParameters);
+
+	ModelParameters getParameters();
 
 	//void setModelParameters(ModelParameters modelParameters);
 
@@ -35,9 +47,16 @@ private:
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
-	//My intention is that 0 is dead, 255 is alive, and in between numbers can either be the amount of time alive or hte amount of time dead.
-	ModelParameters activeModelParams_;
-	//valuse sfor aliveValue_ and deadValue_ can be changed for different visualization strategies.
+	
+	ModelParameters activeModelParams_{
+		false,
+		true,
+		60,
+		1260,
+		720
+	};
+	//My intention is that 0 is dead, 255 is alive, and in between numbers can either be the amount of time alive or the amount of time dead.
+	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
 };
