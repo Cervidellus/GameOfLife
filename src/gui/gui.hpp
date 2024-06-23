@@ -1,14 +1,16 @@
 #ifndef GAMEOFLIFE_GUI_HPP
 #define GAMEOFLIFE_GUI_HPP
 
-#include "mainwindow.hpp"
-#include "interface.hpp"
+//#include "mainwindow.hpp"
+#include "model/modelparameters.hpp"
+//#include "interface.hpp"
 
-#include <memory>
-#include <string>
+//#include <functional>
+//#include <memory>
+//#include <string>
 
 //class ImGuiContext; Forward declaring ImGuiContext causes a linker error.
-class MainWindow;
+//class MainWindow;
 
 class GUI {
 public:
@@ -17,14 +19,14 @@ public:
 
 public:
 
-	bool initialize(
-		std::string windowTitle,
-		std::function<void(ModelParameters presetParameters)> presetCallback
-		//std::function<SDL_Texture* ()> getWindowTextureCallback
-	);
+	//bool initialize(
+	//	std::string windowTitle,
+	//	std::function<void(ModelParameters presetParameters)> presetCallback
+	//	//std::function<SDL_Texture* ()> getWindowTextureCallback
+	//);
 
-	MainWindow mainWindow;
-	Interface interface;
+	//MainWindow mainWindow;
+	//Interface interface;
 	//void shutdown();
 	
 private:

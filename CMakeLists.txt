@@ -17,23 +17,24 @@ message(STATUS "SDL2 found: ${SDL2_FOUND}")
 find_package(imgui CONFIG REQUIRED)
 message(STATUS "imgui found: ${imgui_FOUND}")
 
+
 add_executable(gameoflife 
     src/main.cpp 
     src/core.cpp 
     src/core.hpp 
     #src/model/abstract_model.hpp
-    src/model/modelparameters.hpp
+    #src/model/modelparameters.hpp
     #src/model/CpuModel.cpp
     #src/model/CpuModel.hpp
-    src/presets/modelpresets.hpp
-    src/sdl_manager.cpp
-    src/sdl_manager.hpp
-    src/gui/interface.cpp 
-    src/gui/interface.hpp 
-    src/gui/mainwindow.cpp 
-    src/gui/mainwindow.hpp
-    src/gui/gui.cpp
-    src/gui/gui.hpp
+    #src/presets/modelpresets.hpp
+    #src/sdl_manager.cpp
+    #src/sdl_manager.hpp
+    #src/gui/interface.cpp 
+    #src/gui/interface.hpp 
+    #src/gui/mainwindow.cpp 
+    #src/gui/mainwindow.hpp
+    #src/gui/gui.cpp
+    #src/gui/gui.hpp
 )
 
 target_include_directories(gameoflife PRIVATE src)
@@ -57,6 +58,6 @@ add_custom_command(
 #endif()
 
 #ImGui conflicts with window default libraries
-if(MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-endif()
+#if(MSVC)
+#    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
+#endif()
