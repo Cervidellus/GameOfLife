@@ -28,10 +28,7 @@ public:
 		const int height) override;
 
 	void setParameters(const ModelParameters& modelParameters);
-
 	ModelParameters getParameters();
-
-	//void setModelParameters(ModelParameters modelParameters);
 
 	//void setDrawStrategy(SquareGridDrawStrategy& strategy); When I want to implement different drawing strategies, I can do this.
 

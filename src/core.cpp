@@ -1,8 +1,4 @@
 #include <core.hpp>
-//#include <gui\mainwindow.hpp>
-//#include <gui\interface.hpp>
-//#include <model\modelparameters.hpp>
-//#include "model\CpuModel.h"
 
 #include <iostream>
 #include <string>
@@ -59,11 +55,6 @@ bool Core::init_() {
 		[&](ModelParameters params) {}
 	);
 
-    //cpuModel_.initialize();
-
-    //will go away
-    //surface_ = generateModelPresetSurface(ModelPresets::randomParams);
-
     coreAppRunning_ = true;
     return true;
 }
@@ -92,72 +83,17 @@ void Core::processEvents_() {
 void Core::update_() {
     //I might also have a model manager where I can register models, and have the manager call update on all models.
     cpuModel_.update();
-
-
-  //  //Below is the old stuff and will go away
-  //  SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
-
-  //  for (int row = 0; row < activeModelParams_.modelHeight; row++) {
-  //      int livingNeighbors = 0;
-  //      bool cellAlive = false;
-  //      for (int column = 0; column < activeModelParams_.modelWidth; column++) {
-  //          cellAlive = *((Uint8*)previousState->pixels + row * previousState->pitch + column);
-  //          livingNeighbors = 0;
-  //          for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
-  //              for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
-  //                  //out of range rows
-  //                  if (row + neighborRow < 0 || row + neighborRow >= activeModelParams_.modelHeight) continue;
-  //                  //out of range columns
-  //                  if (column + neighborColumn < 0 || column + neighborColumn >= activeModelParams_.modelWidth) continue;
-  //                  ////center pixel
-  //                  if (neighborRow == 0 && neighborColumn == 0) continue;
-  //                  //count
-  //                  if (*((Uint8*)previousState->pixels + ((row + neighborRow) * previousState->pitch) + column + neighborColumn) == 1) livingNeighbors++;
-  //              }
-  //          }
-  //          
-  //          //If not alive and has 3 neighbors, become alive
-  //          if (!cellAlive) {
-  //              if (livingNeighbors == activeModelParams_.rule4) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
-  //          }
-  //          //If neighbors are less than 2 or more than 3, kill it.
-  //          else  if(livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
-		//}  
-  //      
-  //  }
-  //  SDL_FreeSurface(previousState);
 }
 
 void Core::render_() {
     
     gui_.mainWindow.clear();
-    //Draw the model    
-    // 
-    // I will separte the model from the view. Instead of an SDL_Surface, I will store the cell data in a vector.
-    // 
-    // 
-    //Next: I need to have a modelView object where I can call draw.
-    //It will handle the scale and position of the model, so that I can have a zoom and pan feature.
-    //I'll connect it to the gui, as well as mouse movements. 
 
-    //I can have different views in order to display the model in different ways. Maybe I should abstract things as a strategy pattern.
-
-    //
-    //SDL_Rect destinationRect = {0, 0, activeModelParams_.modelWidth, activeModelParams_.modelHeight};
-    //auto modelTexture = SDL_CreateTextureFromSurface(gui_.mainWindow.sdlRenderer, surface_);
-    //gui_.mainWindow.drawTexture(modelTexture, destinationRect);
-    //SDL_DestroyTexture(modelTexture);//I should make this a member so that I am not constantly creating and destroying it.5
-
-    //I can decide to use this to make a viewport
     int windowWidth, windowHeight;
     SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &windowWidth, &windowHeight);
-    //SDL_Rect drawRect = {0, 0, windowWidth, windowHeight};
     cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
 
-
-
-
-
+    //I should have the models provide their interface
     gui_.interface.draw(gui_.mainWindow.sdlRenderer, activeModelParams_, measuredModelFPS_);
     gui_.mainWindow.renderPresent();
 }
@@ -173,129 +109,8 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
             break;
     }
 }
-//
-//void Core::handleGenerateModelRequest(const ModelParameters& params) {
-//    surface_ = generateModelPresetSurface(params);
-//}
-//
-//SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
-//    //First set the members to correspond with the parameters
-//    if (params.modelFPS > 0) activeModelParams_.modelFPS = params.modelFPS;
-//    if(activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
-//    if(activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
-//    if (params.modelWidth >  0) activeModelParams_.modelWidth= params.modelWidth;
-//    if (params.modelHeight > 0) activeModelParams_.modelHeight = params.modelHeight;
-//    if (params.fillFactor > 0) activeModelParams_.fillFactor = params.fillFactor;
-//    if (params.rule1 > 0) activeModelParams_.rule1 = params.rule1;
-//    if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
-//    if (params.rule4 > 0) activeModelParams_.rule4 = params.rule4;
-//
-//    //Generate surface from parameters...
-//    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(
-//        0, 
-//        activeModelParams_.modelWidth, 
-//        activeModelParams_.modelHeight, 
-//        1, 
-//        SDL_PIXELFORMAT_INDEX8);
-//
-//    if (surface == nullptr) {
-//        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
-//        return nullptr;
-//    }
-//    //Set the color palette
-//    const SDL_Color colors[2] = {
-//        {0, 0, 0, 255},
-//        {255, 255, 255, 255}
-//    };
-//    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
-//
-//    if (params.random) {
-//        //I should switch to a random number generator that is not rand()
-//        //I should also switch to a random number generator that is not rand()
-//
-//
-//
-//
-//        //srand(static_cast<unsigned>(time(nullptr)));
-//        for (int row = 0; row < activeModelParams_.modelHeight; row++) {
-//
-//
-//            for (int column = 0; column < activeModelParams_.modelWidth; column++) {
-//                *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < params.fillFactor * (float)RAND_MAX) ? 1 : 0;
-//            }
-//        }
-//    }
-//    else {
-//        int startColumn = (activeModelParams_.modelWidth / 2) - (params.minWidth / 2);
-//        int startRow = activeModelParams_.modelHeight / 2 - (params.minHeight / 2);
-//        //std::vector encoding
-//        if (params.aliveCells.size() > 0) {
-//            for (auto pixel : params.aliveCells) {
-//                *((Uint8*)surface->pixels + (startRow + pixel.second) * surface->pitch + startColumn + pixel.first) = 1;
-//            }
-//        }
-//
-//        //RLE encoding
-//        if (!params.runLengthEncoding.empty()) {
-//            populateSurfaceFromRLEString(
-//                surface,
-//                params.runLengthEncoding,
-//                startColumn,
-//                startRow
-//            );
-//        }
-//    }
-//    return surface;
-//}
-//
-//void Core::populateSurfaceFromRLEString(
-//    SDL_Surface* surface,
-//    std::string model, 
-//    int startColumn, 
-//    int startRow) 
-//{
-//    int row = startRow;
-//	int column = startColumn;
-//
-//    for (std::string::iterator modelIterator = model.begin(); modelIterator != model.end(); modelIterator++) {
-//        //First handle the edge cases
-//        
-//        if(*modelIterator == '!') break;
-//
-//        int count = 1;
-//        if (isdigit(*modelIterator))
-//        {
-//            std::string stringInteger = "";
-//            while (isdigit(*modelIterator) && modelIterator != model.end())
-//            {
-//                stringInteger += *modelIterator;
-//                modelIterator++;
-//            }
-//            count = std::stoi(stringInteger);
-//        }
-//        if (*modelIterator == 'b') {
-//            for (int i = 0; i < count; i++) {
-//                column++;
-//            }
-//        }
-//        else if (*modelIterator == 'o') {
-//            for (int i = 0; i < count; i++) {
-//                *((Uint8*)surface->pixels + row * surface->pitch + column) = 1;
-//                column++;
-//            }
-//        }
-//        else if (*modelIterator == '$')
-//		{
-//            column = startColumn;
-//            for (int i = 0; i < count; i++) {
-//                row++;
-//            }
-//		}
-//    }
-//}
 
 Core::~Core() {
     //ImGui interface must be deleted before SDL
-    //SDL_FreeSurface(surface_);
     sdlManager_.shutdown();
 }

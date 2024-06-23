@@ -92,25 +92,54 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     //Then I can put in place what i need to only draw what is on screen.
     //Then I can add the ability to zoom.
     //Then I can add the ability to pan.
+
+    int gridRows = grid_.size();
+    int gridColumns = grid_[0].size();
+    const float rectPadding = 0.1;
+    const float scale = 1.0;
     
     //Figure out number of rows and columns to draw
-    int rowsToDraw = std::min<int>(grid_.size(), height);
-    int columnsToDraw = std::min<int>(grid_[0].size(), width);
+    int rowsToDrawCount = std::min<int>(gridRows, height);
+    int columnsToDrawCount = std::min<int>(gridColumns, width);
+
+    //I need to add a concept of scale here.
+    //Figure out the starting indices to draw
+    int rowDrawStartIndex = 0;
+    int columnDrawStartIndex = 0;
+    if(gridRows > height) rowDrawStartIndex = (gridRows - rowsToDrawCount) / 2;
+    if(gridColumns > width) columnDrawStartIndex = (gridColumns - columnsToDrawCount) / 2;
+
+    int rowDrawEndIndex = rowDrawStartIndex + rowsToDrawCount - 1;
+    int columnDrawEndIndex = columnDrawStartIndex + columnsToDrawCount - 1;
+
+    //Determine rect size
+    //const int rectWidth = int(scale * ((float)width / (float)columnsToDrawCount));
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-    for(int rowIndex = 0; rowIndex < rowsToDraw; rowIndex++)
+    //This allows for it to be centered when it is smaller than the window.
+    int drawStartX = posX + (width - columnsToDrawCount) / 2;
+    int drawStartY = posY + (height - rowsToDrawCount) / 2;
+    //Set to zero if model is larger than window.
+    if(drawStartX < 0) drawStartX = 0;
+    if(drawStartY < 0) drawStartY = 0;
+    //int drawStartX = posX ;
+    //int drawStartY = posY;
+
+    //Centering when model is smaller works, and cropping works but it is drawin gin the wrong poisiton. 
+    
+
+    //Hopefully this iterates just over the cells that are visible.
+    for(int rowIndex = rowDrawStartIndex; rowIndex <= rowDrawEndIndex; rowIndex++)
 	{
-		for(int columnIndex = 0; columnIndex < columnsToDraw; columnIndex++)
+		for(int columnIndex = columnDrawStartIndex; columnIndex <= columnDrawEndIndex; columnIndex++)
 		{
 			if(grid_[rowIndex][columnIndex] == aliveValue_)
 			{
 				//SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_Rect rect = { posX + columnIndex, posY + rowIndex, 1, 1 };
+                SDL_Rect rect = { drawStartX + columnIndex-columnDrawStartIndex, drawStartY + rowIndex - rowDrawStartIndex, 1, 1 };
                 SDL_RenderFillRect(renderer, &rect);
 			}
-
-
 		}
 	}
 }
