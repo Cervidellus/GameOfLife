@@ -160,7 +160,7 @@ void Core::render() {
     SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
     SDL_RenderClear(renderer_);
      SDL_RenderCopy(renderer_, texture, NULL, &destinationRect);
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer_);
     
     SDL_RenderPresent(renderer_);
 
