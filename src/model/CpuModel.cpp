@@ -1,6 +1,9 @@
-#include "CpuModel.h"
+#include "CpuModel.hpp"
 
 #include <random>
+
+#include <SDL.h>
+
 
 void CpuModel::initialize()
 {
@@ -39,6 +42,7 @@ void CpuModel::update()
             //count living neighbors
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 int neighborRowIndex = rowIndex + neighborRow;
+
                 //wrap the rows
                 if (neighborRowIndex < 0) neighborRowIndex = grid_.size() - 1;
                 if (neighborRowIndex >= grid_.size()) neighborRowIndex = 0;
@@ -65,6 +69,13 @@ void CpuModel::update()
             else if (livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) grid_[rowIndex][columnIndex] = deadValue_;
         }
     }
+}
+
+void CpuModel::draw(SDL_Texture* texture)
+{
+    //to test this quickly, I can just create a surface and draw it to the texture to see if everything else is working.
+    //If that works, I'll draw squares for each cell.
+    //Once THAT works I can pull it out into a draw strategy so I can do things differently.
 }
 
 //

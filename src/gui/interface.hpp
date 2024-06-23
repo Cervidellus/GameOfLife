@@ -30,16 +30,9 @@ class Interface {
 		//render should just take a modelParameters reference
 
 		void draw(
+			SDL_Renderer* renderer,
 			ModelParameters& modelParameters,
-			//int& modelFPS, 
 			const int measuredModelFPS = 0
-			//bool& modelRunning,
-			//float& fillFactor,
-			//int& modelWidth,
-			//int& modelHeight,
-			//int& rule1,
-			//int& rule3,
-			//int& rule4
 			);
 
 	private:

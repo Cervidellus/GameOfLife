@@ -6,8 +6,10 @@
 
 #include <vector>
 
-class CpuModel : public AbstractModel {
+class SDL_Texture;
 
+class CpuModel : public AbstractModel 
+{
 public:
 	CpuModel() = default;
 	~CpuModel() = default;
@@ -38,6 +40,6 @@ private:
 	//valuse sfor aliveValue_ and deadValue_ can be changed for different visualization strategies.
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
-}
+};
 
 #endif // CPU_MODEL_H

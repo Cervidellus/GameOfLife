@@ -3,8 +3,7 @@
 
 #include <memory>
 
-//#include "gui\mainwindow.hpp"
-
+#include "gui\mainwindow.hpp"
 #include "gui\interface.hpp"
 #include "gui\gui.hpp"
 #include "presets\modelpresets.hpp"

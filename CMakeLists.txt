@@ -5,9 +5,6 @@ project(gameoflife LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-message(STATUS CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE})
-
-
 set(VCPKG_DIR $ENV{VCPKG_DIR})
 if(NOT VCPKG_DIR)
     message(FATAL_ERROR "VCPKG_DIR is not set")
@@ -24,9 +21,10 @@ add_executable(gameoflife
     src/main.cpp 
     src/core.cpp 
     src/core.hpp 
+    #src/model/abstract_model.hpp
     src/model/modelparameters.hpp
-    src/model/CpuModel.cpp
-    src/model/CpuModel.hpp
+    #src/model/CpuModel.cpp
+    #src/model/CpuModel.hpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp

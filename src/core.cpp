@@ -1,8 +1,8 @@
 #include <core.hpp>
-#include <gui\mainwindow.hpp>
-#include <gui\interface.hpp>
-#include <model\modelparameters.hpp>
-#include "model\CpuModel.h"
+//#include <gui\mainwindow.hpp>
+//#include <gui\interface.hpp>
+//#include <model\modelparameters.hpp>
+//#include "model\CpuModel.h"
 
 #include <iostream>
 #include <string>
@@ -138,7 +138,7 @@ void Core::render_() {
     gui_.mainWindow.drawTexture(modelTexture, destinationRect);
     SDL_DestroyTexture(modelTexture);//I should make this a member so that I am not constantly creating and destroying it.5
 
-    gui_.interface.draw(activeModelParams_, measuredModelFPS_);
+    gui_.interface.draw(gui_.mainWindow.sdlRenderer, activeModelParams_, measuredModelFPS_);
     gui_.mainWindow.renderPresent();
 
     

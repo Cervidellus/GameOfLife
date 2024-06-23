@@ -28,6 +28,7 @@ bool Interface::init(
 }
 
 void Interface::draw(
+    SDL_Renderer* renderer,
     ModelParameters& modelParams,
     const int measuredModelFPS
 )
@@ -143,7 +144,7 @@ void Interface::draw(
     ImGui::End();
     ImGui::Render();
 
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
 
