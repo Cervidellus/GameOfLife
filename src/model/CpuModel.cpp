@@ -3,6 +3,9 @@
 #include <iostream>
 #include <random>
 
+//#include <imgui_impl_sdl2.h>
+//#include <imgui_impl_sdlrenderer2.h>
+#include <imgui.h>
 #include <SDL.h>
 
 void CpuModel::initialize()
@@ -88,10 +91,10 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     //If that works, I'll draw squares for each cell.
     //Once THAT works I can pull it out into a draw strategy so I can do things differently.
     
-    //First I can iterate over all and see if it works.
-    //Then I can put in place what i need to only draw what is on screen.
+    //First I can iterate over all and see if it works.(done)
+    //Then I can put in place what i need to only draw what is on screen.(done.. mostly)
     //Then I can add the ability to zoom.
-    //Then I can add the ability to pan.
+    //Then I can add the ability to pan.(done)
 
     int gridRows = grid_.size();
     int gridColumns = grid_[0].size();
@@ -118,35 +121,155 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
     //This allows for it to be centered when it is smaller than the window.
-    int drawStartX = posX + (width - columnsToDrawCount) / 2;
-    int drawStartY = posY + (height - rowsToDrawCount) / 2;
+    int drawStartX = posX + activeModelParams_.displacementX + (width - columnsToDrawCount) / 2;
+    int drawStartY = posY + activeModelParams_.displacementY + (height - rowsToDrawCount) / 2;
     //Set to zero if model is larger than window.
-    if(drawStartX < 0) drawStartX = 0;
-    if(drawStartY < 0) drawStartY = 0;
-    //int drawStartX = posX ;
-    //int drawStartY = posY;
-
-    //Centering when model is smaller works, and cropping works but it is drawin gin the wrong poisiton. 
-    
+    //if(drawStartX < 0) drawStartX = 0;
+    //if(drawStartY < 0) drawStartY = 0;
+    //I should also check for maximum.
 
     //Hopefully this iterates just over the cells that are visible.
+    //I need to test this.. 
     for(int rowIndex = rowDrawStartIndex; rowIndex <= rowDrawEndIndex; rowIndex++)
 	{
 		for(int columnIndex = columnDrawStartIndex; columnIndex <= columnDrawEndIndex; columnIndex++)
 		{
 			if(grid_[rowIndex][columnIndex] == aliveValue_)
 			{
-				//SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_Rect rect = { drawStartX + columnIndex-columnDrawStartIndex, drawStartY + rowIndex - rowDrawStartIndex, 1, 1 };
+                SDL_Rect rect = 
+                { 
+                    drawStartX + activeModelParams_.zoomLevel * (columnIndex - columnDrawStartIndex), 
+                    drawStartY + activeModelParams_.zoomLevel * (rowIndex - rowDrawStartIndex),
+                    activeModelParams_.zoomLevel,
+                    activeModelParams_.zoomLevel
+                };
                 SDL_RenderFillRect(renderer, &rect);
 			}
 		}
 	}
 }
 
+void CpuModel::drawImGuiWidgets(const bool isModelRunning)
+{
+    ImGuiInputTextFlags modelRunningFlag = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+
+    if (ImGui::CollapsingHeader("CPU Model Parameters")) {
+
+        //TODO:: limit to positive values
+        //TODO:: ensure that input is 4-byte aligned
+        ImGui::InputInt("Width", &activeModelParams_.modelWidth, 100, 100, modelRunningFlag);
+        ImGui::InputInt("Height", &activeModelParams_.modelHeight, 100, 100, modelRunningFlag);
+
+        ImGui::SliderFloat("Model Fill Factor", &activeModelParams_.fillFactor, 0.001, 1);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
+        //if (ImGui::Button("Generate Model")) {
+        //    if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
+        //}
+        //ImGui::SameLine();
+        //if (ImGui::Button("Start Model")) {
+        //    modelRunning = true;
+        //}
+
+        //ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+
+        if (ImGui::InputInt("Conway Rule 1 Cutoff", &activeModelParams_.rule1, 1, 1))
+        {
+            if (activeModelParams_.rule1 < 0) activeModelParams_.rule1 = 0;
+            if (activeModelParams_.rule1 > 8) activeModelParams_.rule1 = 8;
+            if (activeModelParams_.rule1 >= activeModelParams_.rule3) activeModelParams_.rule1 = activeModelParams_.rule3 - 1;
+        };
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
+
+        if (ImGui::InputInt("Conway Rule 3 Cutoff", &activeModelParams_.rule3, 1, 1))
+        {
+            if (activeModelParams_.rule3 < 1) activeModelParams_.rule3 = 1;
+            if (activeModelParams_.rule3 > 8) activeModelParams_.rule3 = 8;
+            if (activeModelParams_.rule3 <= activeModelParams_.rule1) activeModelParams_.rule3 = activeModelParams_.rule1 + 1;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
+
+        if (ImGui::InputInt("Conway Rule 4", &activeModelParams_.rule4, 1, 1))
+        {
+            if (activeModelParams_.rule4 < 0) activeModelParams_.rule4 = 0;
+            if (activeModelParams_.rule4 > 8) activeModelParams_.rule4 = 8;
+        };
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
+
+    }
+
+    //if (ImGui::CollapsingHeader("Presets"))
+    //{
+    //    if (ImGui::Button("random")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("A randomly generated field to observe Conway's Game of Life.");
+
+    //    if (ImGui::Button("Swiss Cheese")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
+    //    if (ImGui::Button("Decomposition")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+
+    //    if (ImGui::Button("Blinker")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::blinkerParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest oscillator in Conway's Game of Life.");
+
+    //    if (ImGui::Button("Lightweight Spaceship")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::lightweightSpaceshipParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest orthoganal spaceship in Conway's Game of Life.");
+
+    //    if (ImGui::Button("Blocker")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::blockerParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blocker.");
+
+    //    if (ImGui::Button("Nihonium")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
+
+    //    if (ImGui::Button("Gabriel's P138 Oscillator")) {
+    //        if (presetCallback_) (*presetCallback_)(ModelPresets::gabrielsPOneThirtyEightParams);
+    //    }
+    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cool period 138 oscillator discovered by Gabriel Nivasch on October 13, 2002.");
+    //}
+}
+
+void CpuModel::handleSDLEvent(const SDL_Event& event)
+{
+    int x,y;
+    int mouseButtonState = SDL_GetMouseState(&x, &y);
+    if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
+    {
+        //Change displacement
+        activeModelParams_.displacementX += event.motion.xrel;
+        activeModelParams_.displacementY += event.motion.yrel;
+        //Check that it is within bounds of a maximum displacement
+
+    }
+    else if (event.type == SDL_MOUSEWHEEL)
+	{
+		//Zoom
+        //TODO:: only allow scales that are a multiple of pixels.
+		if (event.wheel.y > 0) {
+			activeModelParams_.zoomLevel *= 1.2;
+            if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) activeModelParams_.zoomLevel = CpuModel::MAX_ZOOM;
+		}
+		else if (event.wheel.y < 0) {
+			activeModelParams_.zoomLevel *= 0.8;
+			if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) activeModelParams_.zoomLevel = CpuModel::MIN_ZOOM;
+		}
+	}
+}
+
 void CpuModel::generateModel_(const ModelParameters& params) {
     //First set the members to correspond with the parameters
-    if (params.modelFPS > 0) activeModelParams_.modelFPS = params.modelFPS;
     if (activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
     if (activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
     if (params.modelWidth > 0) activeModelParams_.modelWidth = params.modelWidth;

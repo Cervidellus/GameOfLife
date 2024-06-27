@@ -31,9 +31,19 @@ class Interface {
 
 		void draw(
 			SDL_Renderer* renderer,
+			bool& modelRunning,
+			int& desiredModelFPS,
 			ModelParameters& modelParameters,
 			const int measuredModelFPS = 0
 			);
+
+		void startDraw(
+			bool& modelRunning,
+			int& desiredModelFPS,
+			const int measuredModelFPS = 0
+		);
+
+		void endDraw(SDL_Renderer* renderer);
 
 	private:
 		bool isInitialized_ = false;

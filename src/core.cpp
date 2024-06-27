@@ -23,7 +23,7 @@ bool Core::run() {
         now = SDL_GetTicks();
 
         processEvents_();
-        if (activeModelParams_.isRunning && now - lastModelUpdate > 1000 / activeModelParams_.modelFPS)
+        if (modelRunning_ && now - lastModelUpdate > 1000 / desiredModelFPS_)
         {
             update_();
             measuredModelFPS_ = 1000 / (now - lastModelUpdate);
@@ -35,7 +35,7 @@ bool Core::run() {
             lastDisplayUpdate = now;
         }
         //wait function so we don't burn too much cpu
-        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / activeModelParams_.modelFPS - (now - lastModelUpdate));
+        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / desiredModelFPS_ - (now - lastModelUpdate));
         if (waitTime > 0) SDL_Delay(waitTime);
     }
 
@@ -60,9 +60,15 @@ bool Core::init_() {
 }
 
 void Core::processEvents_() {
-    //Eventually I will have a SDL_Event handler
+    //Eventually I will have a SDL_Event handler.
+    // It will be able to hold button states that downstream events might need. 
+    // 
+    // 
     //You will be able to register callbacks for events
     //For example the sidebar, which uses ImGui, will be able to use ImGui_ImplSDL2_ProcessEvent(&event) as a callback.
+
+    //each event handler function will recieve the SDL_Event as well as a global state struct containing e.g. current button states.
+    //Or maybe I  can grab the state from SDL directly?
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
@@ -76,6 +82,9 @@ void Core::processEvents_() {
                 break;
         }
         //In the future, I would like an event manager where you can register objects to receive events.
+
+        cpuModel_.handleSDLEvent(event);
+
         gui_.mainWindow.processEvent(event);
     }
 }
@@ -94,7 +103,19 @@ void Core::render_() {
     cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
 
     //I should have the models provide their interface
-    gui_.interface.draw(gui_.mainWindow.sdlRenderer, activeModelParams_, measuredModelFPS_);
+    //But I need to figure out where the data lives.. who owns it?
+    //I think the model should own all of that. 
+    //But how do I call draw on it? 
+    //It woul dbe nice to eventually just call gui_.draw() and have it draw everything.
+    //For that I need to have a callback registered with the model that will draw the interface.
+    //as a part of that abstract class, should I have a drawWidgets function? I can use that as a callback in the gui. 
+    //gui_.interface.draw(gui_.mainWindow.sdlRenderer, modelRunning_, desiredModelFPS_, activeModelParams_, measuredModelFPS_);
+    //bool& modelRunning,
+    //    int& desiredModelFPS,
+    //    const int measuredModelFPS
+    gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
+    cpuModel_.drawImGuiWidgets(modelRunning_);
+    gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);
     gui_.mainWindow.renderPresent();
 }
 

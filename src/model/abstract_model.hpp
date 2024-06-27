@@ -10,6 +10,8 @@
 
 #include "modelparameters.hpp"
 
+#include <SDL2/SDL_events.h>
+
 struct SDL_Renderer;
 
 class AbstractModel {
@@ -20,6 +22,7 @@ public:
 	//I think eventually the model parameters will not be in abstract class. I think I need it here now just to get it going.
 	ModelParameters modelParameters;
 
+	//Very likely I can get rid of this.
 	virtual void initialize() = 0;
 	//virtual void processEvents(const SDL_Event& event) = 0;
 	virtual void update() = 0;	
@@ -27,6 +30,10 @@ public:
 	//I could also have a drawing strategy pattern.. so if I want to do squares, or circles, or have things run into each other. 
 	//I don't think the different drawing strategies belong in the abstract class though.
 	virtual void draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height) = 0;
+	//Does not include begin or end frame, so widgets can slot into an existing frame.
+	virtual void drawImGuiWidgets(const bool isModelRunning) = 0;
+
+	virtual void handleSDLEvent(const SDL_Event& event){};
 
 	//Scale from 0 to 1
 	void setRenderScale(double scale)

@@ -27,16 +27,18 @@ private:
     void handleSDL_KEYDOWN(SDL_Event& event);
 
     bool coreAppRunning_ = false;
+    bool modelRunning_ = false;
 
     ModelParameters activeModelParams_{
-        false, 
+        //false, 
         true, 
-        60,
+        //60,
         1260,
         720
     };
 
     const int displayFPS_ = 60;
+    int desiredModelFPS_ = 60;
     int measuredModelFPS_ = 0;
 
     SDLManager sdlManager_;

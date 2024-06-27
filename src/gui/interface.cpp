@@ -27,8 +27,40 @@ bool Interface::init(
 	return true;
 }
 
+void Interface::startDraw(
+    bool& modelRunning,
+    int& desiredModelFPS,
+    const int measuredModelFPS) 
+{
+	ImGui_ImplSDLRenderer2_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+
+    ImGui::Begin("Options");
+    ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 120);
+    ImGui::Text("Measured FPS: %d", measuredModelFPS);
+    if (modelRunning) {
+        if (ImGui::Button("Pause Model")) {
+            modelRunning = false;
+        }
+    }
+    else {
+        if (ImGui::Button("Start Model")) {
+            modelRunning = true;
+        }
+    }
+}
+
+void Interface::endDraw(SDL_Renderer* renderer) {
+    ImGui::End();
+	ImGui::Render();
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+}
+
 void Interface::draw(
     SDL_Renderer* renderer,
+    bool& modelRunning,
+    int& desiredModelFPS,
     ModelParameters& modelParams,
     const int measuredModelFPS
 )
@@ -39,20 +71,20 @@ void Interface::draw(
     ImGui::NewFrame();
 
     ImGui::Begin("Options");
-    ImGui::SliderInt("Desired Model FPS", &modelParams.modelFPS, 1, 120);
+    ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 120);
     ImGui::Text("Measured FPS: %d", measuredModelFPS);
-    if (modelParams.isRunning) {
+    if (modelRunning) {
         if (ImGui::Button("Pause Model")) {
-            modelParams.isRunning = false;
+            modelRunning = false;
         }
     }
     else {
         if (ImGui::Button("Start Model")) {
-            modelParams.isRunning = true;
+            modelRunning = true;
 		}
 	}
 
-    ImGuiInputTextFlags modelRunningFlag = modelParams.isRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+    ImGuiInputTextFlags modelRunningFlag = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
     
     if (ImGui::CollapsingHeader("Parameters")) {
 
