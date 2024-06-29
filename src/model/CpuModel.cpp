@@ -87,59 +87,43 @@ void CpuModel::update()
 
 void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
-    //to test this quickly, I can just create a surface and draw it to the texture to see if everything else is working.
-    //If that works, I'll draw squares for each cell.
-    //Once THAT works I can pull it out into a draw strategy so I can do things differently.
-    
-    //First I can iterate over all and see if it works.(done)
-    //Then I can put in place what i need to only draw what is on screen.(done.. mostly)
-    //Then I can add the ability to zoom.
-    //Then I can add the ability to pan.(done)
+    if(width != viewportWidth_ || height != viewportHeight_)
+	{
+		viewportWidth_ = width;
+		viewportHeight_ = height;
+	}  
 
     int gridRows = grid_.size();
     int gridColumns = grid_[0].size();
-    const float rectPadding = 0.1;
+    const float rectPadding = 0.1;//not used yet
     const float scale = 1.0;
     
-    //Figure out number of rows and columns to draw
-    int rowsToDrawCount = std::min<int>(gridRows, height);
-    int columnsToDrawCount = std::min<int>(gridColumns, width);
-
-    //I need to add a concept of scale here.
-    //Figure out the starting indices to draw
-    int rowDrawStartIndex = 0;
-    int columnDrawStartIndex = 0;
-    if(gridRows > height) rowDrawStartIndex = (gridRows - rowsToDrawCount) / 2;
-    if(gridColumns > width) columnDrawStartIndex = (gridColumns - columnsToDrawCount) / 2;
-
+    //Figure out the starting indices and ending indices to draw, so we only draw what is on screen.
+    int rowsToDrawCount = height / activeModelParams_.zoomLevel;
+    int columnsToDrawCount = width / activeModelParams_.zoomLevel;
+    int columnDrawStartIndex = -(int)(((double)activeModelParams_.displacementX / activeModelParams_.zoomLevel));
+    int rowDrawStartIndex = -(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
+    
     int rowDrawEndIndex = rowDrawStartIndex + rowsToDrawCount - 1;
+    if(rowDrawEndIndex >= gridRows) rowDrawEndIndex = gridRows - 1;
     int columnDrawEndIndex = columnDrawStartIndex + columnsToDrawCount - 1;
-
-    //Determine rect size
-    //const int rectWidth = int(scale * ((float)width / (float)columnsToDrawCount));
+    if(columnDrawEndIndex >= gridColumns) columnDrawEndIndex = gridColumns - 1;
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-    //This allows for it to be centered when it is smaller than the window.
-    int drawStartX = posX + activeModelParams_.displacementX + (width - columnsToDrawCount) / 2;
-    int drawStartY = posY + activeModelParams_.displacementY + (height - rowsToDrawCount) / 2;
-    //Set to zero if model is larger than window.
-    //if(drawStartX < 0) drawStartX = 0;
-    //if(drawStartY < 0) drawStartY = 0;
-    //I should also check for maximum.
-
-    //Hopefully this iterates just over the cells that are visible.
-    //I need to test this.. 
     for(int rowIndex = rowDrawStartIndex; rowIndex <= rowDrawEndIndex; rowIndex++)
 	{
+        if (rowIndex < 0) continue;
 		for(int columnIndex = columnDrawStartIndex; columnIndex <= columnDrawEndIndex; columnIndex++)
 		{
+            if (columnIndex < 0) continue;
 			if(grid_[rowIndex][columnIndex] == aliveValue_)
 			{
+                //I might be able to add the remainder of the displacement to get smoother panning...
                 SDL_Rect rect = 
                 { 
-                    drawStartX + activeModelParams_.zoomLevel * (columnIndex - columnDrawStartIndex), 
-                    drawStartY + activeModelParams_.zoomLevel * (rowIndex - rowDrawStartIndex),
+                    activeModelParams_.zoomLevel * (columnIndex - columnDrawStartIndex),
+                    activeModelParams_.zoomLevel * (rowIndex - rowDrawStartIndex),
                     activeModelParams_.zoomLevel,
                     activeModelParams_.zoomLevel
                 };
@@ -147,11 +131,23 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
 			}
 		}
 	}
+    
 }
 
 void CpuModel::drawImGuiWidgets(const bool isModelRunning)
 {
     ImGuiInputTextFlags modelRunningFlag = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+
+    ImGui::SliderInt(
+        "X displacement",
+        &activeModelParams_.displacementX,
+        -500,
+        500);
+    ImGui::SliderInt(
+        "Y displacement",
+        &activeModelParams_.displacementY,
+        -500,
+        500);
 
     if (ImGui::CollapsingHeader("CPU Model Parameters")) {
 
@@ -241,12 +237,16 @@ void CpuModel::drawImGuiWidgets(const bool isModelRunning)
     //}
 }
 
-void CpuModel::handleSDLEvent(const SDL_Event& event)
+//TODO:: I might not need the renderer.
+void CpuModel::handleSDLEvent(const SDL_Event& event, SDL_Renderer* renderer)
 {
+    //TODO::I need to control behavior to know if the mouse is inside or outside of the IMGUI menu. 
+    //TODO::I need to control behavior to know if the mouse is inside or outside of the IMGUI menu.
     int x,y;
     int mouseButtonState = SDL_GetMouseState(&x, &y);
     if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
     {
+        //TODO: should I make sure that the mouse is in the viewport space? 
         //Change displacement
         activeModelParams_.displacementX += event.motion.xrel;
         activeModelParams_.displacementY += event.motion.yrel;
@@ -257,14 +257,29 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 	{
 		//Zoom
         //TODO:: only allow scales that are a multiple of pixels.
-		if (event.wheel.y > 0) {
-			activeModelParams_.zoomLevel *= 1.2;
-            if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) activeModelParams_.zoomLevel = CpuModel::MAX_ZOOM;
-		}
-		else if (event.wheel.y < 0) {
-			activeModelParams_.zoomLevel *= 0.8;
-			if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) activeModelParams_.zoomLevel = CpuModel::MIN_ZOOM;
-		}
+        double newZoomLevel = activeModelParams_.zoomLevel;
+        if (event.wheel.y > 0)
+        {
+            newZoomLevel = activeModelParams_.zoomLevel * 1.2;
+            if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
+        }
+        else if (event.wheel.y < 0) {
+            newZoomLevel = activeModelParams_.zoomLevel * 0.8;
+            if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
+        }
+
+        //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);//WindowSpace
+        int cursorModelIndexX = (int)(((double)mouseX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
+        int cursorModelIndexY = (int)(((double)mouseY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
+        
+        //Calculate the new displacement, trying to keep the model in the same position relative to the cursor. 
+        //This works MOSTLY but drifts more than I would like. 
+        activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mouseX);
+        activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mouseY);
+
+        activeModelParams_.zoomLevel = newZoomLevel;
 	}
 }
 

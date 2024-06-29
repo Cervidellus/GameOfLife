@@ -83,7 +83,7 @@ void Core::processEvents_() {
         }
         //In the future, I would like an event manager where you can register objects to receive events.
 
-        cpuModel_.handleSDLEvent(event);
+        cpuModel_.handleSDLEvent(event, gui_.mainWindow.sdlRenderer);
 
         gui_.mainWindow.processEvent(event);
     }

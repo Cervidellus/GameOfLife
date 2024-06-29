@@ -18,6 +18,7 @@ struct ModelParameters {
 	int minHeight = 10;
 	std::vector<std::pair <int, int>> aliveCells = {};
 	std::string runLengthEncoding = "";
+	//displacement of model in viewport space
 	int displacementX = 0;
 	int displacementY = 0;
 	double zoomLevel = 1.0f;

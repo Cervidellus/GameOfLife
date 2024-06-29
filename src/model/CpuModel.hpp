@@ -28,7 +28,7 @@ public:
 
 	void drawImGuiWidgets(const bool isModelRunning) override;
 
-	void handleSDLEvent(const SDL_Event& event) override;
+	void handleSDLEvent(const SDL_Event& event, SDL_Renderer* renderer) override;
 
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();
@@ -51,13 +51,16 @@ private:
 		//false,
 		true,
 		//60,
-		1260,
-		720
+		400,
+		400
 	};
 	//My intention is that 0 is dead, 255 is alive, and in between numbers can either be the amount of time alive or the amount of time dead.
 	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
 	int aliveValue_ = 255;
-	int deadValue_ = 0; \
+	int deadValue_ = 0;
+
+	int viewportWidth_ = 100; 
+	int viewportHeight_ = 100;
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
 };
