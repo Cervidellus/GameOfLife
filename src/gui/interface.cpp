@@ -59,9 +59,28 @@ void Interface::endDraw(SDL_Renderer* renderer) {
     auto imGuiWindowPos = ImGui::GetWindowPos();
     imGuiRect_ = SDL_Rect{ (int)imGuiWindowPos.x, (int)imGuiWindowPos.y, (int)imGuiMax.x, (int)imGuiMax.y };
 
+    //std::cout  << ImGui::IsWindowFocused() << "\n";// only changes after a mouse click
+    //std::cout << ImGui::IsAnyItemHovered() << "\n";//doesn;t consider window an item
+    //std::cout << ImGui::IsMouseHoveringRect() << "\n";//need the rect of everything...
+    
+     
+    //This would work except when window is getting resized.
+    //std::cout  << ImGui::IsWindowHovered() << "\n";
+
+    //This should work.
+    std::cout << ImGui::IsAnyItemActive() << "\n";
+
+
+
+
+
     ImGui::End();
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+}
+
+bool Interface::isAnyItemActive() {
+    return ImGui::IsAnyItemActive();
 }
 
 bool Interface::isPointInOverlay(int x, int y)
@@ -70,7 +89,7 @@ bool Interface::isPointInOverlay(int x, int y)
     if (x >= imGuiRect_.x && x <= imGuiRect_.x + imGuiRect_.w) {
         if (y >= imGuiRect_.y && y <= imGuiRect_.y + imGuiRect_.h) pointInOverlay = true;
     }
-    std::cout << pointInOverlay << " mousepos:" << x << " imGui.x" << imGuiRect_.x << " imGui.w" << imGuiRect_.w << "\n";
+    //std::cout << pointInOverlay << " mousepos:" << x << " imGui.x" << imGuiRect_.x << " imGui.w" << imGuiRect_.w << "\n";
 
     return pointInOverlay;
 }

@@ -47,6 +47,9 @@ class Interface {
 		//Mouse related events need to know if the mouse cursor overlaps the overlay. 
 		bool isPointInOverlay(int x, int y);
 
+		//Can be used to determine if ImGui frame is being interacted with.
+		bool isAnyItemActive();
+
 	private:
 		bool isInitialized_ = false;
 		SDL_Rect imGuiRect_{0, 0, 0, 0};

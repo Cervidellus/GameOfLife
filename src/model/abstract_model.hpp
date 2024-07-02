@@ -34,11 +34,11 @@ public:
 	virtual void drawImGuiWidgets(const bool isModelRunning) = 0;
 
 	virtual void handleSDLEvent(
-		const SDL_Event& event, 
-		const int& mousePosX,
-		const int& mousePosY,
-		const int& mouseButtonState,
-		const bool& isCursorInOverlay
+		const SDL_Event& event
+		//const int& mousePosX,
+		//const int& mousePosY,
+		//const int& mouseButtonState,
+		//const bool& isCursorInOverlay
 		){};
 
 	//Scale from 0 to 1

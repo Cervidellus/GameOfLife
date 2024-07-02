@@ -239,11 +239,11 @@ void CpuModel::drawImGuiWidgets(const bool isModelRunning)
 
 //TODO:: I might not need the renderer.
 void CpuModel::handleSDLEvent(
-    const SDL_Event& event,
-    const int& mousePosX,
-    const int& mousePosY,
-    const int& mouseButtonState,
-    const bool& isCursorInOverlay
+    const SDL_Event& event
+    //const int& mousePosX,
+    //const int& mousePosY,
+    //const int& mouseButtonState
+    //const bool& isCursorInOverlay
 )
 {
  
@@ -255,8 +255,8 @@ void CpuModel::handleSDLEvent(
     //Or I can just pass a rect every time the method is called. This results in a small allocation every time an event is passed, which is constantly. 
     //I could limit the types of events that get passed to CpuHandler to reduce some calls.. honestly it is probably not a big deal.
     ////
-    //int x,y;
-    //int mouseButtonState = SDL_GetMouseState(&x, &y);
+    int mousePosX, mousePosY;
+    int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
     //////auto widgetViewport = ImGui::GetMainViewport();
     //////ImGui::GetCurrentContext();
     //////auto imGuiMin = ImGui::GetWindowContentRegionMin();//exception because frame is not currently being drawn.
@@ -272,7 +272,7 @@ void CpuModel::handleSDLEvent(
     ////if (x >= imGuiMin.x && x <= imGuiMax.x && y >= imGuiMin.y && y <= imGuiMax.y) isPointInOverlay = true;
 
     //widgetViewport.
-    if (!isCursorInOverlay)
+    if (!ImGui::IsAnyItemActive())
     {
         if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
         {

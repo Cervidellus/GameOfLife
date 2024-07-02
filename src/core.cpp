@@ -88,15 +88,8 @@ void Core::processEvents_() {
         //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
         //e.g. so that something not processing a mouse movement event won't have to process it. 
 
-        int mousePosX, mousePosY;
-        int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-        cpuModel_.handleSDLEvent(
-            event, 
-            mousePosX,
-            mousePosY,
-            mouseButtonState,
-            gui_.interface.isPointInOverlay(mousePosX, mousePosY)
-        );
+
+        cpuModel_.handleSDLEvent(event);
 
         gui_.mainWindow.processEvent(event);
     }

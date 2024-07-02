@@ -20,11 +20,11 @@ public:
 	void update() override;
 
 	void handleSDLEvent(
-		const SDL_Event& event,
-		const int& mousePosX,
-		const int& mousePosY,
-		const int& mouseButtonState,
-		const bool& isCursorInOverlay
+		const SDL_Event& event
+		//const int& mousePosX,
+		//const int& mousePosY,
+		//const int& mouseButtonState,
+		//const bool& isCursorInOverlay
 	);
 
 	void draw(
