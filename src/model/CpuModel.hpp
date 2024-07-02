@@ -19,6 +19,14 @@ public:
 	//void processEvents(const SDL_Event& event) override;
 	void update() override;
 
+	void handleSDLEvent(
+		const SDL_Event& event,
+		const int& mousePosX,
+		const int& mousePosY,
+		const int& mouseButtonState,
+		const bool& isCursorInOverlay
+	);
+
 	void draw(
 		SDL_Renderer* renderer, 
 		const int posX, 
@@ -27,8 +35,6 @@ public:
 		const int height) override;
 
 	void drawImGuiWidgets(const bool isModelRunning) override;
-
-	void handleSDLEvent(const SDL_Event& event, SDL_Renderer* renderer) override;
 
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();

@@ -7,35 +7,34 @@
 
 #include <functional>
 #include <memory>
+#include <SDL2/SDL_rect.h>
 
 //class ModelPresets::ModelPresetName;
 struct SDL_Window;
 struct SDL_Renderer;
-class SDL_Texture;
 
 class Interface {
 	public:
-		Interface();
+		Interface() {};
 		~Interface();
 
-		bool init(
-			SDL_Window* window, 
-			SDL_Renderer* renderer,
-			std::function<void(ModelParameters presetParameters)> presetCallback,
-			std::function<SDL_Texture*()> getWindowTextureCallback);
+		//bool init(
+		//	SDL_Window* window, 
+		//	SDL_Renderer* renderer
+		//);
 
 		//I should make separate update and render functions.
 		//I have some kind of callback for when inividual parameters are changed..
 
 		//render should just take a modelParameters reference
 
-		void draw(
-			SDL_Renderer* renderer,
-			bool& modelRunning,
-			int& desiredModelFPS,
-			ModelParameters& modelParameters,
-			const int measuredModelFPS = 0
-			);
+		//void draw(
+		//	SDL_Renderer* renderer,
+		//	bool& modelRunning,
+		//	int& desiredModelFPS,
+		//	ModelParameters& modelParameters,
+		//	const int measuredModelFPS = 0
+		//	);
 
 		void startDraw(
 			bool& modelRunning,
@@ -45,10 +44,13 @@ class Interface {
 
 		void endDraw(SDL_Renderer* renderer);
 
+		//Mouse related events need to know if the mouse cursor overlaps the overlay. 
+		bool isPointInOverlay(int x, int y);
+
 	private:
 		bool isInitialized_ = false;
-		std::unique_ptr<std::function<void(ModelParameters presetParameters)>> presetCallback_;
-		std::unique_ptr<std::function<SDL_Texture*()>> getWindowTextureCallback_;
+		SDL_Rect imGuiRect_{0, 0, 0, 0};
+
 };
 
 #endif //GAMEOFLIFE_INTERFACE_HPP

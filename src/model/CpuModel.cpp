@@ -238,49 +238,82 @@ void CpuModel::drawImGuiWidgets(const bool isModelRunning)
 }
 
 //TODO:: I might not need the renderer.
-void CpuModel::handleSDLEvent(const SDL_Event& event, SDL_Renderer* renderer)
+void CpuModel::handleSDLEvent(
+    const SDL_Event& event,
+    const int& mousePosX,
+    const int& mousePosY,
+    const int& mouseButtonState,
+    const bool& isCursorInOverlay
+)
 {
-    //TODO::I need to control behavior to know if the mouse is inside or outside of the IMGUI menu. 
+ 
     //TODO::I need to control behavior to know if the mouse is inside or outside of the IMGUI menu.
-    int x,y;
-    int mouseButtonState = SDL_GetMouseState(&x, &y);
-    if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
+
+    //I can get the mouse state here. 
+    //I can either have CpuModel have a callback so it can grab the info when it needs it.
+    //This will reduce the number of calls to get the status, but makes code more complicated and less readable.
+    //Or I can just pass a rect every time the method is called. This results in a small allocation every time an event is passed, which is constantly. 
+    //I could limit the types of events that get passed to CpuHandler to reduce some calls.. honestly it is probably not a big deal.
+    ////
+    //int x,y;
+    //int mouseButtonState = SDL_GetMouseState(&x, &y);
+    //////auto widgetViewport = ImGui::GetMainViewport();
+    //////ImGui::GetCurrentContext();
+    //////auto imGuiMin = ImGui::GetWindowContentRegionMin();//exception because frame is not currently being drawn.
+    //////auto imGuiMax = ImGui::GetWindowContentRegionMax();//exception because frame is not currently being drawn.
+    ////auto imGuiSize = ImGui::GetIO().DisplaySize;
+    ////auto imGuiWindowPos = ImGui::GetWindowPos();//exception because frame is not currently being drawn.
+
+    ////auto drawData = ImGui::GetDrawData();
+    ////auto disSize = drawData->DisplaySize;//The whole window
+    ////auto disPos = drawData->DisplayPos;//the whole window
+
+    //bool isPointInOverlay = false;
+    ////if (x >= imGuiMin.x && x <= imGuiMax.x && y >= imGuiMin.y && y <= imGuiMax.y) isPointInOverlay = true;
+
+    //widgetViewport.
+    if (!isCursorInOverlay)
     {
-        //TODO: should I make sure that the mouse is in the viewport space? 
-        //Change displacement
-        activeModelParams_.displacementX += event.motion.xrel;
-        activeModelParams_.displacementY += event.motion.yrel;
-        //Check that it is within bounds of a maximum displacement
-
-    }
-    else if (event.type == SDL_MOUSEWHEEL)
-	{
-		//Zoom
-        //TODO:: only allow scales that are a multiple of pixels.
-        double newZoomLevel = activeModelParams_.zoomLevel;
-        if (event.wheel.y > 0)
+        if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
         {
-            newZoomLevel = activeModelParams_.zoomLevel * 1.2;
-            if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
-        }
-        else if (event.wheel.y < 0) {
-            newZoomLevel = activeModelParams_.zoomLevel * 0.8;
-            if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
-        }
 
-        //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
-        int mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);//WindowSpace
-        int cursorModelIndexX = (int)(((double)mouseX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
-        int cursorModelIndexY = (int)(((double)mouseY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
-        
-        //Calculate the new displacement, trying to keep the model in the same position relative to the cursor. 
-        //This works MOSTLY but drifts more than I would like. 
-        activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mouseX);
-        activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mouseY);
+            //TODO: should I make sure that the mouse is in the viewport space? 
+            //Change displacement
+            activeModelParams_.displacementX += event.motion.xrel;
+            activeModelParams_.displacementY += event.motion.yrel;
+            //Check that it is within bounds of a maximum displacement
 
-        activeModelParams_.zoomLevel = newZoomLevel;
-	}
+
+        }
+        else if (event.type == SDL_MOUSEWHEEL)
+        {
+            //Zoom
+            //TODO:: only allow scales that are a multiple of pixels.
+            double newZoomLevel = activeModelParams_.zoomLevel;
+            if (event.wheel.y > 0)
+            {
+                newZoomLevel = activeModelParams_.zoomLevel * 1.2;
+                if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
+            }
+            else if (event.wheel.y < 0) {
+                newZoomLevel = activeModelParams_.zoomLevel * 0.8;
+                if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
+            }
+
+            //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
+            //int mouseX, mouseY;
+            //SDL_GetMouseState(&mouseX, &mouseY);//WindowSpace
+            int cursorModelIndexX = (int)(((double)mousePosX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
+            int cursorModelIndexY = (int)(((double)mousePosY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
+
+            //Calculate the new displacement, trying to keep the model in the same position relative to the cursor. 
+            //This works MOSTLY but drifts more than I would like. 
+            activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mousePosX);
+            activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mousePosY);
+
+            activeModelParams_.zoomLevel = newZoomLevel;
+        }
+    }
 }
 
 void CpuModel::generateModel_(const ModelParameters& params) {

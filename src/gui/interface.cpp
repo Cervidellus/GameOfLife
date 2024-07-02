@@ -9,23 +9,23 @@
 #include <imgui.h>
 
 
-Interface::Interface() {
-    std::cout << "Interface created" << std::endl;
-}
+//Interface::Interface() {
+//    std::cout << "Interface created" << std::endl;
+//}
 
-
-bool Interface::init(
-    SDL_Window* window, 
-    SDL_Renderer* renderer,
-    std::function<void(ModelParameters presetParameters)> presetCallback, 
-    std::function<SDL_Texture* ()> getWindowTextureCallback)
-{
-    presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
-    getWindowTextureCallback_ = std::make_unique<std::function<SDL_Texture*()>>(std::move(getWindowTextureCallback));
-
-    isInitialized_ = true;
-	return true;
-}
+//bool Interface::init(
+//    SDL_Window* window, 
+//    SDL_Renderer* renderer
+//    //std::function<void(ModelParameters presetParameters)> presetCallback, 
+//    //std::function<SDL_Texture* ()> getWindowTextureCallback
+//)
+//{
+//    //presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
+//    //getWindowTextureCallback_ = std::make_unique<std::function<SDL_Texture*()>>(std::move(getWindowTextureCallback));
+//
+//    isInitialized_ = true;
+//	return true;
+//}
 
 void Interface::startDraw(
     bool& modelRunning,
@@ -52,133 +52,28 @@ void Interface::startDraw(
 }
 
 void Interface::endDraw(SDL_Renderer* renderer) {
+    //Grab the position and size of the rendered area. Seem to give a size, but not the position?
+    //Need to offset dimensions by window position.
+    //auto imGuiMin = ImGui::GetWindowContentRegionMin();
+    auto imGuiMax = ImGui::GetWindowContentRegionMax();
+    auto imGuiWindowPos = ImGui::GetWindowPos();
+    imGuiRect_ = SDL_Rect{ (int)imGuiWindowPos.x, (int)imGuiWindowPos.y, (int)imGuiMax.x, (int)imGuiMax.y };
+
     ImGui::End();
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
-void Interface::draw(
-    SDL_Renderer* renderer,
-    bool& modelRunning,
-    int& desiredModelFPS,
-    ModelParameters& modelParams,
-    const int measuredModelFPS
-)
+bool Interface::isPointInOverlay(int x, int y)
 {
-    //IMGUI
-    ImGui_ImplSDLRenderer2_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::Begin("Options");
-    ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 120);
-    ImGui::Text("Measured FPS: %d", measuredModelFPS);
-    if (modelRunning) {
-        if (ImGui::Button("Pause Model")) {
-            modelRunning = false;
-        }
+    bool pointInOverlay = false;
+    if (x >= imGuiRect_.x && x <= imGuiRect_.x + imGuiRect_.w) {
+        if (y >= imGuiRect_.y && y <= imGuiRect_.y + imGuiRect_.h) pointInOverlay = true;
     }
-    else {
-        if (ImGui::Button("Start Model")) {
-            modelRunning = true;
-		}
-	}
+    std::cout << pointInOverlay << " mousepos:" << x << " imGui.x" << imGuiRect_.x << " imGui.w" << imGuiRect_.w << "\n";
 
-    ImGuiInputTextFlags modelRunningFlag = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
-    
-    if (ImGui::CollapsingHeader("Parameters")) {
-
-        //TODO:: limit to positive values
-        //TODO:: ensure that input is 4-byte aligned
-        ImGui::InputInt("Width", &modelParams.modelWidth, 100, 100, modelRunningFlag);
-        ImGui::InputInt("Height", &modelParams.modelHeight, 100, 100, modelRunningFlag);
-
-        ImGui::SliderFloat("Model Fill Factor", &modelParams.fillFactor, 0.001, 1);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-        //if (ImGui::Button("Generate Model")) {
-        //    if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
-        //}
-        //ImGui::SameLine();
-        //if (ImGui::Button("Start Model")) {
-        //    modelRunning = true;
-        //}
-
-        //ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
-
-        if (ImGui::InputInt("Conway Rule 1 Cutoff", &modelParams.rule1, 1, 1))
-        {
-            if (modelParams.rule1 < 0) modelParams.rule1 = 0;
-            if (modelParams.rule1 > 8) modelParams.rule1 = 8;
-            if (modelParams.rule1 >= modelParams.rule3) modelParams.rule1 = modelParams.rule3 - 1;
-        };
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
-
-        if (ImGui::InputInt("Conway Rule 3 Cutoff", &modelParams.rule3, 1, 1))
-        {
-            if (modelParams.rule3 < 1) modelParams.rule3 = 1;
-            if (modelParams.rule3 > 8) modelParams.rule3 = 8;
-            if (modelParams.rule3 <= modelParams.rule1) modelParams.rule3 = modelParams.rule1 + 1;
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
-
-        if (ImGui::InputInt("Conway Rule 4", &modelParams.rule4, 1, 1))
-        {
-            if (modelParams.rule4 < 0) modelParams.rule4 = 0;
-            if (modelParams.rule4 > 8) modelParams.rule4 = 8;
-        };
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
-
-    }
-
-    if (ImGui::CollapsingHeader("Presets"))
-    {
-        if (ImGui::Button("random")) {
-			if(presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
-		}
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("A randomly generated field to observe Conway's Game of Life.");
-
-        if (ImGui::Button("Swiss Cheese")) {
-			if(presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
-		}
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
-
-        if (ImGui::Button("Decomposition")) {
-			if(presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
-		}
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
-
-        if (ImGui::Button("Blinker")) {
-            if (presetCallback_) (*presetCallback_)(ModelPresets::blinkerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest oscillator in Conway's Game of Life.");
-
-        if (ImGui::Button("Lightweight Spaceship")) {
-			if (presetCallback_) (*presetCallback_)(ModelPresets::lightweightSpaceshipParams);
-		}
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest orthoganal spaceship in Conway's Game of Life.");
-
-        if (ImGui::Button("Blocker")) {
-            if (presetCallback_) (*presetCallback_)(ModelPresets::blockerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blocker.");
-
-        if (ImGui::Button("Nihonium")) {
-            if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
-
-        if (ImGui::Button("Gabriel's P138 Oscillator")) {
-            if (presetCallback_) (*presetCallback_)(ModelPresets::gabrielsPOneThirtyEightParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cool period 138 oscillator discovered by Gabriel Nivasch on October 13, 2002.");
-	}
-
-    ImGui::End();
-    ImGui::Render();
-
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+    return pointInOverlay;
 }
-
 
 Interface::~Interface() {
     if (isInitialized_) {

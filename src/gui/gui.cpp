@@ -9,8 +9,7 @@
 GUI::GUI() {};
 
 bool GUI::initialize(
-	std::string windowTitle,
-	std::function<void(ModelParameters presetParameters)> presetCallback
+	std::string windowTitle
 )
 {
 	mainWindow.initialize(windowTitle.c_str());
@@ -26,12 +25,7 @@ bool GUI::initialize(
 	if (!ImGui_ImplSDL2_InitForSDLRenderer(mainWindow.sdlWindow, mainWindow.sdlRenderer)) return false;
 	if (!ImGui_ImplSDLRenderer2_Init(mainWindow.sdlRenderer)) return false;
 
-	interface.init(
-		mainWindow.sdlWindow,
-		mainWindow.sdlRenderer,
-		presetCallback,
-		[&]() {return mainWindow.getTextureFromWindow(SDL_PIXELFORMAT_RGBA8888); }
-	);
+	//interface.init(mainWindow.sdlWindow, mainWindow.sdlRenderer);
 
 	return true;
 };

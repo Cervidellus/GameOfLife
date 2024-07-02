@@ -50,12 +50,12 @@ bool Core::init_() {
 
     cpuModel_.initialize();
 
-    gui_.initialize(
-		"Game of Life",
-		[&](ModelParameters params) {}
-	);
+    gui_.initialize("Game of Life");
 
     coreAppRunning_ = true;
+    //Need to draw once so that ImGui gets initialized before events get processed
+    render_();
+
     return true;
 }
 
@@ -69,9 +69,12 @@ void Core::processEvents_() {
 
     //each event handler function will recieve the SDL_Event as well as a global state struct containing e.g. current button states.
     //Or maybe I  can grab the state from SDL directly?
+
+    
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
+
         switch(event.type)
         {
             case SDL_QUIT:
@@ -82,8 +85,18 @@ void Core::processEvents_() {
                 break;
         }
         //In the future, I would like an event manager where you can register objects to receive events.
+        //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
+        //e.g. so that something not processing a mouse movement event won't have to process it. 
 
-        cpuModel_.handleSDLEvent(event, gui_.mainWindow.sdlRenderer);
+        int mousePosX, mousePosY;
+        int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
+        cpuModel_.handleSDLEvent(
+            event, 
+            mousePosX,
+            mousePosY,
+            mouseButtonState,
+            gui_.interface.isPointInOverlay(mousePosX, mousePosY)
+        );
 
         gui_.mainWindow.processEvent(event);
     }

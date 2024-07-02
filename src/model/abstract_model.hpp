@@ -33,7 +33,13 @@ public:
 	//Does not include begin or end frame, so widgets can slot into an existing frame.
 	virtual void drawImGuiWidgets(const bool isModelRunning) = 0;
 
-	virtual void handleSDLEvent(const SDL_Event& event, SDL_Renderer* renderer){};
+	virtual void handleSDLEvent(
+		const SDL_Event& event, 
+		const int& mousePosX,
+		const int& mousePosY,
+		const int& mouseButtonState,
+		const bool& isCursorInOverlay
+		){};
 
 	//Scale from 0 to 1
 	void setRenderScale(double scale)
