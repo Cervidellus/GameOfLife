@@ -31,15 +31,9 @@ public:
 	//I don't think the different drawing strategies belong in the abstract class though.
 	virtual void draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height) = 0;
 	//Does not include begin or end frame, so widgets can slot into an existing frame.
-	virtual void drawImGuiWidgets(const bool isModelRunning) = 0;
+	virtual void drawImGuiWidgets(const bool& isModelRunning) = 0;
 
-	virtual void handleSDLEvent(
-		const SDL_Event& event
-		//const int& mousePosX,
-		//const int& mousePosY,
-		//const int& mouseButtonState,
-		//const bool& isCursorInOverlay
-		){};
+	virtual void handleSDLEvent(const SDL_Event& event){};
 
 	//Scale from 0 to 1
 	void setRenderScale(double scale)

@@ -8,25 +8,6 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 
-
-//Interface::Interface() {
-//    std::cout << "Interface created" << std::endl;
-//}
-
-//bool Interface::init(
-//    SDL_Window* window, 
-//    SDL_Renderer* renderer
-//    //std::function<void(ModelParameters presetParameters)> presetCallback, 
-//    //std::function<SDL_Texture* ()> getWindowTextureCallback
-//)
-//{
-//    //presetCallback_ = std::make_unique<std::function<void(ModelParameters presetParameters)>>(std::move(presetCallback));
-//    //getWindowTextureCallback_ = std::make_unique<std::function<SDL_Texture*()>>(std::move(getWindowTextureCallback));
-//
-//    isInitialized_ = true;
-//	return true;
-//}
-
 void Interface::startDraw(
     bool& modelRunning,
     int& desiredModelFPS,
@@ -52,47 +33,23 @@ void Interface::startDraw(
 }
 
 void Interface::endDraw(SDL_Renderer* renderer) {
-    //Grab the position and size of the rendered area. Seem to give a size, but not the position?
-    //Need to offset dimensions by window position.
-    //auto imGuiMin = ImGui::GetWindowContentRegionMin();
-    auto imGuiMax = ImGui::GetWindowContentRegionMax();
-    auto imGuiWindowPos = ImGui::GetWindowPos();
-    imGuiRect_ = SDL_Rect{ (int)imGuiWindowPos.x, (int)imGuiWindowPos.y, (int)imGuiMax.x, (int)imGuiMax.y };
-
-    //std::cout  << ImGui::IsWindowFocused() << "\n";// only changes after a mouse click
-    //std::cout << ImGui::IsAnyItemHovered() << "\n";//doesn;t consider window an item
-    //std::cout << ImGui::IsMouseHoveringRect() << "\n";//need the rect of everything...
-    
-     
-    //This would work except when window is getting resized.
-    //std::cout  << ImGui::IsWindowHovered() << "\n";
-
-    //This should work.
-    std::cout << ImGui::IsAnyItemActive() << "\n";
-
-
-
-
-
     ImGui::End();
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
-bool Interface::isAnyItemActive() {
-    return ImGui::IsAnyItemActive();
-}
-
-bool Interface::isPointInOverlay(int x, int y)
-{
-    bool pointInOverlay = false;
-    if (x >= imGuiRect_.x && x <= imGuiRect_.x + imGuiRect_.w) {
-        if (y >= imGuiRect_.y && y <= imGuiRect_.y + imGuiRect_.h) pointInOverlay = true;
-    }
-    //std::cout << pointInOverlay << " mousepos:" << x << " imGui.x" << imGuiRect_.x << " imGui.w" << imGuiRect_.w << "\n";
-
-    return pointInOverlay;
-}
+//bool Interface::isAnyItemActive() {
+//    return ImGui::IsAnyItemActive();
+//}
+//
+//bool Interface::isPointInOverlay(int x, int y)
+//{
+//    bool pointInOverlay = false;
+//    if (x >= imGuiRect_.x && x <= imGuiRect_.x + imGuiRect_.w) {
+//        if (y >= imGuiRect_.y && y <= imGuiRect_.y + imGuiRect_.h) pointInOverlay = true;
+//    }
+//    return pointInOverlay;
+//}
 
 Interface::~Interface() {
     if (isInitialized_) {

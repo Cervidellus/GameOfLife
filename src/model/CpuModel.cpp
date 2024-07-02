@@ -1,10 +1,9 @@
 #include "CpuModel.hpp"
+#include "presets/modelpresets.hpp"
 
 #include <iostream>
 #include <random>
 
-//#include <imgui_impl_sdl2.h>
-//#include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 #include <SDL.h>
 
@@ -134,7 +133,7 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     
 }
 
-void CpuModel::drawImGuiWidgets(const bool isModelRunning)
+void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 {
     ImGuiInputTextFlags modelRunningFlag = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
 
@@ -158,15 +157,15 @@ void CpuModel::drawImGuiWidgets(const bool isModelRunning)
 
         ImGui::SliderFloat("Model Fill Factor", &activeModelParams_.fillFactor, 0.001, 1);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-        //if (ImGui::Button("Generate Model")) {
-        //    if(generateModelCallback_) (*generateModelCallback_)(ModelPreset::random);
-        //}
+        if (ImGui::Button("Generate Model")) {
+            generateModel_(activeModelParams_);
+        }
         //ImGui::SameLine();
         //if (ImGui::Button("Start Model")) {
-        //    modelRunning = true;
+        //    isModelRunning = true;
         //}
 
-        //ImGuiInputTextFlags ruleInputFlags = modelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+        ImGuiInputTextFlags ruleInputFlags = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
 
         if (ImGui::InputInt("Conway Rule 1 Cutoff", &activeModelParams_.rule1, 1, 1))
         {
@@ -193,96 +192,62 @@ void CpuModel::drawImGuiWidgets(const bool isModelRunning)
 
     }
 
-    //if (ImGui::CollapsingHeader("Presets"))
-    //{
-    //    if (ImGui::Button("random")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::randomParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("A randomly generated field to observe Conway's Game of Life.");
+    if (ImGui::CollapsingHeader("presets"))
+    {
+        if (ImGui::Button("random")) {
+            generateModel_(ModelPresets::randomParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("a randomly generated field to observe conway's game of life.");
 
-    //    if (ImGui::Button("Swiss Cheese")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::swissCheeseParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+        if (ImGui::Button("swiss cheese")) {
+            generateModel_(ModelPresets::swissCheeseParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("modified rules can produce different results.");
 
-    //    if (ImGui::Button("Decomposition")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::decompositionParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Modified rules can produce different results.");
+        if (ImGui::Button("decomposition")) {
+            generateModel_(ModelPresets::decompositionParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("modified rules can produce different results.");
 
-    //    if (ImGui::Button("Blinker")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::blinkerParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest oscillator in Conway's Game of Life.");
+        if (ImGui::Button("blinker")) {
+            generateModel_(ModelPresets::blinkerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest oscillator in conway's game of life.");
 
-    //    if (ImGui::Button("Lightweight Spaceship")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::lightweightSpaceshipParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The smallest orthoganal spaceship in Conway's Game of Life.");
+        if (ImGui::Button("lightweight spaceship")) {
+            generateModel_(ModelPresets::lightweightSpaceshipParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest orthoganal spaceship in conway's game of life.");
 
-    //    if (ImGui::Button("Blocker")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::blockerParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blocker.");
+        if (ImGui::Button("blocker")) {
+            generateModel_(ModelPresets::blockerParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("blocker.");
 
-    //    if (ImGui::Button("Nihonium")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::nihoniumParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Nihonium emu.");
+        if (ImGui::Button("nihonium")) {
+            generateModel_(ModelPresets::nihoniumParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("nihonium emu.");
 
-    //    if (ImGui::Button("Gabriel's P138 Oscillator")) {
-    //        if (presetCallback_) (*presetCallback_)(ModelPresets::gabrielsPOneThirtyEightParams);
-    //    }
-    //    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Cool period 138 oscillator discovered by Gabriel Nivasch on October 13, 2002.");
-    //}
+        if (ImGui::Button("gabriel's p138 oscillator")) {
+            generateModel_(ModelPresets::gabrielsPOneThirtyEightParams);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("cool period 138 oscillator discovered by gabriel nivasch on october 13, 2002.");
+    }
 }
 
-//TODO:: I might not need the renderer.
-void CpuModel::handleSDLEvent(
-    const SDL_Event& event
-    //const int& mousePosX,
-    //const int& mousePosY,
-    //const int& mouseButtonState
-    //const bool& isCursorInOverlay
-)
+void CpuModel::handleSDLEvent(const SDL_Event& event)
 {
- 
-    //TODO::I need to control behavior to know if the mouse is inside or outside of the IMGUI menu.
-
-    //I can get the mouse state here. 
-    //I can either have CpuModel have a callback so it can grab the info when it needs it.
-    //This will reduce the number of calls to get the status, but makes code more complicated and less readable.
-    //Or I can just pass a rect every time the method is called. This results in a small allocation every time an event is passed, which is constantly. 
-    //I could limit the types of events that get passed to CpuHandler to reduce some calls.. honestly it is probably not a big deal.
-    ////
     int mousePosX, mousePosY;
     int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-    //////auto widgetViewport = ImGui::GetMainViewport();
-    //////ImGui::GetCurrentContext();
-    //////auto imGuiMin = ImGui::GetWindowContentRegionMin();//exception because frame is not currently being drawn.
-    //////auto imGuiMax = ImGui::GetWindowContentRegionMax();//exception because frame is not currently being drawn.
-    ////auto imGuiSize = ImGui::GetIO().DisplaySize;
-    ////auto imGuiWindowPos = ImGui::GetWindowPos();//exception because frame is not currently being drawn.
 
-    ////auto drawData = ImGui::GetDrawData();
-    ////auto disSize = drawData->DisplaySize;//The whole window
-    ////auto disPos = drawData->DisplayPos;//the whole window
-
-    //bool isPointInOverlay = false;
-    ////if (x >= imGuiMin.x && x <= imGuiMax.x && y >= imGuiMin.y && y <= imGuiMax.y) isPointInOverlay = true;
-
-    //widgetViewport.
     if (!ImGui::IsAnyItemActive())
     {
         if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
         {
-
-            //TODO: should I make sure that the mouse is in the viewport space? 
-            //Change displacement
             activeModelParams_.displacementX += event.motion.xrel;
             activeModelParams_.displacementY += event.motion.yrel;
-            //Check that it is within bounds of a maximum displacement
-
+            //TODO:Check that it is within bounds of a maximum displacement
 
         }
         else if (event.type == SDL_MOUSEWHEEL)
@@ -301,8 +266,6 @@ void CpuModel::handleSDLEvent(
             }
 
             //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
-            //int mouseX, mouseY;
-            //SDL_GetMouseState(&mouseX, &mouseY);//WindowSpace
             int cursorModelIndexX = (int)(((double)mousePosX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
             int cursorModelIndexY = (int)(((double)mousePosY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
 

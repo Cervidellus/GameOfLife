@@ -16,16 +16,9 @@ public:
 
 	void initialize() override;
 
-	//void processEvents(const SDL_Event& event) override;
 	void update() override;
 
-	void handleSDLEvent(
-		const SDL_Event& event
-		//const int& mousePosX,
-		//const int& mousePosY,
-		//const int& mouseButtonState,
-		//const bool& isCursorInOverlay
-	);
+	void handleSDLEvent(const SDL_Event& event) override;
 
 	void draw(
 		SDL_Renderer* renderer, 
@@ -34,7 +27,7 @@ public:
 		const int width, 
 		const int height) override;
 
-	void drawImGuiWidgets(const bool isModelRunning) override;
+	void drawImGuiWidgets(const bool& isModelRunning) override;
 
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();
@@ -54,9 +47,7 @@ private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
 	
 	ModelParameters activeModelParams_{
-		//false,
 		true,
-		//60,
 		400,
 		400
 	};
