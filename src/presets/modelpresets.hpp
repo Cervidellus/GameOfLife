@@ -12,31 +12,29 @@
 
 namespace ModelPresets {
 
-	enum class ModelPresetName {
-		random,
-		swiss_cheese,
-		decomposition
-	};
+	//enum class ModelPresetName {
+	//	random,
+	//	swiss_cheese,
+	//	decomposition
+	//};
 
-	constexpr std::string_view getModelPresetStringView(ModelPresetName modelPresetName){
-		switch (modelPresetName) {
-			case ModelPresetName::random:
-				return "random";
-			case ModelPresetName::swiss_cheese:
-				return "swiss_cheese";
-			case ModelPresetName::decomposition:
-				return "decomposition";
-			default:
-				return "unknown";
-		}
-	};
+	//constexpr std::string_view getModelPresetStringView(ModelPresetName modelPresetName){
+	//	switch (modelPresetName) {
+	//		case ModelPresetName::random:
+	//			return "random";
+	//		case ModelPresetName::swiss_cheese:
+	//			return "swiss_cheese";
+	//		case ModelPresetName::decomposition:
+	//			return "decomposition";
+	//		default:
+	//			return "unknown";
+	//	}
+	//};
 
 	const ModelParameters randomParams = ModelParameters();
 
 	const ModelParameters swissCheeseParams = ModelParameters(
-		//false,
 		true,
-		//15,
 		-1,
 		-1,
 		0.9f,
@@ -46,9 +44,7 @@ namespace ModelPresets {
 	);
 
 	const ModelParameters decompositionParams = ModelParameters(
-		//false,
 		true,
-		//40,
 		-1,
 		-1,
 		0.9f,
@@ -58,9 +54,7 @@ namespace ModelPresets {
 	);
 
 	const ModelParameters blinkerParams = ModelParameters(
-		//false,
 		false,
-		//-1,
 		-1,
 		-1,
 		-1,
@@ -69,15 +63,12 @@ namespace ModelPresets {
 		3,
 		3,
 		3,
-		//{ {2, 1}, {2, 2}, {2, 3} }
 		{},
 		"3o!"
 	);
 
 	const ModelParameters lightweightSpaceshipParams = ModelParameters(
-		//false,
 		false,
-		//-1,
 		-1,
 		-1,
 		-1,
@@ -86,15 +77,12 @@ namespace ModelPresets {
 		3,
 		40,
 		40,
-		//{ {0, 1}, {0, 4}, {1, 0}, {2, 0}, {3, 0}, {3, 4}, {4, 0}, {4, 1}, {4, 2}, {4, 3} }
 		{},
 		"bo2bo$o4b$o3bo$4o!"
 	);
 
 	const ModelParameters blockerParams = {
-		//false,
 		false,
-		//-1,
 		-1,
 		-1,
 		-1,
@@ -108,9 +96,7 @@ namespace ModelPresets {
 	};
 
 	const ModelParameters nihoniumParams = {
-		//false,
 	false,
-	//-1,
 	-1,
 	-1,
 	-1,
@@ -128,9 +114,7 @@ namespace ModelPresets {
 	};
 
 const ModelParameters gabrielsPOneThirtyEightParams = {
-	//false,
 	false,
-	//-1,
 	-1,
 	-1,
 	-1,

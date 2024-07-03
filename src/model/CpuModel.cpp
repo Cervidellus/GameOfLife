@@ -240,8 +240,10 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 {
     int mousePosX, mousePosY;
     int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-
-    if (!ImGui::IsAnyItemActive())
+    //ImGui::IsWindowHovered(4) returns true if any window is hovered. If you pass 0, it throws an exception as it does not know the window to check.
+    //std::cout << ImGui::IsWindowHovered(4);
+    
+    if (!ImGui::IsWindowHovered(4) && !ImGui::IsAnyItemActive())
     {
         if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
         {
