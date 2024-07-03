@@ -1,90 +1,80 @@
 #include <core.hpp>
-#include <interface.hpp>
-#include <modelparameters.hpp>
-//#include <modelpresets.hpp>
 
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
 
-Core::Core() {
-    interface_ = std::make_unique<Interface>();
+Core::Core() 
+{
 }
 
 bool Core::run() {
-    if(!init()) return false;
+    if(!init_()) return false;
     int lastDisplayUpdate, lastModelUpdate, now;
     now = lastDisplayUpdate = lastModelUpdate = SDL_GetTicks();
 
     while (coreAppRunning_) {  
         now = SDL_GetTicks();
 
-        processEvents();
-        if (modelRunning_ && now - lastModelUpdate > 1000 / modelFPS_)
+        processEvents_();
+        if (modelRunning_ && now - lastModelUpdate > 1000 / desiredModelFPS_)
         {
-            update();
+            update_();
             measuredModelFPS_ = 1000 / (now - lastModelUpdate);
             lastModelUpdate = now;
         }
         if (now - lastDisplayUpdate > 1000 / displayFPS_)
         {
-            render();
+            render_();
             lastDisplayUpdate = now;
         }
         //wait function so we don't burn too much cpu
-        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / modelFPS_ - (now - lastModelUpdate));
+        int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / desiredModelFPS_ - (now - lastModelUpdate));
         if (waitTime > 0) SDL_Delay(waitTime);
     }
 
     return true;
 }
 
-bool Core::init() {
-    surface_ = generateModelPresetSurface(ModelPresets::randomParams);
+bool Core::init_() {
+    if (!sdlManager_.isInitialized()) {
+		coreAppRunning_ = false;
+		return false;
+	}
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "Error intializing SDL2: " << SDL_GetError() << std::endl;
-        coreAppRunning_ = false;
-        return false;
-    }
-    std::cout << "SDL2 video initialized..." << std::endl;
-    
-    window_ = SDL_CreateWindow(
-        "GameOfLife", 
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        1280, 
-        720, 
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
-        
-    renderer_ = SDL_CreateRenderer(
-        window_, 
-        -1, 
-        SDL_RENDERER_ACCELERATED);
+    cpuModel_.initialize();
 
-    //Make modelwidth and modelheight the same as window size
-    //SDL_GetRendererOutputSize(renderer_, &modelWidth_, &modelHeight_);
-
-    interface_->init(
-        window_, 
-        renderer_,
-        [&](ModelParameters params) {handleGenerateModelRequest(params); }
-    );
+    gui_.initialize("Game of Life");
 
     coreAppRunning_ = true;
+    //Need to draw once so that ImGui gets initialized before events get processed
+    render_();
+
     return true;
 }
 
-void Core::processEvents() {
+void Core::processEvents_() {
+    //Eventually I will have a SDL_Event handler.
+    // It will be able to hold button states that downstream events might need. 
+    // 
+    // 
+    //You will be able to register callbacks for events
+    //For example the sidebar, which uses ImGui, will be able to use ImGui_ImplSDL2_ProcessEvent(&event) as a callback.
+
+    //each event handler function will recieve the SDL_Event as well as a global state struct containing e.g. current button states.
+    //Or maybe I  can grab the state from SDL directly?
+
+    
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
-        //SDL 
+
         switch(event.type)
         {
             case SDL_QUIT:
@@ -94,77 +84,45 @@ void Core::processEvents() {
                 handleSDL_KEYDOWN(event);
                 break;
         }
-        //ImGui
-        ImGui_ImplSDL2_ProcessEvent(&event);
+        //In the future, I would like an event manager where you can register objects to receive events.
+        //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
+        //e.g. so that something not processing a mouse movement event won't have to process it. 
+
+
+        cpuModel_.handleSDLEvent(event);
+
+        gui_.mainWindow.processEvent(event);
     }
 }
 
-void Core::update() {
-    SDL_Surface* previousState = SDL_ConvertSurface(surface_, surface_->format, 0);
-
-    for (int row = 0; row < modelHeight_; row++) {
-        int livingNeighbors = 0;
-        bool cellAlive = false;
-        for (int column = 0; column < modelWidth_; column++) {
-            cellAlive = *((Uint8*)previousState->pixels + row * previousState->pitch + column);
-            livingNeighbors = 0;
-            for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
-                for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
-                    //out of range rows
-                    if (row + neighborRow < 0 || row + neighborRow >= modelHeight_) continue;
-                    //out of range columns
-                    if (column + neighborColumn < 0 || column + neighborColumn >= modelWidth_) continue;
-                    ////center pixel
-                    if (neighborRow == 0 && neighborColumn == 0) continue;
-                    //count
-                    if (*((Uint8*)previousState->pixels + ((row + neighborRow) * previousState->pitch) + column + neighborColumn) == 1) livingNeighbors++;
-                }
-            }
-            
-            //If not alive and has 3 neighbors, become alive
-            if (!cellAlive) {
-                if (livingNeighbors == rule4_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 1;
-            }
-            //If neighbors are less than 2 or more than 3, kill it.
-            else  if(livingNeighbors < rule1_ || livingNeighbors > rule3_) *((Uint8*)surface_->pixels + row * surface_->pitch + column) = 0;
-		}  
-        
-    }
-    SDL_FreeSurface(previousState);
+void Core::update_() {
+    //I might also have a model manager where I can register models, and have the manager call update on all models.
+    cpuModel_.update();
 }
 
-void Core::render() {
-    int windowWidth, windowHeight;
-    SDL_GetRendererOutputSize(renderer_, &windowWidth, &windowHeight);
-    SDL_Rect destinationRect{0, 0, windowWidth, windowWidth};
-
-    interface_->render
-    (
-        modelFPS_,
-        measuredModelFPS_,
-        modelRunning_,
-        fillFactor_,
-        modelWidth_,
-        modelHeight_,
-        rule1_,
-        rule3_,
-        rule4_
-    );
-
-    //Is this the right way, or should I be passing to an existing texture?
-    //SDL_updateTexture could be the way.. 
-    //I won't worry about this for now as this would change if I move to GPU. 
-    auto texture = SDL_CreateTextureFromSurface(renderer_, surface_);
-
-    SDL_SetRenderTarget(renderer_, texture);
-    SDL_SetRenderDrawColor(renderer_, 0, 255, 0, 255);
-    SDL_RenderClear(renderer_);
-     SDL_RenderCopy(renderer_, texture, NULL, &destinationRect);
-    ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer_);
+void Core::render_() {
     
-    SDL_RenderPresent(renderer_);
+    gui_.mainWindow.clear();
 
-    SDL_DestroyTexture(texture);
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &windowWidth, &windowHeight);
+    cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
+
+    //I should have the models provide their interface
+    //But I need to figure out where the data lives.. who owns it?
+    //I think the model should own all of that. 
+    //But how do I call draw on it? 
+    //It woul dbe nice to eventually just call gui_.draw() and have it draw everything.
+    //For that I need to have a callback registered with the model that will draw the interface.
+    //as a part of that abstract class, should I have a drawWidgets function? I can use that as a callback in the gui. 
+    //gui_.interface.draw(gui_.mainWindow.sdlRenderer, modelRunning_, desiredModelFPS_, activeModelParams_, measuredModelFPS_);
+    //bool& modelRunning,
+    //    int& desiredModelFPS,
+    //    const int measuredModelFPS
+    gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
+    cpuModel_.drawImGuiWidgets(modelRunning_);
+    gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);
+    gui_.mainWindow.renderPresent();
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
@@ -179,121 +137,7 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     }
 }
 
-void Core::handleGenerateModelRequest(const ModelParameters& params) {
-    surface_ = generateModelPresetSurface(params);
-}
-
-SDL_Surface* Core::generateModelPresetSurface(const ModelParameters& params) {
-    //First set the members to correspond with the parameters
-    if (params.modelFPS > 0) modelFPS_ = params.modelFPS;
-    if(modelWidth_ < params.minWidth) modelWidth_ = params.minWidth;
-    if(modelHeight_ < params.minHeight) modelHeight_ = params.minHeight;
-    if (params.modelWidth >  0) modelWidth_ = params.modelWidth;
-    if (params.modelHeight > 0) modelHeight_ = params.modelHeight;
-    if (params.fillFactor > 0) fillFactor_ = params.fillFactor;
-    if (params.rule1 > 0) rule1_ = params.rule1;
-    if (params.rule3 > 0) rule3_ = params.rule3;
-    if (params.rule4 > 0) rule4_ = params.rule4;
-
-    //Generate surface from parameters
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, modelWidth_, modelHeight_, 1, SDL_PIXELFORMAT_INDEX8);
-    if (surface == nullptr) {
-        std::cout << "Error creating surface: " << SDL_GetError() << std::endl;
-        return nullptr;
-    }
-    //Set the color palette
-    const SDL_Color colors[2] = {
-        {0, 0, 0, 255},
-        {255, 255, 255, 255}
-    };
-    SDL_SetPaletteColors(surface->format->palette, colors, 0, 2);
-
-    if (params.random) {
-
-        srand(static_cast<unsigned>(time(nullptr)));
-        for (int row = 0; row < modelHeight_; row++) {
-            for (int column = 0; column < modelWidth_; column++) {
-                *((Uint8*)surface->pixels + row * surface->pitch + column) = (rand() < params.fillFactor * (float)RAND_MAX) ? 1 : 0;
-            }
-        }
-    }
-    else {
-        int startColumn = (modelWidth_ / 2) - (params.minWidth / 2);
-        int startRow = modelHeight_ / 2 - (params.minHeight / 2);
-        //std::vector encoding
-        if (params.aliveCells.size() > 0) {
-            for (auto pixel : params.aliveCells) {
-                *((Uint8*)surface->pixels + (startRow + pixel.second) * surface->pitch + startColumn + pixel.first) = 1;
-            }
-        }
-
-        //RLE encoding
-        if (!params.runLengthEncoding.empty()) {
-            populateSurfaceFromRLEString(
-                surface,
-                params.runLengthEncoding,
-                startColumn,
-                startRow
-            );
-        }
-    }
-    return surface;
-}
-
-void Core::populateSurfaceFromRLEString(
-    SDL_Surface* surface,
-    std::string model, 
-    int startColumn, 
-    int startRow) 
-{
-    int row = startRow;
-	int column = startColumn;
-
-    for (std::string::iterator modelIterator = model.begin(); modelIterator != model.end(); modelIterator++) {
-        //First handle the edge cases
-        
-        if(*modelIterator == '!') break;
-
-        int count = 1;
-        if (isdigit(*modelIterator))
-        {
-            std::string stringInteger = "";
-            while (isdigit(*modelIterator) && modelIterator != model.end())
-            {
-                stringInteger += *modelIterator;
-                modelIterator++;
-            }
-            count = std::stoi(stringInteger);
-        }
-        if (*modelIterator == 'b') {
-            for (int i = 0; i < count; i++) {
-                column++;
-            }
-        }
-        else if (*modelIterator == 'o') {
-            for (int i = 0; i < count; i++) {
-                *((Uint8*)surface->pixels + row * surface->pitch + column) = 1;
-                column++;
-            }
-        }
-        else if (*modelIterator == '$')
-		{
-            column = startColumn;
-            for (int i = 0; i < count; i++) {
-                row++;
-            }
-		}
-    }
-}
-
 Core::~Core() {
     //ImGui interface must be deleted before SDL
-    interface_.reset();
-
-    //shutdown SDL
-    SDL_DestroyRenderer(renderer_);
-    SDL_DestroyWindow(window_);
-    SDL_FreeSurface(surface_);
-
-    SDL_Quit();
+    sdlManager_.shutdown();
 }

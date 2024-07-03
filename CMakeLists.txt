@@ -5,9 +5,6 @@ project(gameoflife LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-message(STATUS CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE})
-
-
 set(VCPKG_DIR $ENV{VCPKG_DIR})
 if(NOT VCPKG_DIR)
     message(FATAL_ERROR "VCPKG_DIR is not set")
@@ -20,17 +17,26 @@ message(STATUS "SDL2 found: ${SDL2_FOUND}")
 find_package(imgui CONFIG REQUIRED)
 message(STATUS "imgui found: ${imgui_FOUND}")
 
-add_executable(gameoflife 
+add_executable(gameoflife  
     src/main.cpp 
     src/core.cpp 
-    src/interface.cpp 
-    include/core.hpp 
-    include/interface.hpp 
-    include/modelparameters.hpp
-    include/modelpresets.hpp
+    src/core.hpp 
+    src/model/abstract_model.hpp
+    src/model/modelparameters.hpp
+    src/model/CpuModel.cpp
+    src/model/CpuModel.hpp
+    src/presets/modelpresets.hpp
+    src/sdl_manager.cpp
+    src/sdl_manager.hpp
+    src/gui/interface.cpp 
+    src/gui/interface.hpp 
+    src/gui/mainwindow.cpp 
+    src/gui/mainwindow.hpp
+    src/gui/gui.cpp
+    src/gui/gui.hpp
 )
 
-target_include_directories(gameoflife PRIVATE include)
+target_include_directories(gameoflife PRIVATE src)
 
 target_link_libraries(gameoflife SDL2::SDL2)
 
@@ -43,8 +49,14 @@ add_custom_command(
 
 
 # Set the "Use Debug Libraries" property for Debug configuration
-if(MSVC)
-    set_target_properties(gameoflife PROPERTIES
-        VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
-    )
-endif()
+# doesn't seem to work.
+#if(MSVC)
+#    set_target_properties(gameoflife PROPERTIES
+#       VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
+ #   )
+#endif()
+
+#ImGui conflicts with window default libraries
+#if(MSVC)
+ #   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
+#endif()

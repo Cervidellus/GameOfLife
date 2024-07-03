@@ -1,6 +1,6 @@
-/*main will take in command line arguments before
-initializing and running the core application*/
 #include <core.hpp>
+
+//#define SDL_MAIN_HANDLED
 
 int main(int argc, char** argv){
     Core game;
