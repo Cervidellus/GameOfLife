@@ -5,6 +5,7 @@
 #include "modelparameters.hpp"
 
 #include <vector>
+#include <../submodules/tinycolormap/include/tinycolormap.hpp>
 
 
 
@@ -43,6 +44,23 @@ private:
 	void resizeGrid_();
 	void clearGrid_();
 
+	struct GridDrawRange
+	{
+		int rowBegin = 0;
+		int rowEnd = 1;
+		int columnBegin = 0;
+		int columnEnd = 1;
+	};
+
+	enum class DrawStrategy
+	{
+		SingleColor,
+		Decay
+	};
+
+	GridDrawRange getDrawRange_(int rowCount, int columnCount);
+	void drawDecay_(SDL_Renderer* renderer, const GridDrawRange& drawRange);
+
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
 	
@@ -55,11 +73,15 @@ private:
 	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
+	float singleDrawColor_[3] = { 1.0, 1.0, 0 };
+	int deadValueDecrement_ = 5;//how fast does teh dead value decrement
+	DrawStrategy drawStrategy_ = DrawStrategy::Decay;
+	tinycolormap::ColormapType colorMapType_ = tinycolormap::ColormapType::Inferno;
+	//have in the draw function check the strategy, and hten call an appropriate function. 
 
-	int viewportWidth_ = 100; 
-	int viewportHeight_ = 100;
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
+
 };
 
 #endif // CPU_MODEL_H

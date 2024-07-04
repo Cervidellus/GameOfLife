@@ -12,25 +12,6 @@
 
 namespace ModelPresets {
 
-	//enum class ModelPresetName {
-	//	random,
-	//	swiss_cheese,
-	//	decomposition
-	//};
-
-	//constexpr std::string_view getModelPresetStringView(ModelPresetName modelPresetName){
-	//	switch (modelPresetName) {
-	//		case ModelPresetName::random:
-	//			return "random";
-	//		case ModelPresetName::swiss_cheese:
-	//			return "swiss_cheese";
-	//		case ModelPresetName::decomposition:
-	//			return "decomposition";
-	//		default:
-	//			return "unknown";
-	//	}
-	//};
-
 	const ModelParameters randomParams = ModelParameters();
 
 	const ModelParameters swissCheeseParams = ModelParameters(

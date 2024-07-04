@@ -53,17 +53,11 @@ bool Core::init_() {
     gui_.initialize("Game of Life");
 
     coreAppRunning_ = true;
-    //Need to draw once so that ImGui gets initialized before events get processed
-    render_();
 
     return true;
 }
 
 void Core::processEvents_() {
-    //Eventually I will have a SDL_Event handler.
-    // It will be able to hold button states that downstream events might need. 
-    // 
-    // 
     //You will be able to register callbacks for events
     //For example the sidebar, which uses ImGui, will be able to use ImGui_ImplSDL2_ProcessEvent(&event) as a callback.
 
@@ -88,7 +82,6 @@ void Core::processEvents_() {
         //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
         //e.g. so that something not processing a mouse movement event won't have to process it. 
 
-
         cpuModel_.handleSDLEvent(event);
 
         gui_.mainWindow.processEvent(event);
@@ -101,24 +94,12 @@ void Core::update_() {
 }
 
 void Core::render_() {
-    
     gui_.mainWindow.clear();
 
     int windowWidth, windowHeight;
     SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &windowWidth, &windowHeight);
     cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
 
-    //I should have the models provide their interface
-    //But I need to figure out where the data lives.. who owns it?
-    //I think the model should own all of that. 
-    //But how do I call draw on it? 
-    //It woul dbe nice to eventually just call gui_.draw() and have it draw everything.
-    //For that I need to have a callback registered with the model that will draw the interface.
-    //as a part of that abstract class, should I have a drawWidgets function? I can use that as a callback in the gui. 
-    //gui_.interface.draw(gui_.mainWindow.sdlRenderer, modelRunning_, desiredModelFPS_, activeModelParams_, measuredModelFPS_);
-    //bool& modelRunning,
-    //    int& desiredModelFPS,
-    //    const int measuredModelFPS
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
     cpuModel_.drawImGuiWidgets(modelRunning_);
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);

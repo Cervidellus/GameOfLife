@@ -7,6 +7,14 @@
 #include <imgui.h>
 #include <SDL.h>
 
+
+//Draw Strategies:
+//-Single Color
+//Decay: Color decays according to a colormap according to how long the pixel has been dead. 
+//Something based on hte values of neighbors? Decay slower when you have more neighbors?
+//Color based on average value of neighbors?
+
+
 void CpuModel::initialize()
 {
     generateModel_(activeModelParams_);
@@ -46,7 +54,8 @@ void CpuModel::update()
     int columnCount = grid_[0].size();
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            cellAlive = (grid_[rowIndex][columnIndex] == aliveValue_) ? aliveValue_ : deadValue_;
+            uint8_t* cellValue = &grid_[rowIndex][columnIndex];
+            cellAlive = (*cellValue == aliveValue_) ? true: false;
             livingNeighbors = 0;
             //count living neighbors
 
@@ -63,9 +72,7 @@ void CpuModel::update()
 
                     int neighborColumnIndex = columnIndex + neighborColumn;
 
-                    //neighborColumn = columnIndex + neighborColumn;
-
-                    //wrap the columns
+                    //wrap the columnsa
                     if (neighborColumnIndex < 0) neighborColumnIndex = columnCount - 1;
                     if (neighborColumnIndex >= columnCount) neighborColumnIndex = 0;
 
@@ -76,61 +83,76 @@ void CpuModel::update()
 
             //If not alive and has 3 neighbors, become alive
             if (!cellAlive) {
-                if (livingNeighbors == activeModelParams_.rule4) grid_[rowIndex][columnIndex] = aliveValue_;
+                if (livingNeighbors == activeModelParams_.rule4) *cellValue = aliveValue_;
+                else *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
+                //else grid_[rowIndex][columnIndex] -= deadValueDecrement_;
             }
             //If neighbors are less than 2 or more than 3, kill it.
-            else if (livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) grid_[rowIndex][columnIndex] = deadValue_;
+            else if (livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) {
+                *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
+            }
+            //if (grid_[rowIndex][columnIndex] < 0) grid_[rowIndex][columnIndex] = 0;
         }
     }
 }
 
 void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
-    if(width != viewportWidth_ || height != viewportHeight_)
-	{
-		viewportWidth_ = width;
-		viewportHeight_ = height;
-	}  
+    const CpuModel::GridDrawRange drawRange = getDrawRange_(height, width);
+    drawDecay_(renderer, drawRange);
 
-    int gridRows = grid_.size();
-    int gridColumns = grid_[0].size();
-    const float rectPadding = 0.1;//not used yet
-    const float scale = 1.0;
+ //   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, (uint8_t)(singleDrawColor_[0] * 255), (uint8_t)(singleDrawColor_[1] * 255), (singleDrawColor_[2] * 255), 255);
+
+ //   for(int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
+	//{
+	//	for(int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
+	//	{
+	//		if(grid_[rowIndex][columnIndex] == aliveValue_)
+	//		{
+ //               //I might be able to add the remainder of the displacement to get smoother panning...
+ //               SDL_Rect rect = 
+ //               { 
+ //                   activeModelParams_.zoomLevel * (columnIndex - drawRange.columnBegin),
+ //                   activeModelParams_.zoomLevel * (rowIndex - drawRange.rowBegin),
+ //                   activeModelParams_.zoomLevel,
+ //                   activeModelParams_.zoomLevel
+ //               };
+ //               SDL_RenderFillRect(renderer, &rect);
+	//		}
+	//	}
+	//}
     
-    //Figure out the starting indices and ending indices to draw, so we only draw what is on screen.
-    int rowsToDrawCount = height / activeModelParams_.zoomLevel;
-    int columnsToDrawCount = width / activeModelParams_.zoomLevel;
-    int columnDrawStartIndex = -(int)(((double)activeModelParams_.displacementX / activeModelParams_.zoomLevel));
-    int rowDrawStartIndex = -(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
-    
-    int rowDrawEndIndex = rowDrawStartIndex + rowsToDrawCount - 1;
-    if(rowDrawEndIndex >= gridRows) rowDrawEndIndex = gridRows - 1;
-    int columnDrawEndIndex = columnDrawStartIndex + columnsToDrawCount - 1;
-    if(columnDrawEndIndex >= gridColumns) columnDrawEndIndex = gridColumns - 1;
+}
 
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-
-    for(int rowIndex = rowDrawStartIndex; rowIndex <= rowDrawEndIndex; rowIndex++)
-	{
-        if (rowIndex < 0) continue;
-		for(int columnIndex = columnDrawStartIndex; columnIndex <= columnDrawEndIndex; columnIndex++)
-		{
-            if (columnIndex < 0) continue;
-			if(grid_[rowIndex][columnIndex] == aliveValue_)
-			{
+void CpuModel::drawDecay_(SDL_Renderer* renderer, const GridDrawRange& drawRange) {
+    for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
+    {
+        for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
+        {
+            //if (grid_[rowIndex][columnIndex] == aliveValue_)
+            //{
+            //Set the color according to the value.
+             
                 //I might be able to add the remainder of the displacement to get smoother panning...
-                SDL_Rect rect = 
-                { 
-                    activeModelParams_.zoomLevel * (columnIndex - columnDrawStartIndex),
-                    activeModelParams_.zoomLevel * (rowIndex - rowDrawStartIndex),
-                    activeModelParams_.zoomLevel,
-                    activeModelParams_.zoomLevel
-                };
-                SDL_RenderFillRect(renderer, &rect);
-			}
-		}
-	}
-    
+            SDL_Rect rect =
+            {
+                activeModelParams_.zoomLevel * (columnIndex - drawRange.columnBegin),
+                activeModelParams_.zoomLevel * (rowIndex - drawRange.rowBegin),
+                activeModelParams_.zoomLevel,
+                activeModelParams_.zoomLevel
+            };
+            uint8_t test =  grid_[rowIndex][columnIndex];
+            auto color = tinycolormap::GetQuantizedColor(
+                (double)grid_[rowIndex][columnIndex] / 255.0,
+                100,
+                colorMapType_);
+            auto colorR = color.ri();
+            SDL_SetRenderDrawColor(renderer, color.ri(), color.gi(), color.bi(), 255);
+            SDL_RenderFillRect(renderer, &rect);
+            //}
+        }
+    }
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -152,6 +174,8 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 
         //TODO:: limit to positive values
         //TODO:: ensure that input is 4-byte aligned
+        ImGui::ColorPicker3("RGB Color:", singleDrawColor_, 134217728);
+
         ImGui::InputInt("Width", &activeModelParams_.modelWidth, 100, 100, modelRunningFlag);
         ImGui::InputInt("Height", &activeModelParams_.modelHeight, 100, 100, modelRunningFlag);
 
@@ -160,10 +184,6 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
         if (ImGui::Button("Generate Model")) {
             generateModel_(activeModelParams_);
         }
-        //ImGui::SameLine();
-        //if (ImGui::Button("Start Model")) {
-        //    isModelRunning = true;
-        //}
 
         ImGuiInputTextFlags ruleInputFlags = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
 
@@ -377,4 +397,22 @@ void CpuModel::populateFromRLEString_(
             }
         }
     }
+}
+
+CpuModel::GridDrawRange CpuModel::getDrawRange_(int rowCount, int columnCount)
+{
+    CpuModel::GridDrawRange drawRange;
+    drawRange.rowBegin = -(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
+    drawRange.rowEnd = drawRange.rowBegin + (rowCount / activeModelParams_.zoomLevel)-1;
+    drawRange.columnBegin = -(int)(((double)activeModelParams_.displacementX / activeModelParams_.zoomLevel));
+    drawRange.columnEnd = drawRange.columnBegin + (columnCount / activeModelParams_.zoomLevel) - 1;
+
+    int gridRows = grid_.size();
+    int gridColumns = grid_[0].size();
+    if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
+    if (drawRange.columnEnd >= gridColumns) drawRange.columnEnd = gridColumns - 1;
+    if (drawRange.rowBegin < 0) drawRange.rowBegin = 0;
+    if (drawRange.columnBegin < 0) drawRange.columnBegin = 0;
+
+    return drawRange;
 }
