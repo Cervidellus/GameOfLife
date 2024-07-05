@@ -1,5 +1,6 @@
 #include "CpuModel.hpp"
 #include "presets/modelpresets.hpp"
+#include "gui/sdl_colormaps_8bit.hpp"
 
 #include <iostream>
 #include <random>
@@ -98,11 +99,11 @@ void CpuModel::update()
 
 void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
-    const CpuModel::GridDrawRange drawRange = getDrawRange_(height, width);
-    drawDecay_(renderer, drawRange);
+    const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
+    drawDecay_(renderer, width, height, drawRange);
 
  //   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_SetRenderDrawColor(renderer, (uint8_t)(singleDrawColor_[0] * 255), (uint8_t)(singleDrawColor_[1] * 255), (singleDrawColor_[2] * 255), 255);
+    //SDL_SetRenderDrawColor(renderer, (uint8_t)(singleDrawColor_[0] * 255), (uint8_t)(singleDrawColor_[1] * 255), (singleDrawColor_[2] * 255), 255);
 
  //   for(int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
 	//{
@@ -122,35 +123,42 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
 	//		}
 	//	}
 	//}
-    
+
 }
 
-void CpuModel::drawDecay_(SDL_Renderer* renderer, const GridDrawRange& drawRange) {
+void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange) {
     for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
     {
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
         {
-            //if (grid_[rowIndex][columnIndex] == aliveValue_)
-            //{
             //Set the color according to the value.
-             
-                //I might be able to add the remainder of the displacement to get smoother panning...
+            //I might be able to add the remainder of the displacement to get smoother panning...
+
+            //I guess this part is all that needs to be separate from other strategies.
             SDL_Rect rect =
             {
-                activeModelParams_.zoomLevel * (columnIndex - drawRange.columnBegin),
-                activeModelParams_.zoomLevel * (rowIndex - drawRange.rowBegin),
+
+                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX /*+ (activeModelParams_.displacementX % width)*/,
+                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY /*- (activeModelParams_.displacementY % height)*/,
                 activeModelParams_.zoomLevel,
                 activeModelParams_.zoomLevel
             };
-            uint8_t test =  grid_[rowIndex][columnIndex];
+            //This is actually quite slow.
+            //TODO::Switch to a lookup table.
+
+            
             auto color = tinycolormap::GetQuantizedColor(
                 (double)grid_[rowIndex][columnIndex] / 255.0,
                 100,
                 colorMapType_);
-            auto colorR = color.ri();
             SDL_SetRenderDrawColor(renderer, color.ri(), color.gi(), color.bi(), 255);
+
+            //const auto color = Colormaps::ViridisLookup[grid_[rowIndex][columnIndex]];
+            //SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+            //if ((double)grid_[rowIndex][columnIndex] == aliveValue_) SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            //else SDL_SetRenderDrawColor(renderer,  0, 0, 0, 255);
             SDL_RenderFillRect(renderer, &rect);
-            //}
         }
     }
 }
@@ -274,29 +282,33 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         }
         else if (event.type == SDL_MOUSEWHEEL)
         {
+            int width, height;
+            SDL_GetWindowSize(SDL_GetWindowFromID(event.window.windowID), &width, &height);
             //Zoom
             //TODO:: only allow scales that are a multiple of pixels.
             double newZoomLevel = activeModelParams_.zoomLevel;
             if (event.wheel.y > 0)
             {
-                newZoomLevel = activeModelParams_.zoomLevel * 1.2;
-                if (activeModelParams_.zoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
+                //newZoomLevel = (activeModelParams_.zoomLevel * 1.2);
+                newZoomLevel = activeModelParams_.zoomLevel + 1;
+                if (newZoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
             }
             else if (event.wheel.y < 0) {
-                newZoomLevel = activeModelParams_.zoomLevel * 0.8;
-                if (activeModelParams_.zoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
+                //newZoomLevel = activeModelParams_.zoomLevel * 0.8;
+                newZoomLevel = activeModelParams_.zoomLevel - 1;
+                if (newZoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
             }
-
+            
             //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
             int cursorModelIndexX = (int)(((double)mousePosX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
             int cursorModelIndexY = (int)(((double)mousePosY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
-
+            activeModelParams_.zoomLevel = newZoomLevel;
             //Calculate the new displacement, trying to keep the model in the same position relative to the cursor. 
             //This works MOSTLY but drifts more than I would like. 
             activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mousePosX);
             activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mousePosY);
 
-            activeModelParams_.zoomLevel = newZoomLevel;
+            
         }
     }
 }
@@ -399,14 +411,16 @@ void CpuModel::populateFromRLEString_(
     }
 }
 
-CpuModel::GridDrawRange CpuModel::getDrawRange_(int rowCount, int columnCount)
+CpuModel::GridDrawRange CpuModel::getDrawRange_(int width, int height)
 {
     CpuModel::GridDrawRange drawRange;
-    drawRange.rowBegin = -(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
-    drawRange.rowEnd = drawRange.rowBegin + (rowCount / activeModelParams_.zoomLevel)-1;
+    drawRange.rowBegin = 0-(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
+    drawRange.rowEnd = drawRange.rowBegin + (height / activeModelParams_.zoomLevel);
     drawRange.columnBegin = -(int)(((double)activeModelParams_.displacementX / activeModelParams_.zoomLevel));
-    drawRange.columnEnd = drawRange.columnBegin + (columnCount / activeModelParams_.zoomLevel) - 1;
+    /*drawRange.columnEnd = drawRange.columnBegin + (columnCount / activeModelParams_.zoomLevel) - 1;*/
+    drawRange.columnEnd = drawRange.columnBegin + (width / activeModelParams_.zoomLevel);
 
+    //make sure you don't try and draw something not in grid_
     int gridRows = grid_.size();
     int gridColumns = grid_[0].size();
     if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;

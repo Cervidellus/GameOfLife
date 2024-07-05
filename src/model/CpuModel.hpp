@@ -58,8 +58,8 @@ private:
 		Decay
 	};
 
-	GridDrawRange getDrawRange_(int rowCount, int columnCount);
-	void drawDecay_(SDL_Renderer* renderer, const GridDrawRange& drawRange);
+	GridDrawRange getDrawRange_(const int width, const int height);
+	void drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange);
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
@@ -74,9 +74,9 @@ private:
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
 	float singleDrawColor_[3] = { 1.0, 1.0, 0 };
-	int deadValueDecrement_ = 5;//how fast does teh dead value decrement
+	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 	DrawStrategy drawStrategy_ = DrawStrategy::Decay;
-	tinycolormap::ColormapType colorMapType_ = tinycolormap::ColormapType::Inferno;
+	tinycolormap::ColormapType colorMapType_ = tinycolormap::ColormapType::Viridis;
 	//have in the draw function check the strategy, and hten call an appropriate function. 
 
 	const double MAX_ZOOM = 100.0;
