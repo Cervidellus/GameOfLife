@@ -3,6 +3,7 @@
 
 #include "abstract_model.hpp"
 #include "modelparameters.hpp"
+#include "gui/sdl_colormaps_8bit.hpp"
 
 #include <vector>
 #include <../submodules/tinycolormap/include/tinycolormap.hpp>
@@ -54,7 +55,7 @@ private:
 
 	enum class DrawStrategy
 	{
-		SingleColor,
+		DualColor,
 		Decay
 	};
 
@@ -73,11 +74,32 @@ private:
 	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
-	float singleDrawColor_[3] = { 1.0, 1.0, 0 };
+	float dualColorAliveColor_[3] = { 1.0, 1.0, 0 };
+	float dualColorDeadColor_[3] = { 0.0, 0.0, 0.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 	DrawStrategy drawStrategy_ = DrawStrategy::Decay;
-	tinycolormap::ColormapType colorMapType_ = tinycolormap::ColormapType::Viridis;
-	//have in the draw function check the strategy, and hten call an appropriate function. 
+	std::array<SDL_Color, 256> colormapLookup_ = Colormaps::PlasmaLookup;
+
+	//For selecting colormap
+	//const char* items[11] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIIIIII", "JJJJ", "KKKKKKK" };
+	const char* colorMapSelectorItems_[15] = {
+		"DualColor",
+		"Cividis",
+		"Cubehelix",
+		"Github",
+		"Gray",
+		"Heat",
+		"Hot",
+		"HSV",
+		"Inferno",
+		"Jet",
+		"Magma",
+		"Parula",
+		"Plasma",
+		"Turbo",
+		"Viridis" };
+	int selectedColorMapIndex_ = 0;
+
 
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;

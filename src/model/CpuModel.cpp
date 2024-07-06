@@ -1,6 +1,6 @@
 #include "CpuModel.hpp"
 #include "presets/modelpresets.hpp"
-#include "gui/sdl_colormaps_8bit.hpp"
+
 
 #include <iostream>
 #include <random>
@@ -132,32 +132,24 @@ void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int hei
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
         {
             //Set the color according to the value.
-            //I might be able to add the remainder of the displacement to get smoother panning...
 
             //I guess this part is all that needs to be separate from other strategies.
             SDL_Rect rect =
             {
-
-                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX /*+ (activeModelParams_.displacementX % width)*/,
-                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY /*- (activeModelParams_.displacementY % height)*/,
+                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX,
+                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY,
                 activeModelParams_.zoomLevel,
                 activeModelParams_.zoomLevel
             };
-            //This is actually quite slow.
-            //TODO::Switch to a lookup table.
 
-            
-            auto color = tinycolormap::GetQuantizedColor(
-                (double)grid_[rowIndex][columnIndex] / 255.0,
-                100,
-                colorMapType_);
-            SDL_SetRenderDrawColor(renderer, color.ri(), color.gi(), color.bi(), 255);
+            const auto color = colormapLookup_[grid_[rowIndex][columnIndex]];
+            SDL_SetRenderDrawColor(
+                renderer, 
+                color.r, 
+                color.g, 
+                color.b, 
+                color.a);
 
-            //const auto color = Colormaps::ViridisLookup[grid_[rowIndex][columnIndex]];
-            //SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-
-            //if ((double)grid_[rowIndex][columnIndex] == aliveValue_) SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            //else SDL_SetRenderDrawColor(renderer,  0, 0, 0, 255);
             SDL_RenderFillRect(renderer, &rect);
         }
     }
@@ -182,11 +174,8 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 
         //TODO:: limit to positive values
         //TODO:: ensure that input is 4-byte aligned
-        ImGui::ColorPicker3("RGB Color:", singleDrawColor_, 134217728);
-
         ImGui::InputInt("Width", &activeModelParams_.modelWidth, 100, 100, modelRunningFlag);
         ImGui::InputInt("Height", &activeModelParams_.modelHeight, 100, 100, modelRunningFlag);
-
         ImGui::SliderFloat("Model Fill Factor", &activeModelParams_.fillFactor, 0.001, 1);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
         if (ImGui::Button("Generate Model")) {
@@ -219,6 +208,70 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
 
     }
+
+    //Visualization
+    if (ImGui::CollapsingHeader("Visualization")) {
+        //Need a button to choose drawing strategy
+        
+        if (ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapSelectorItems_,15))
+        {
+            drawStrategy_ = (selectedColorMapIndex_ == 0) ? DrawStrategy::DualColor : DrawStrategy::Decay;
+
+            switch (selectedColorMapIndex_){
+            case 0:
+                break;
+            case 1:
+                colormapLookup_ = Colormaps::CividisLookup;
+                break;
+            case 2:
+				colormapLookup_ = Colormaps::CubehelixLookup;
+				break;
+            case 3:
+                colormapLookup_ = Colormaps::GithubLookup;
+                break;
+            case 4:
+				colormapLookup_ = Colormaps::GrayLookup;
+				break;
+            case 5:
+                colormapLookup_ = Colormaps::HeatLookup;
+                break;
+            case 6:
+                colormapLookup_ = Colormaps::HotLookup;
+                break;
+            case 7:
+                colormapLookup_ = Colormaps::HSVLookup;
+                break;
+            case 8:
+				colormapLookup_ = Colormaps::InfernoLookup;
+				break;
+                case 9:
+				colormapLookup_ = Colormaps::JetLookup;
+				break;
+                case 10:
+				colormapLookup_ = Colormaps::MagmaLookup;
+				break;
+                case 11:
+                    colormapLookup_ = Colormaps::ParulaLookup;
+                    break;
+                case 12:
+                    colormapLookup_ = Colormaps::PlasmaLookup;
+                    break;
+                case 13:
+					colormapLookup_ = Colormaps::TurboLookup;
+					break;
+				case 14:
+					colormapLookup_ = Colormaps::ViridisLookup;
+					break;
+            }
+        }
+        
+        if (drawStrategy_ == DrawStrategy::DualColor)
+        {
+            ImGui::ColorPicker3("Alive Cell Color:", dualColorAliveColor_, 134217728);
+            ImGui::ColorPicker3("Dead Cell Color:", dualColorDeadColor_, 134217728);
+        }
+    }
+
 
     if (ImGui::CollapsingHeader("presets"))
     {
