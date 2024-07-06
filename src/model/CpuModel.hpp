@@ -34,12 +34,7 @@ public:
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();
 
-	//void setDrawStrategy(SquareGridDrawStrategy& strategy); When I want to implement different drawing strategies, I can do this.
-
 private:
-	//I should have a squareGridGenerator, but what about different underlying storage types?
-	//I'll put it here for now.
-	//void handleGenerateModelRequest_(const ModelParameters& params);
 	void generateModel_(const ModelParameters& modelParameters);
 	void populateFromRLEString_(std::string model, const int startRow = 0, const int startColumn = 0);
 	void resizeGrid_();
@@ -60,7 +55,7 @@ private:
 	};
 
 	GridDrawRange getDrawRange_(const int width, const int height);
-	void drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange);
+	//void drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange);
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
@@ -75,9 +70,9 @@ private:
 	int aliveValue_ = 255;
 	int deadValue_ = 0;
 	float dualColorAliveColor_[3] = { 1.0, 1.0, 0 };
-	float dualColorDeadColor_[3] = { 0.0, 0.0, 0.0 };
+	float dualColorDeadColor_[3] = { 0.0, 0.0, 1.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
-	DrawStrategy drawStrategy_ = DrawStrategy::Decay;
+	DrawStrategy drawStrategy_ = DrawStrategy::DualColor;
 	std::array<SDL_Color, 256> colormapLookup_ = Colormaps::PlasmaLookup;
 
 	//For selecting colormap
@@ -100,10 +95,8 @@ private:
 		"Viridis" };
 	int selectedColorMapIndex_ = 0;
 
-
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
-
 };
 
 #endif // CPU_MODEL_H

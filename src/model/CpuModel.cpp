@@ -99,41 +99,41 @@ void CpuModel::update()
 
 void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
+    //TODO: Currently I am redrawing the model every time. It might be better to draw it to a texture and reuse the texture if model is not updated.
+    //I might even update the texture at the same time I update the model, if the view has drawn the last one. 
+    //THe hard thing there is making sure that we aren't drawing the texture more often than we need. 
+    //I could have a bool that says the texture needs updating before drawing and handle that in core.cpp.
+
     const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
-    drawDecay_(renderer, width, height, drawRange);
+    //drawDecay_(renderer, width, height, drawRange);
 
- //   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    //SDL_SetRenderDrawColor(renderer, (uint8_t)(singleDrawColor_[0] * 255), (uint8_t)(singleDrawColor_[1] * 255), (singleDrawColor_[2] * 255), 255);
-
- //   for(int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
-	//{
-	//	for(int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
-	//	{
-	//		if(grid_[rowIndex][columnIndex] == aliveValue_)
-	//		{
- //               //I might be able to add the remainder of the displacement to get smoother panning...
- //               SDL_Rect rect = 
- //               { 
- //                   activeModelParams_.zoomLevel * (columnIndex - drawRange.columnBegin),
- //                   activeModelParams_.zoomLevel * (rowIndex - drawRange.rowBegin),
- //                   activeModelParams_.zoomLevel,
- //                   activeModelParams_.zoomLevel
- //               };
- //               SDL_RenderFillRect(renderer, &rect);
-	//		}
-	//	}
-	//}
-
-}
-
-void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange) {
+    //if(drawStrategy_ != DrawStrategy::DualColor) return;
     for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
     {
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
         {
-            //Set the color according to the value.
+            SDL_Color color = SDL_Color();
+            if (drawStrategy_ == DrawStrategy::DualColor) {
+                auto floatColor = (grid_[rowIndex][columnIndex] == aliveValue_) ? dualColorAliveColor_ : dualColorDeadColor_;
 
-            //I guess this part is all that needs to be separate from other strategies.
+                color = { 
+                    (uint8_t)(floatColor[0] * 255), 
+                    (uint8_t)(floatColor[1] * 255),
+                    (uint8_t)(floatColor[2] * 255),
+                    255 
+                };
+            }
+            else {
+				color = colormapLookup_[grid_[rowIndex][columnIndex]];
+			}
+
+            SDL_SetRenderDrawColor(
+                renderer,
+                color.r,
+                color.g,
+                color.b,
+                255);
+
             SDL_Rect rect =
             {
                 activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX,
@@ -142,18 +142,39 @@ void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int hei
                 activeModelParams_.zoomLevel
             };
 
-            const auto color = colormapLookup_[grid_[rowIndex][columnIndex]];
-            SDL_SetRenderDrawColor(
-                renderer, 
-                color.r, 
-                color.g, 
-                color.b, 
-                color.a);
-
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
+//
+//void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange) {
+//    for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
+//    {
+//        for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
+//        {
+//            //Set the color according to the value.
+//
+//            //I guess this part is all that needs to be separate from other strategies.
+//            SDL_Rect rect =
+//            {
+//                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX,
+//                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY,
+//                activeModelParams_.zoomLevel,
+//                activeModelParams_.zoomLevel
+//            };
+//
+//            const auto color = colormapLookup_[grid_[rowIndex][columnIndex]];
+//            SDL_SetRenderDrawColor(
+//                renderer, 
+//                color.r, 
+//                color.g, 
+//                color.b, 
+//                color.a);
+//
+//            SDL_RenderFillRect(renderer, &rect);
+//        }
+//    }
+//}
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 {
@@ -270,8 +291,12 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
             ImGui::ColorPicker3("Alive Cell Color:", dualColorAliveColor_, 134217728);
             ImGui::ColorPicker3("Dead Cell Color:", dualColorDeadColor_, 134217728);
         }
+		else {
+			ImGui::InputInt("Decay Rate", &deadValueDecrement_, 1, 10, 0);
+            if (deadValueDecrement_ < 1) deadValueDecrement_ = 1;
+            else if (deadValueDecrement_ > 255) deadValueDecrement_ = 255;
+		}
     }
-
 
     if (ImGui::CollapsingHeader("presets"))
     {
