@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <random>
+#include <sstream>
 
 #include <imgui.h>
 #include <SDL.h>
@@ -420,66 +421,108 @@ void CpuModel::generateModel_(const ModelParameters& params) {
 			}
 		}
         std::cout << "Random model generated" << std::endl;
+        return;
     }
-    else {
-        //if incoded in a std::vector<std::pair<int, int>> we want it centered.
-        const int startColumn = (activeModelParams_.modelWidth / 2) - (params.minWidth / 2);
-        const int startRow = activeModelParams_.modelHeight / 2 - (params.minHeight / 2);
-        if (params.aliveCells.size() > 0) {
-            for (const std::pair<int,int> aliveCell : params.aliveCells) {
-                if (aliveCell.first < 0 || aliveCell.first >= params.minHeight) continue;
-                grid_[startRow + aliveCell.first][startColumn + aliveCell.second] = 255;
-            }
-        }
 
-        //RLE encoding
+    else {
         if (!params.runLengthEncoding.empty()) {
-            populateFromRLEString_(
-                params.runLengthEncoding,
-                startRow,
-                startColumn
-            );
+            std::istringstream rleStream(params.runLengthEncoding);
+            populateFromRLE_(rleStream);
         }
     }
 }
 
-void CpuModel::populateFromRLEString_(
-    std::string model,
-    const int startRow,
-    const int startColumn)
+void CpuModel::populateFromRLE_(std::istream& modelStream)
 {
+    //Parse the header lines to find the min width and min height
+    //Below is an example of the file format.
+    // In these case we just parse the last 3 lines.
+    //    #N Achim's p16
+    //    #O Achim Flammenkamp
+    //    #C A period 16 oscillator that was found in July 1994.
+    //    x = 13, y = 13, rule = B3 / S23
+    //    7b2o4b$7bobo3b$2bo4bob2o2b$b2o5bo4b$o2bo9b$3o10b2$10b3o$9bo2bo$4bo5b2o
+    //    b$2b2obo4bo2b$3bobo7b$4b2o!
+    int minWidth = 10;
+    int minHeight = 10;
+
+    std::string line = "";
+    std::string RLEstring = "";
+    while(std::getline(modelStream, line))
+    {
+        //Find the header line containing specifications, which begins with the char 'x'
+		if (line[0] == '#') continue;
+		if (line[0] == 'x') {
+            std::string::iterator lineIterator = line.begin();
+            std::string minWidthString = "";
+            std::string minHeightString = "";
+            int bornNeighborCount = 3;
+            int surviveNeighborMin = 2;
+            int surviveNeighborMax = 3;
+
+            //minimum width
+            while (!std::isdigit(*lineIterator)) lineIterator++;
+            while (std::isdigit(*lineIterator)) {
+				minWidthString += *lineIterator;
+				lineIterator++;
+			}
+
+            //minimum height
+            while (!std::isdigit(*lineIterator)) lineIterator++;
+            while (std::isdigit(*lineIterator)) {
+                minHeightString += *lineIterator;
+                lineIterator++;
+            }
+            
+            //Neighbor count to be born
+            while (*lineIterator != 'B') lineIterator++;
+            lineIterator++;
+            activeModelParams_.rule4 = (int)(*lineIterator - '0');
+
+            //minimum and maximum neighbors to survive
+            while (!std::isdigit(*lineIterator)) lineIterator++;
+            activeModelParams_.rule1 = (int)(*lineIterator - '0');
+            lineIterator++;
+            activeModelParams_.rule3 = (int)(*lineIterator - '0');
+            continue;
+		}
+
+        //If lines don't start with # or X, they must be part of the RLE encoded model.
+        RLEstring += line;
+	}
+
+    int startColumn = (activeModelParams_.modelWidth / 2) - (minWidth / 2);
+    int startRow = activeModelParams_.modelHeight / 2 - (minHeight / 2);
     int row = startRow;
     int column = startColumn;
 
-    for (std::string::iterator modelIterator = model.begin(); modelIterator != model.end(); modelIterator++) {
-        //First handle the edge cases
+    std::string::iterator RLEit;
+    for (std::string::iterator it = RLEstring.begin(); it != RLEstring.end(); ++it)
+    {
+        if (*it == '!') break;
 
-        if (*modelIterator == '!') break;
-
-        int count = 1;
-        if (isdigit(*modelIterator))
+        std::string stringInteger = "";
+        while ( isdigit(*it) || *it == '\n')
         {
-            std::string stringInteger = "";
-            while (isdigit(*modelIterator) && modelIterator != model.end())
-            {
-                stringInteger += *modelIterator;
-                modelIterator++;
-            }
-            count = std::stoi(stringInteger);
+            if (*it != '\n') stringInteger += *it;
+            it++;
         }
+        //If there is no preceding integer, set the count to 1
+        if (stringInteger.empty()) stringInteger = "1";
+        int count = std::stoi(stringInteger);
         //b is dead, o is alive, $ is newline
-        if (*modelIterator == 'b') {
+        if (*it == 'b') {
             for (int i = 0; i < count; i++) {
                 column++;
             }
         }
-        else if (*modelIterator == 'o') {
+        else if (*it == 'o') {
             for (int i = 0; i < count; i++) {
                 grid_[row][column] = aliveValue_;
                 column++;
             }
         }
-        else if (*modelIterator == '$')
+        else if (*it == '$')
         {
             column = startColumn;
             for (int i = 0; i < count; i++) {

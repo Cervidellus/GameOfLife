@@ -36,7 +36,9 @@ public:
 
 private:
 	void generateModel_(const ModelParameters& modelParameters);
-	void populateFromRLEString_(std::string model, const int startRow = 0, const int startColumn = 0);
+	//void populateFromRLEStream_(std::istream& stream, const int startRow = 0, const int startColumn = 0);
+	void populateFromRLE_(std::istream& modelStream);
+	//void populateFromRLE_(std::string model);
 	void resizeGrid_();
 	void clearGrid_();
 
