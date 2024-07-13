@@ -1,10 +1,12 @@
 #include "CpuModel.hpp"
 #include "presets/modelpresets.hpp"
+#include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
-
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <sstream>
+
 
 #include <imgui.h>
 #include <SDL.h>
@@ -147,35 +149,6 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
         }
     }
 }
-//
-//void CpuModel::drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange) {
-//    for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
-//    {
-//        for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
-//        {
-//            //Set the color according to the value.
-//
-//            //I guess this part is all that needs to be separate from other strategies.
-//            SDL_Rect rect =
-//            {
-//                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX,
-//                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY,
-//                activeModelParams_.zoomLevel,
-//                activeModelParams_.zoomLevel
-//            };
-//
-//            const auto color = colormapLookup_[grid_[rowIndex][columnIndex]];
-//            SDL_SetRenderDrawColor(
-//                renderer, 
-//                color.r, 
-//                color.g, 
-//                color.b, 
-//                color.a);
-//
-//            SDL_RenderFillRect(renderer, &rect);
-//        }
-//    }
-//}
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 {
@@ -305,6 +278,34 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
             generateModel_(ModelPresets::randomParams);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("a randomly generated field to observe conway's game of life.");
+
+        if (ImGui::Button("From File")) {
+            //I could us native file dialog https://github.com/mlabbe/nativefiledialog
+            //or maybe https://github.com/aiekick/ImGuiFileDialog
+            //https://github.com/samhocevar/portable-file-dialogs this on is c++11 and seeks to be secure and maintainable
+            //     auto f = pfd::open_file("Choose files to read", pfd::path::home(),
+            //{
+            //    "Text Files (.txt .text)", "*.txt *.text",
+            //        "All Files", "*"
+            //},
+            //    pfd::opt::multiselect);
+
+            auto fileDialog = pfd::open_file(
+                "Choose file", 
+                pfd::path::home(),
+                {"RLE Pattern Files (.rle)", "*.rle"},
+                false
+            );
+            auto result = fileDialog.result();
+            if (!result.empty())
+            {
+                std::cout << "Opening: " <<  fileDialog.result()[0] << "\n";
+                std::ifstream filestream(result[0]);
+                if (filestream.is_open()) populateFromRLE_(filestream);
+                filestream.close();
+            }
+
+        }
 
         if (ImGui::Button("swiss cheese")) {
             generateModel_(ModelPresets::swissCheeseParams);
