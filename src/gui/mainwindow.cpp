@@ -6,7 +6,6 @@
 #include <SDL2/SDL.h>
 
 
-//TODO: I'll have to generate a new windowTexture when the window is resized.
 MainWindow::MainWindow(){}
 
 void MainWindow::initialize(std::string windowName)
@@ -25,9 +24,6 @@ void MainWindow::initialize(std::string windowName)
 		-1,
 		SDL_RENDERER_ACCELERATED
 	);
-
-	windowTexture = getTextureFromWindow(SDL_PIXELFORMAT_RGBA8888);
-
 }
 
 void MainWindow::processEvent(SDL_Event& event)
@@ -42,12 +38,6 @@ MainWindowSize MainWindow::getSize()
 	return size;
 }
 
-SDL_Texture* MainWindow::getTextureFromWindow(uint32_t format)
-{
-	MainWindowSize windowSize = getSize();
-	return SDL_CreateTexture(sdlRenderer, format, SDL_TEXTUREACCESS_TARGET, windowSize.width, windowSize.height);
-}
-
 void MainWindow::drawTexture(SDL_Texture* texture, SDL_Rect destination)
 {
 	SDL_RenderCopy(sdlRenderer, texture, NULL, &destination);
@@ -55,7 +45,6 @@ void MainWindow::drawTexture(SDL_Texture* texture, SDL_Rect destination)
 
 
 void MainWindow::clear() {
-	//SDL_SetRenderTarget(sdlRenderer, windowTexture);//This messes things up?
 	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(sdlRenderer);
 }
@@ -67,9 +56,4 @@ void MainWindow::renderPresent()
 
 MainWindow::~MainWindow() 
 {
-	ImGui_ImplSDLRenderer2_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	if (windowTexture != nullptr) SDL_DestroyTexture(windowTexture);
-	SDL_DestroyRenderer(sdlRenderer);
-	SDL_DestroyWindow(sdlWindow);
 }

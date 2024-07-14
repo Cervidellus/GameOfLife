@@ -120,5 +120,6 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
 
 Core::~Core() {
     //ImGui interface must be deleted before SDL
+    gui_.shutdown();
     sdlManager_.shutdown();
 }

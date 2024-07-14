@@ -36,11 +36,7 @@ public:
 	//I'm not quite sure where this belongs. This processes the event globally, so If I have more than one window it will repeat. 
 	void processEvent(SDL_Event& event);
 
-	//void renderTexture(SDL_Texture* texture);
-	//void renderSurface(SDL_Surface* surface);
-
 	MainWindowSize getSize();
-	SDL_Texture* getTextureFromWindow(uint32_t format);
 
 	void drawTexture(SDL_Texture* texture, SDL_Rect destination);
 	void clear();
@@ -49,7 +45,6 @@ public:
 	//Not super happy about the raw pointers.
 	SDL_Window* sdlWindow = nullptr;
 	SDL_Renderer* sdlRenderer = nullptr;
-	SDL_Texture* windowTexture = nullptr;
 
 private:
 

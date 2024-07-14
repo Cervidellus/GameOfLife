@@ -8,18 +8,9 @@
 #include <random>
 #include <sstream>
 
-
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <SDL.h>
-
-
-//Draw Strategies:
-//-Single Color
-//Decay: Color decays according to a colormap according to how long the pixel has been dead. 
-//Something based on hte values of neighbors? Decay slower when you have more neighbors?
-//Color based on average value of neighbors?
-
 
 void CpuModel::initialize()
 {
@@ -326,6 +317,7 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
             }
             ImGui::EndPopup();
         }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("RLE text can be copied and pasted from https://conwaylife.com/");
 
         if (ImGui::Button("swiss cheese")) {
             generateModel_(ModelPresets::swissCheeseParams);
@@ -455,16 +447,6 @@ void CpuModel::generateModel_(const ModelParameters& params) {
 
 void CpuModel::populateFromRLE_(std::istream& modelStream)
 {
-    //Parse the header lines to find the min width and min height
-    //Below is an example of the file format.
-    // In these case we just parse the last 3 lines.
-    //    #N Achim's p16
-    //    #O Achim Flammenkamp
-    //    #C A period 16 oscillator that was found in July 1994.
-    //    x = 13, y = 13, rule = B3 / S23
-    //    7b2o4b$7bobo3b$2bo4bob2o2b$b2o5bo4b$o2bo9b$3o10b2$10b3o$9bo2bo$4bo5b2o
-    //    b$2b2obo4bo2b$3bobo7b$4b2o!
-
     std::string line = "";
     std::string RLEstring = "";
     while(std::getline(modelStream, line))
@@ -496,7 +478,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
             activeModelParams_.minHeight = std::stoi(minHeightString);
             
             //Neighbor count to be born
-            while (*lineIterator != 'B') lineIterator++;
+            while (*lineIterator != 'B' && *lineIterator != 'b') lineIterator++;
             lineIterator++;
             activeModelParams_.rule4 = (int)(*lineIterator - '0');
             lineIterator++;

@@ -20,7 +20,7 @@ public:
 
 	MainWindow mainWindow;
 	Interface interface;
-	//void shutdown();
+	void shutdown();
 };
 
 #endif //GAMEOFLIFE_GUI_HPP
