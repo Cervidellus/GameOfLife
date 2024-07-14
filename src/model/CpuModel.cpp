@@ -2,6 +2,7 @@
 #include "presets/modelpresets.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -297,13 +298,22 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
                 false
             );
             auto result = fileDialog.result();
-            if (!result.empty())
-            {
-                std::cout << "Opening: " <<  fileDialog.result()[0] << "\n";
+            if (!result.empty()) {
+                std::cout << "Opening: " << fileDialog.result()[0] << "\n";
                 std::ifstream filestream(result[0]);
-                if (filestream.is_open()) populateFromRLE_(filestream);
-                filestream.close();
+
+                if (filestream.is_open())
+                {
+                    //ModelParameters newParams;
+                    //newParams.runLengthEncoding = filestream
+                    clearGrid_();
+                    populateFromRLE_(filestream);
+                    filestream.close();
+                }
             }
+
+
+
 
         }
 
@@ -444,8 +454,8 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
     //    x = 13, y = 13, rule = B3 / S23
     //    7b2o4b$7bobo3b$2bo4bob2o2b$b2o5bo4b$o2bo9b$3o10b2$10b3o$9bo2bo$4bo5b2o
     //    b$2b2obo4bo2b$3bobo7b$4b2o!
-    int minWidth = 10;
-    int minHeight = 10;
+    //int minWidth = 10;
+    //int minHeight = 10;
 
     std::string line = "";
     std::string RLEstring = "";
@@ -467,6 +477,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
 				minWidthString += *lineIterator;
 				lineIterator++;
 			}
+            activeModelParams_.minWidth = std::stoi(minWidthString);
 
             //minimum height
             while (!std::isdigit(*lineIterator)) lineIterator++;
@@ -474,26 +485,35 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
                 minHeightString += *lineIterator;
                 lineIterator++;
             }
+            activeModelParams_.minHeight = std::stoi(minHeightString);
             
             //Neighbor count to be born
             while (*lineIterator != 'B') lineIterator++;
             lineIterator++;
             activeModelParams_.rule4 = (int)(*lineIterator - '0');
-
+            lineIterator++;
             //minimum and maximum neighbors to survive
             while (!std::isdigit(*lineIterator)) lineIterator++;
             activeModelParams_.rule1 = (int)(*lineIterator - '0');
             lineIterator++;
-            activeModelParams_.rule3 = (int)(*lineIterator - '0');
+            activeModelParams_.rule3 = (int)(*lineIterator - '0');//lineiterator '/S23'
             continue;
 		}
 
         //If lines don't start with # or X, they must be part of the RLE encoded model.
         RLEstring += line;
 	}
+    activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, activeModelParams_.minWidth);
+    activeModelParams_.modelHeight= std::max<int>(activeModelParams_.modelHeight, activeModelParams_.minHeight);
+    if (grid_.size() != activeModelParams_.modelHeight || grid_[0].size() != activeModelParams_.modelWidth) {
+        resizeGrid_();
+    }
+    else {
+        clearGrid_();
+    }
 
-    int startColumn = (activeModelParams_.modelWidth / 2) - (minWidth / 2);
-    int startRow = activeModelParams_.modelHeight / 2 - (minHeight / 2);
+    int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth / 2);
+    int startRow = activeModelParams_.modelHeight / 2 - (activeModelParams_.minHeight / 2);
     int row = startRow;
     int column = startColumn;
 
