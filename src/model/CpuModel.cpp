@@ -10,6 +10,7 @@
 
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <SDL.h>
 
 
@@ -281,16 +282,6 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("a randomly generated field to observe conway's game of life.");
 
         if (ImGui::Button("From File")) {
-            //I could us native file dialog https://github.com/mlabbe/nativefiledialog
-            //or maybe https://github.com/aiekick/ImGuiFileDialog
-            //https://github.com/samhocevar/portable-file-dialogs this on is c++11 and seeks to be secure and maintainable
-            //     auto f = pfd::open_file("Choose files to read", pfd::path::home(),
-            //{
-            //    "Text Files (.txt .text)", "*.txt *.text",
-            //        "All Files", "*"
-            //},
-            //    pfd::opt::multiselect);
-
             auto fileDialog = pfd::open_file(
                 "Choose file", 
                 pfd::path::home(),
@@ -304,17 +295,36 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 
                 if (filestream.is_open())
                 {
-                    //ModelParameters newParams;
-                    //newParams.runLengthEncoding = filestream
                     clearGrid_();
                     populateFromRLE_(filestream);
                     filestream.close();
                 }
             }
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("RLE encoded files can be downloaded from https://conwaylife.com/");
 
+        if (ImGui::Button("From String")) ImGui::OpenPopup("Enter RLE string:");
+        if (ImGui::BeginPopup("Enter RLE string:"))
+        {
+            //I need a temporary input buffer as userInput will be empty once Finished is pressed
+            std::string userInput;
+            if (ImGui::InputTextMultiline("Enter RLE String:", &userInput))
+            {
+                inputString_ = userInput;
+            }
 
-
-
+            if (ImGui::Button("Finished"))
+            {
+                ImGui::CloseCurrentPopup();
+                if (!inputString_.empty())
+                {
+                    std::cout << "Processing: " << inputString_ << "\n";
+                    clearGrid_();
+                    std::stringstream rleStream(inputString_);
+                    populateFromRLE_(rleStream);
+                }
+            }
+            ImGui::EndPopup();
         }
 
         if (ImGui::Button("swiss cheese")) {
@@ -454,8 +464,6 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
     //    x = 13, y = 13, rule = B3 / S23
     //    7b2o4b$7bobo3b$2bo4bob2o2b$b2o5bo4b$o2bo9b$3o10b2$10b3o$9bo2bo$4bo5b2o
     //    b$2b2obo4bo2b$3bobo7b$4b2o!
-    //int minWidth = 10;
-    //int minHeight = 10;
 
     std::string line = "";
     std::string RLEstring = "";

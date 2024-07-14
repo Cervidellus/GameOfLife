@@ -99,6 +99,9 @@ private:
 
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
+
+	//for handling ImGui user input
+	std::string inputString_ = "";
 };
 
 #endif // CPU_MODEL_H
