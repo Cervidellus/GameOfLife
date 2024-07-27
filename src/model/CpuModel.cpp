@@ -42,6 +42,14 @@ ModelParameters CpuModel::getParameters()
 	return activeModelParams_;
 }
 
+//Should I subclass the datastructure?
+//Right now I have a vector of vectors,
+//Next I would do a sparse matrix.
+//I would reuse most of the update method (aside from the neighbor counting). 
+//I could have a countNeighbors(cell). 
+//For a sparse matrix, how do I know which dead cells to check? 
+//I could keep a list of candidates.. so if the central cell is alive at the end of update, add all of the neighbors to a list of cells to check next time. 
+
 void CpuModel::update()
 {
     std::vector<std::vector<uint8_t>> previousState = grid_;

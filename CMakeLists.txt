@@ -25,6 +25,8 @@ add_executable(gameoflife
     src/model/modelparameters.hpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
+    src/model/LifeQuadTree.hpp
+    src/model/LifeQuadTree.cpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
@@ -47,16 +49,10 @@ add_custom_command(
                 ${CMAKE_SOURCE_DIR}/resources
                 $<TARGET_FILE_DIR:gameoflife>/resources)
 
+add_executable(quadtreetest
+    QuadTreeTest/QuadTreeTest.cpp
+    src/model/LifeQuadTree.hpp
+    src/model/LifeQuadTree.cpp
+)
 
-# Set the "Use Debug Libraries" property for Debug configuration
-# doesn't seem to work.
-#if(MSVC)
-#    set_target_properties(gameoflife PROPERTIES
-#       VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
- #   )
-#endif()
-
-#ImGui conflicts with window default libraries
-#if(MSVC)
- #   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-#endif()
+target_include_directories(quadtreetest PRIVATE src)
