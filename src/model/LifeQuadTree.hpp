@@ -12,10 +12,30 @@
 namespace LifeQuadTree
 {
 	typedef std::bitset<8>  NodeFlags;
+
 	struct Point
 	{
 		int x = 0;
 		int y = 0;
+
+		//Point& operator=(const Point& point) {
+		//	x = point.x;
+		//	y = point.y;
+		//	return *this;
+		//}
+
+		//Point operator+(const Point& point) const {
+		//	return { x + point.x, y + point.y };
+		//}
+
+		bool operator==(const Point& point) const
+		{
+			return (x == point.x && y == point.y);
+		}
+
+		//bool operator==(const Names& rhs) const {
+		//	return this->fname == rhs.lname;
+		//}
 	};
 
 	struct BoundingBox
@@ -48,21 +68,12 @@ namespace LifeQuadTree
 		//If it is a LEAF node, the origin is just the point coordinates.
 
 		//Coordinate of northWest
+		//We actually don't really have to store this as it can be deduced from the tree structure.
+		//For now I am leaving it in to make my life easy..
 		LifeQuadTree::Point origin;
 
 		//Flags that can be set are listed in the enum NodeFlagNames
 		NodeFlags flags = 0;
-
-		//bool isRoot = false;
-		//bool isLeaf = false;
-		////I might switch to flags for all of these bools.. that way I have just a single int.
-		//bool alive = false; //Will be true if ANY of the cells in the bounding box are alive. 
-		////a flag for an empty cell that has a live neighbor to make sure it gets checked next round.
-		////When I set a pixel to true, I'll also set the neighbors to checkNext.
-		////If a dead cell is then checked and found to have no neighbors, I set it back to false.
-		//bool checkNext = false;
-
-		
 
 		//value for display. 8 bit, will be translated to a color map. 
 		uint8_t colorValue = 0;
@@ -76,16 +87,20 @@ namespace LifeQuadTree
 		std::shared_ptr<Node> northEast = nullptr;
 		std::shared_ptr<Node> southEast = nullptr;
 		std::shared_ptr<Node> southWest = nullptr;
-		const std::array<std::shared_ptr<Node>, 4> children = { northWest , northEast, southEast, southWest };
+		//This needs to be pointers to pointers!
+		const std::array<std::shared_ptr<Node>*, 4> children = { &northWest , &northEast, &southEast, &southWest };
 
+		//Return true if all quadrant pointers are empty
 		bool isEmpty(){
-			for (auto quadrant : children) if (quadrant) return false;
+			for (auto quadrant : children) if (*quadrant) return false;
 			return true;
 		}
 
 		bool getFlag(NodeFlagNames flag) { return flags.test(flag); }
 		void setFlag(NodeFlagNames flag, bool value) { value ? flags.set(flag) : flags.reset(flag); }
 
+
+		//This is just wrong.... 
 		BoundingBox getBoundingBox()
 		{
 			//int displacement = 1;
@@ -94,16 +109,19 @@ namespace LifeQuadTree
 			return BoundingBox
 			{
 				origin.x ,
-				origin.x + displacement,
+				2 * displacement + origin.x -1,
 				origin.y,
-				origin.y + displacement
+				2 * displacement + origin.y -1
 			};
 		}
 
 		//The coordinate distance between children;
+		//I can get this from boundinghbox. 
 		int childDisplacement() {
-			int displacement = 1;
-			for (int i = 1; i <= scale; ++i) displacement = displacement * 2;
+			int displacement = 1;//scale 1 we want 1
+			//scale 2 we want 2.. but it returns 4? 
+			
+			for (int i = 1; i < scale; i++) displacement = displacement * 2;
 			return displacement;
 		}
 	};
@@ -113,12 +131,18 @@ namespace LifeQuadTree
 	public:
 		Tree();
 
-		std::shared_ptr<LifeQuadTree::Node> rootNode = std::make_unique<LifeQuadTree::Node>();
-		void setLeaf(LifeQuadTree::Point point, bool alive = true);
+		std::shared_ptr<LifeQuadTree::Node> rootNode = std::make_unique<LifeQuadTree::Node>(1);
+		std::shared_ptr<LifeQuadTree::Node> setLeaf(LifeQuadTree::Point point, bool alive = true);
 		//getNeighbors(LifeQuadTree::Point point);
 
 		//If it is the first point, call this to create a root node that will include the point.
 		//Expand scale by adding root nodes until the root node bounding box includes the point
+
+		std::shared_ptr<LifeQuadTree::Node> getChildNodeEnclosingPoint(
+			std::shared_ptr<LifeQuadTree::Node> parent,
+			LifeQuadTree::Point point
+		);
+
 		void expandTreeScaleTowardsPoint(Point point);
 
 
