@@ -42,14 +42,6 @@ ModelParameters CpuModel::getParameters()
 	return activeModelParams_;
 }
 
-//Should I subclass the datastructure?
-//Right now I have a vector of vectors,
-//Next I would do a sparse matrix.
-//I would reuse most of the update method (aside from the neighbor counting). 
-//I could have a countNeighbors(cell). 
-//For a sparse matrix, how do I know which dead cells to check? 
-//I could keep a list of candidates.. so if the central cell is alive at the end of update, add all of the neighbors to a list of cells to check next time. 
-
 void CpuModel::update()
 {
     std::vector<std::vector<uint8_t>> previousState = grid_;
@@ -109,26 +101,13 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     //I could have a bool that says the texture needs updating before drawing and handle that in core.cpp.
 
     const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
-    //drawDecay_(renderer, width, height, drawRange);
 
     for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
     {
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
         {
-            SDL_Color color = SDL_Color();
-            if (drawStrategy_ == DrawStrategy::DualColor) {
-                auto floatColor = (grid_[rowIndex][columnIndex] == aliveValue_) ? dualColorAliveColor_ : dualColorDeadColor_;
 
-                color = { 
-                    (uint8_t)(floatColor[0] * 255), 
-                    (uint8_t)(floatColor[1] * 255),
-                    (uint8_t)(floatColor[2] * 255),
-                    255 
-                };
-            }
-            else {
-				color = colormapLookup_[grid_[rowIndex][columnIndex]];
-			}
+            SDL_Color color = colorMapper_.ColormapMap[static_cast<ColorMapper::ColormapType>(selectedColorMapIndex_)][grid_[rowIndex][columnIndex]];
 
             SDL_SetRenderDrawColor(
                 renderer,
@@ -206,70 +185,27 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 
     //Visualization
     if (ImGui::CollapsingHeader("Visualization")) {
-        //Need a button to choose drawing strategy
+        ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapper_.ColorMapNames, 15);
         
-        if (ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapper_.ColorMapNames ,15))
+        if (selectedColorMapIndex_ == (int)ColorMapper::ColormapType::DualColor)
         {
-            drawStrategy_ = (selectedColorMapIndex_ == 0) ? DrawStrategy::DualColor : DrawStrategy::Decay;
-
-            //Why am I using a switch here? I should just have a lookup.
-            switch (selectedColorMapIndex_){
-            case 0:
-                break;
-            case 1:
-                colormapLookup_ = colorMapper_.CividisLookup;
-                break;
-            case 2:
-				colormapLookup_ = colorMapper_.CubehelixLookup;
-				break;
-            case 3:
-                colormapLookup_ = colorMapper_.GithubLookup;
-                break;
-            case 4:
-				colormapLookup_ = colorMapper_.GrayLookup;
-				break;
-            case 5:
-                colormapLookup_ = colorMapper_.HeatLookup;
-                break;
-            case 6:
-                colormapLookup_ = colorMapper_.HotLookup;
-                break;
-            case 7:
-                colormapLookup_ = colorMapper_.HSVLookup;
-                break;
-            case 8:
-				colormapLookup_ = colorMapper_.InfernoLookup;
-				break;
-            case 9:
-				colormapLookup_ = colorMapper_.JetLookup;
-				break;
-            case 10:
-				colormapLookup_ = colorMapper_.MagmaLookup;
-				break;
-            case 11:
-                    colormapLookup_ = colorMapper_.ParulaLookup;
-                    break;
-            case 12:
-                    colormapLookup_ = colorMapper_.PlasmaLookup;
-                    break;
-            case 13:
-					colormapLookup_ = colorMapper_.TurboLookup;
-					break;
-			case 14:
-					colormapLookup_ = colorMapper_.ViridisLookup;
-					break;
+            if (ImGui::ColorPicker3("Alive Cell Color:", dualColorAliveColor_, 134217728)) 
+            {
+                colorMapper_.setDualColorAliveColor(
+                    SDL_Color(dualColorAliveColor_[0] * 255, dualColorAliveColor_[1] * 255, dualColorAliveColor_[2] * 255)
+                );
+            }
+            if (ImGui::ColorPicker3("Dead Cell Color:", dualColorDeadColor_, 134217728))
+            {
+                colorMapper_.setDualColorDeadColor(
+                    SDL_Color(dualColorDeadColor_[0] * 255, dualColorDeadColor_[1] * 255, dualColorDeadColor_[2] * 255)
+                );
             }
         }
-        
-        if (drawStrategy_ == DrawStrategy::DualColor)
-        {
-            ImGui::ColorPicker3("Alive Cell Color:", dualColorAliveColor_, 134217728);
-            ImGui::ColorPicker3("Dead Cell Color:", dualColorDeadColor_, 134217728);
-        }
 		else {
-			ImGui::InputInt("Decay Rate", &deadValueDecrement_, 1, 10, 0);
-            if (deadValueDecrement_ < 1) deadValueDecrement_ = 1;
-            else if (deadValueDecrement_ > 255) deadValueDecrement_ = 255;
+		ImGui::InputInt("Decay Rate", &deadValueDecrement_, 1, 10, 0);
+        if (deadValueDecrement_ < 1) deadValueDecrement_ = 1;
+        else if (deadValueDecrement_ > 255) deadValueDecrement_ = 255;
 		}
     }
 
@@ -368,8 +304,6 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 {
     int mousePosX, mousePosY;
     int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-    //ImGui::IsWindowHovered(4) returns true if any window is hovered. If you pass 0, it throws an exception as it does not know the window to check.
-    //std::cout << ImGui::IsWindowHovered(4);
     
     if (!ImGui::IsWindowHovered(4) && !ImGui::IsAnyItemActive())
     {

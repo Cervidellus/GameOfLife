@@ -4,12 +4,9 @@
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
 #include "modelparameters.hpp"
-//#include "gui/sdl_colormaps_8bit.hpp"
 
 #include <vector>
 #include <../submodules/tinycolormap/include/tinycolormap.hpp>
-
-
 
 
 class CpuModel : public AbstractModel 
@@ -50,11 +47,11 @@ private:
 		int columnEnd = 1;
 	};
 
-	enum class DrawStrategy
-	{
-		DualColor,
-		Decay
-	};
+	//enum class DrawStrategy
+	//{
+	//	DualColor,
+	//	Decay
+	//};
 
 	GridDrawRange getDrawRange_(const int width, const int height);
 	//void drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange);
@@ -76,28 +73,11 @@ private:
 	float dualColorAliveColor_[3] = { 1.0, 1.0, 0 };
 	float dualColorDeadColor_[3] = { 0.0, 0.0, 1.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
-	DrawStrategy drawStrategy_ = DrawStrategy::DualColor;
-	std::array<SDL_Color, 256> colormapLookup_ = colorMapper_.CividisLookup;
+	//DrawStrategy drawStrategy_ = DrawStrategy::DualColor;
 
-	//For selecting colormap
-	//I should move some of the gui stuff out of here into something reusable.
-	//Maybe have a colormap class.
-	//const char* colorMapSelectorItems_[15] = {
-	//	"DualColor",
-	//	"Cividis",
-	//	"Cubehelix",
-	//	"Github",
-	//	"Gray",
-	//	"Heat",
-	//	"Hot",
-	//	"HSV",
-	//	"Inferno",
-	//	"Jet",
-	//	"Magma",
-	//	"Parula",
-	//	"Plasma",
-	//	"Turbo",
-	//	"Viridis" };
+	//TODO:: no reason to stor a colormapLookup_.. I should just store the index
+	//std::array<SDL_Color, 256> colormapLookup_ = colorMapper_.ColormapMap[ColorMapper::ColormapType::Cividis];
+
 	int selectedColorMapIndex_ = 0;
 
 	const double MAX_ZOOM = 100.0;

@@ -11,7 +11,7 @@
 class ColorMapper
 {
 public:
-	//ColorMapper();
+	ColorMapper();
 
 	static enum class ColormapType
 	{
@@ -24,38 +24,32 @@ public:
 		"DualColor","Cividis","Cubehelix","Github","Gray","Heat","Hot",
 		"HSV","Inferno","Jet","Magma","Parula","Plasma","Turbo","Viridis" };
 
-	const std::array<SDL_Color, 256> CividisLookup = getColormapData_(tinycolormap::ColormapType::Cividis);
-	const std::array<SDL_Color, 256> CubehelixLookup = getColormapData_(tinycolormap::ColormapType::Cubehelix);
-	const std::array<SDL_Color, 256> GithubLookup = getColormapData_(tinycolormap::ColormapType::Github);
-	const std::array<SDL_Color, 256> GrayLookup = getColormapData_(tinycolormap::ColormapType::Gray);
-	const std::array<SDL_Color, 256> HeatLookup = getColormapData_(tinycolormap::ColormapType::Heat);
-	const std::array<SDL_Color, 256> HotLookup = getColormapData_(tinycolormap::ColormapType::Hot);
-	const std::array<SDL_Color, 256> HSVLookup = getColormapData_(tinycolormap::ColormapType::HSV);
-	const std::array<SDL_Color, 256> InfernoLookup = getColormapData_(tinycolormap::ColormapType::Inferno);
-	const std::array<SDL_Color, 256> JetLookup = getColormapData_(tinycolormap::ColormapType::Jet);
-	const std::array<SDL_Color, 256> MagmaLookup = getColormapData_(tinycolormap::ColormapType::Magma);
-	const std::array<SDL_Color, 256> ParulaLookup = getColormapData_(tinycolormap::ColormapType::Parula);
-	const std::array<SDL_Color, 256> PlasmaLookup = getColormapData_(tinycolormap::ColormapType::Plasma);
-	const std::array<SDL_Color, 256> TurboLookup = getColormapData_(tinycolormap::ColormapType::Turbo);
-	const std::array<SDL_Color, 256> ViridisLookup = getColormapData_(tinycolormap::ColormapType::Viridis);
+	std::map<ColormapType, std::array<SDL_Color, 256>> ColormapMap{
+		{ColormapType::DualColor, std::array<SDL_Color, 256>()},
+		{ColormapType::Cividis, getColormapData_(tinycolormap::ColormapType::Cividis) },
+		{ColormapType::Cubehelix, getColormapData_(tinycolormap::ColormapType::Cubehelix) },
+		{ColormapType::Github, getColormapData_(tinycolormap::ColormapType::Github) },
+		{ColormapType::Gray, getColormapData_(tinycolormap::ColormapType::Gray) },
+		{ColormapType::Heat, getColormapData_(tinycolormap::ColormapType::Heat) },
+		{ColormapType::Hot, getColormapData_(tinycolormap::ColormapType::Hot) },
+		{ColormapType::HSV, getColormapData_(tinycolormap::ColormapType::HSV) },
+		{ColormapType::Inferno, getColormapData_(tinycolormap::ColormapType::Inferno) },
+		{ColormapType::Jet, getColormapData_(tinycolormap::ColormapType::Jet) },
+		{ColormapType::Magma, getColormapData_(tinycolormap::ColormapType::Magma) },
+		{ColormapType::Parula, getColormapData_(tinycolormap::ColormapType::Parula) },
+		{ColormapType::Plasma, getColormapData_(tinycolormap::ColormapType::Plasma) },
+		{ColormapType::Turbo, getColormapData_(tinycolormap::ColormapType::Turbo) },
+		{ColormapType::Viridis, getColormapData_(tinycolormap::ColormapType::Viridis) }
+	};
 
+	void setDualColorAliveColor(SDL_Color color);
+	void setDualColorDeadColor(SDL_Color color);
 
 private:
-	constexpr std::array<SDL_Color, 256> getColormapData_(const tinycolormap::ColormapType colorMapType)
-	{
-		std::array<SDL_Color, 256> colors{};
-		for (int i = 0; i < 256; ++i) {
-			auto color = tinycolormap::GetColor((double)i / 255, colorMapType);
-			colors[i] = SDL_Color{
-				color.ri(),
-				color.gi(),
-				color.bi(),
-				255
-			};
-		}
-		return colors;
-	}
+	SDL_Color dualColorAliveSDLColor_ = SDL_Color(255, 255, 0, 255 );
+	SDL_Color dualColorDeadSDLColor_ = SDL_Color( 0, 0, 255, 255 );
 
+	constexpr std::array<SDL_Color, 256> getColormapData_(const tinycolormap::ColormapType colorMapType);
 };
 
 #endif //COLORMAPPER_H
