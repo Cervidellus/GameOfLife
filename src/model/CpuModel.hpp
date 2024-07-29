@@ -2,11 +2,13 @@
 #define CPU_MODEL_H
 
 #include "abstract_model.hpp"
+#include "ColorMapper.hpp"
 #include "modelparameters.hpp"
-#include "gui/sdl_colormaps_8bit.hpp"
+//#include "gui/sdl_colormaps_8bit.hpp"
 
 #include <vector>
 #include <../submodules/tinycolormap/include/tinycolormap.hpp>
+
 
 
 
@@ -36,9 +38,7 @@ public:
 
 private:
 	void generateModel_(const ModelParameters& modelParameters);
-	//void populateFromRLEStream_(std::istream& stream, const int startRow = 0, const int startColumn = 0);
 	void populateFromRLE_(std::istream& modelStream);
-	//void populateFromRLE_(std::string model);
 	void resizeGrid_();
 	void clearGrid_();
 
@@ -69,32 +69,35 @@ private:
 	};
 	//My intention is that 0 is dead, 255 is alive, and in between numbers can either be the amount of time alive or the amount of time dead.
 	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
-	int aliveValue_ = 255;
-	int deadValue_ = 0;
+
+	ColorMapper colorMapper_;
+	const int aliveValue_ = 255;
+	const int deadValue_ = 0;
 	float dualColorAliveColor_[3] = { 1.0, 1.0, 0 };
 	float dualColorDeadColor_[3] = { 0.0, 0.0, 1.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 	DrawStrategy drawStrategy_ = DrawStrategy::DualColor;
-	std::array<SDL_Color, 256> colormapLookup_ = Colormaps::PlasmaLookup;
+	std::array<SDL_Color, 256> colormapLookup_ = colorMapper_.CividisLookup;
 
 	//For selecting colormap
-	//const char* items[11] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIIIIII", "JJJJ", "KKKKKKK" };
-	const char* colorMapSelectorItems_[15] = {
-		"DualColor",
-		"Cividis",
-		"Cubehelix",
-		"Github",
-		"Gray",
-		"Heat",
-		"Hot",
-		"HSV",
-		"Inferno",
-		"Jet",
-		"Magma",
-		"Parula",
-		"Plasma",
-		"Turbo",
-		"Viridis" };
+	//I should move some of the gui stuff out of here into something reusable.
+	//Maybe have a colormap class.
+	//const char* colorMapSelectorItems_[15] = {
+	//	"DualColor",
+	//	"Cividis",
+	//	"Cubehelix",
+	//	"Github",
+	//	"Gray",
+	//	"Heat",
+	//	"Hot",
+	//	"HSV",
+	//	"Inferno",
+	//	"Jet",
+	//	"Magma",
+	//	"Parula",
+	//	"Plasma",
+	//	"Turbo",
+	//	"Viridis" };
 	int selectedColorMapIndex_ = 0;
 
 	const double MAX_ZOOM = 100.0;

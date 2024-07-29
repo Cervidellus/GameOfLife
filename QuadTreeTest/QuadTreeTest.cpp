@@ -1,5 +1,3 @@
-// QuadTreeTest.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 
 #include <iostream>
 #include "../src/model/LifeQuadTree.hpp"
@@ -40,21 +38,11 @@ int main()
 {
     LifeQuadTree::Tree tree;
 
-    //LifeQuadTree::Node node;
-    //node.scale = 1;
-    //auto scale1 = node.childDisplacement();//expect 1
-    //node.scale = 2;
-    //auto scale2 = node.childDisplacement();//expect 2
-    //node.scale = 3;
-    //auto scale3 = node.childDisplacement();//expect 4
-    //node.scale = 4;
-    //auto scale4 = node.childDisplacement();//expect 8
-
     auto result = testSetLeaf(tree, LifeQuadTree::Point{ 0, 0 }, true);
     std::cout << "Test result for Point{0,0}:\n";
     std::cout <<  result.resultString;
 
-    result = testSetLeaf(tree, LifeQuadTree::Point{ 3, 3 }, true);//testnode origin is 2,2!
+    result = testSetLeaf(tree, LifeQuadTree::Point{ 3, 3 }, true);
     std::cout << "Test result for Point{3, 3}:\n";
     std::cout << result.resultString;
 

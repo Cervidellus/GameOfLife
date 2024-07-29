@@ -18,24 +18,10 @@ namespace LifeQuadTree
 		int x = 0;
 		int y = 0;
 
-		//Point& operator=(const Point& point) {
-		//	x = point.x;
-		//	y = point.y;
-		//	return *this;
-		//}
-
-		//Point operator+(const Point& point) const {
-		//	return { x + point.x, y + point.y };
-		//}
-
 		bool operator==(const Point& point) const
 		{
 			return (x == point.x && y == point.y);
 		}
-
-		//bool operator==(const Names& rhs) const {
-		//	return this->fname == rhs.lname;
-		//}
 	};
 
 	struct BoundingBox
@@ -67,8 +53,7 @@ namespace LifeQuadTree
 
 		//If it is a LEAF node, the origin is just the point coordinates.
 
-		//Coordinate of northWest
-		//We actually don't really have to store this as it can be deduced from the tree structure.
+		//We don't have to store this as it can be deduced from the tree structure.
 		//For now I am leaving it in to make my life easy..
 		LifeQuadTree::Point origin;
 
@@ -82,7 +67,8 @@ namespace LifeQuadTree
 		//I think though we really want to set it to nullptr 
 		//Or maybe I should have hte drawing tree also be a quadtree? And have a separate vector of alive nodes that gets iterated over? 
 		std::shared_ptr<Node> parent = nullptr;
-
+		
+		//I should just have this in the array... but this allows me to access by name. Leaving it in for now to make my life easier. 
 		std::shared_ptr<Node> northWest = nullptr;
 		std::shared_ptr<Node> northEast = nullptr;
 		std::shared_ptr<Node> southEast = nullptr;
@@ -99,12 +85,8 @@ namespace LifeQuadTree
 		bool getFlag(NodeFlagNames flag) { return flags.test(flag); }
 		void setFlag(NodeFlagNames flag, bool value) { value ? flags.set(flag) : flags.reset(flag); }
 
-
-		//This is just wrong.... 
 		BoundingBox getBoundingBox()
 		{
-			//int displacement = 1;
-			//for (int i = 1; i <= scale; ++i) displacement = displacement * 2;//I think this works for factorial? Need to check to make sure I get right values.
 			int displacement = childDisplacement();
 			return BoundingBox
 			{
@@ -115,12 +97,9 @@ namespace LifeQuadTree
 			};
 		}
 
-		//The coordinate distance between children;
-		//I can get this from boundinghbox. 
 		int childDisplacement() {
-			int displacement = 1;//scale 1 we want 1
-			//scale 2 we want 2.. but it returns 4? 
-			
+			//I could make a simple lookup table to make this run faster. 
+			int displacement = 1;
 			for (int i = 1; i < scale; i++) displacement = displacement * 2;
 			return displacement;
 		}
@@ -133,16 +112,26 @@ namespace LifeQuadTree
 
 		std::shared_ptr<LifeQuadTree::Node> rootNode = std::make_unique<LifeQuadTree::Node>(1);
 		std::shared_ptr<LifeQuadTree::Node> setLeaf(LifeQuadTree::Point point, bool alive = true);
-		//getNeighbors(LifeQuadTree::Point point);
+		//clockwise Moore neighborhood, with northwest being index 0; 
+		//std::array<std::shared_ptr<LifeQuadTree::Node>, 8> getMooreNeighborhood(std::shared_ptr<LifeQuadTree::Node> center);
 
-		//If it is the first point, call this to create a root node that will include the point.
-		//Expand scale by adding root nodes until the root node bounding box includes the point
+		//If the center does not exist yet, I can call this?
+		//std::array<std::shared_ptr<LifeQuadTree::Node>, 8> getMooreNeighborhood(const LifeQuadTree::Point center);
 
-		std::shared_ptr<LifeQuadTree::Node> getChildNodeEnclosingPoint(
+		//returns false if a point does not exist. 
+		//bool isPointAlive(LifeQuadTree::Point point);
+		
+		//std::shared_ptr<LifeQuadTree::Node> getPoint(LifeQuadTree::Point point);
+
+		//Descends tree one level from the tree towards a point.
+		std::shared_ptr<LifeQuadTree::Node> descendTowardsPoint(
 			std::shared_ptr<LifeQuadTree::Node> parent,
 			LifeQuadTree::Point point
 		);
 
+		//I can also make an ascend method. But this is just getting the parent. 
+		
+		//this can be private
 		void expandTreeScaleTowardsPoint(Point point);
 
 

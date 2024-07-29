@@ -111,7 +111,6 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
     //drawDecay_(renderer, width, height, drawRange);
 
-    //if(drawStrategy_ != DrawStrategy::DualColor) return;
     for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
     {
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
@@ -209,54 +208,55 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
     if (ImGui::CollapsingHeader("Visualization")) {
         //Need a button to choose drawing strategy
         
-        if (ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapSelectorItems_,15))
+        if (ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapper_.ColorMapNames ,15))
         {
             drawStrategy_ = (selectedColorMapIndex_ == 0) ? DrawStrategy::DualColor : DrawStrategy::Decay;
 
+            //Why am I using a switch here? I should just have a lookup.
             switch (selectedColorMapIndex_){
             case 0:
                 break;
             case 1:
-                colormapLookup_ = Colormaps::CividisLookup;
+                colormapLookup_ = colorMapper_.CividisLookup;
                 break;
             case 2:
-				colormapLookup_ = Colormaps::CubehelixLookup;
+				colormapLookup_ = colorMapper_.CubehelixLookup;
 				break;
             case 3:
-                colormapLookup_ = Colormaps::GithubLookup;
+                colormapLookup_ = colorMapper_.GithubLookup;
                 break;
             case 4:
-				colormapLookup_ = Colormaps::GrayLookup;
+				colormapLookup_ = colorMapper_.GrayLookup;
 				break;
             case 5:
-                colormapLookup_ = Colormaps::HeatLookup;
+                colormapLookup_ = colorMapper_.HeatLookup;
                 break;
             case 6:
-                colormapLookup_ = Colormaps::HotLookup;
+                colormapLookup_ = colorMapper_.HotLookup;
                 break;
             case 7:
-                colormapLookup_ = Colormaps::HSVLookup;
+                colormapLookup_ = colorMapper_.HSVLookup;
                 break;
             case 8:
-				colormapLookup_ = Colormaps::InfernoLookup;
+				colormapLookup_ = colorMapper_.InfernoLookup;
 				break;
-                case 9:
-				colormapLookup_ = Colormaps::JetLookup;
+            case 9:
+				colormapLookup_ = colorMapper_.JetLookup;
 				break;
-                case 10:
-				colormapLookup_ = Colormaps::MagmaLookup;
+            case 10:
+				colormapLookup_ = colorMapper_.MagmaLookup;
 				break;
-                case 11:
-                    colormapLookup_ = Colormaps::ParulaLookup;
+            case 11:
+                    colormapLookup_ = colorMapper_.ParulaLookup;
                     break;
-                case 12:
-                    colormapLookup_ = Colormaps::PlasmaLookup;
+            case 12:
+                    colormapLookup_ = colorMapper_.PlasmaLookup;
                     break;
-                case 13:
-					colormapLookup_ = Colormaps::TurboLookup;
+            case 13:
+					colormapLookup_ = colorMapper_.TurboLookup;
 					break;
-				case 14:
-					colormapLookup_ = Colormaps::ViridisLookup;
+			case 14:
+					colormapLookup_ = colorMapper_.ViridisLookup;
 					break;
             }
         }

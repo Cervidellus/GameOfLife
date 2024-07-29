@@ -76,12 +76,12 @@ void LifeQuadTree::Tree::expandTreeScaleTowardsPoint(Point point)
 	rootNode = newRoot;
 }
 
-std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::getChildNodeEnclosingPoint(
+std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::descendTowardsPoint(
 	std::shared_ptr<LifeQuadTree::Node> parent,
 	LifeQuadTree::Point point)
 {
 	if (parent->scale == 0) return parent;
-	auto boundingBox = parent->getBoundingBox();
+	//auto boundingBox = parent->getBoundingBox();
 	//if (point == Point{ -5, -44 } )
 	//{
 	//	std::cout << "here is the fail point. Returns wrong child node.\n";
@@ -92,8 +92,8 @@ std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::getChildNodeEnclosingPoi
 	//Which child bounding box does it fit in? 
 	auto childDisplacement = parent->childDisplacement();
 
-	bool west = (point.x < (boundingBox.xMin + childDisplacement));
-	bool north = (point.y < (boundingBox.yMin + childDisplacement));
+	bool west = (point.x < (parent->origin.x + childDisplacement));
+	bool north = (point.y < (parent->origin.y + childDisplacement));
 	std::shared_ptr<LifeQuadTree::Node> subNode;
 	if (north) subNode = (west) ? parent->northWest : parent->northEast;
 	else subNode = (west) ? parent->southWest : parent->southEast;
@@ -142,7 +142,7 @@ std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::setLeaf(LifeQuadTree::Po
 	while(!isInBoundingBox(point, rootNode->getBoundingBox())) expandTreeScaleTowardsPoint(point);
 
 	auto currentNode = rootNode;
-	while (currentNode->scale > 0) currentNode = getChildNodeEnclosingPoint(currentNode, point);
+	while (currentNode->scale > 0) currentNode = descendTowardsPoint(currentNode, point);
 	currentNode->setFlag(LifeQuadTree::IsAlive, alive);
 	return currentNode;
 }

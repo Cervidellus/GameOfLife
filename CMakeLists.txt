@@ -23,6 +23,8 @@ add_executable(gameoflife
     src/core.hpp 
     src/model/abstract_model.hpp
     src/model/modelparameters.hpp
+    src/model/ColorMapper.hpp
+    src/model/ColorMapper.cpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
     src/model/LifeQuadTree.hpp
