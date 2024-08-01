@@ -34,12 +34,14 @@ add_executable(gameoflife
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
+    src/gui/gui.cpp
+    src/gui/gui.hpp
     src/gui/interface.cpp 
     src/gui/interface.hpp 
     src/gui/mainwindow.cpp 
     src/gui/mainwindow.hpp
-    src/gui/gui.cpp
-    src/gui/gui.hpp
+    src/gui/WidgetFunctions.hpp
+    src/gui/WidgetFunctions.cpp
 )
 
 target_include_directories(gameoflife PRIVATE src)
