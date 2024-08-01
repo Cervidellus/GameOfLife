@@ -19,11 +19,6 @@ LifeQuadTree::Tree::Tree()
 
 void LifeQuadTree::Tree::expandTreeScaleTowardsPoint(Point point)
 {
-	//if (point == Point{ -5, -44 })
-	//{
-	//	std::cout << "here is the fail point. Returns wrong child node.\n";
-	//	//Root node has scale 1?
-	//}
 	//if it is the first point, move the root to the origin point.
 	if (rootNode->isEmpty())//I could flag this unlikely. Don't want to do it until I have benchmarking in place.
 	{
@@ -81,12 +76,6 @@ std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::descendTowardsPoint(
 	LifeQuadTree::Point point)
 {
 	if (parent->scale == 0) return parent;
-	//auto boundingBox = parent->getBoundingBox();
-	//if (point == Point{ -5, -44 } )
-	//{
-	//	std::cout << "here is the fail point. Returns wrong child node.\n";
-	//	//Bounding box of root is WAY off....
-	//}
 
 	//traverse down until you get to a leaf node. If at any point you reach a nullpointer, create that node.
 	//Which child bounding box does it fit in? 
@@ -94,44 +83,44 @@ std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::descendTowardsPoint(
 
 	bool west = (point.x < (parent->origin.x + childDisplacement));
 	bool north = (point.y < (parent->origin.y + childDisplacement));
-	std::shared_ptr<LifeQuadTree::Node> subNode;
-	if (north) subNode = (west) ? parent->northWest : parent->northEast;
-	else subNode = (west) ? parent->southWest : parent->southEast;
+	std::shared_ptr<LifeQuadTree::Node> childNode;
+	if (north) childNode = (west) ? parent->northWest : parent->northEast;
+	else childNode = (west) ? parent->southWest : parent->southEast;
 
-	if (!subNode)
+	if (!childNode)
 	{
 		//create the subnode
-		subNode = std::make_shared<LifeQuadTree::Node>();
-		subNode->scale = parent->scale - 1;
-		subNode->parent = parent;
+		childNode = std::make_shared<LifeQuadTree::Node>();
+		childNode->scale = parent->scale - 1;
+		childNode->parent = parent;
 		//Need to give appropriate values for x and y
 		if (north)
 		{
-			subNode->origin.y = parent->origin.y;
+			childNode->origin.y = parent->origin.y;
 			if (west) {
-				subNode->origin.x = parent->origin.x;
-				parent->northWest = subNode;
+				childNode->origin.x = parent->origin.x;
+				parent->northWest = childNode;
 			}
 				
 			else {
-				subNode->origin.x = parent->origin.x + parent->childDisplacement();
-				parent->northEast = subNode;
+				childNode->origin.x = parent->origin.x + parent->childDisplacement();
+				parent->northEast = childNode;
 			}
 		}
 		else
 		{
-			subNode->origin.y = parent->origin.y + parent->childDisplacement();
+			childNode->origin.y = parent->origin.y + parent->childDisplacement();
 			if (west) {
-				subNode->origin.x = parent->origin.x;
-				parent->southWest = subNode;
+				childNode->origin.x = parent->origin.x;
+				parent->southWest = childNode;
 			}
 			else {
-				subNode->origin.x = parent->origin.x + parent->childDisplacement();
-				parent->southEast = subNode;
+				childNode->origin.x = parent->origin.x + parent->childDisplacement();
+				parent->southEast = childNode;
 			}
 		}
 	}
-	return subNode;
+	return childNode;
 }
 
 //Maybe I should return the node so that we can further process it if need be.
@@ -145,4 +134,10 @@ std::shared_ptr<LifeQuadTree::Node> LifeQuadTree::Tree::setLeaf(LifeQuadTree::Po
 	while (currentNode->scale > 0) currentNode = descendTowardsPoint(currentNode, point);
 	currentNode->setFlag(LifeQuadTree::IsAlive, alive);
 	return currentNode;
+}
+
+void LifeQuadTree::Tree::clear()
+{
+	rootNode.reset(new Node());
+	rootNode->scale = 1;
 }

@@ -42,12 +42,30 @@ public:
 		{ColormapType::Viridis, getColormapData_(tinycolormap::ColormapType::Viridis) }
 	};
 
-	void setDualColorAliveColor(SDL_Color color);
-	void setDualColorDeadColor(SDL_Color color);
+	SDL_Color getSDLColor(const int& colorIndex);
+
+	//getters and setters needed to modify DualColor colormap
+	//And to make the float and SDL_Color values equivalent.
+	SDL_Color getDualColorAliveSDLColor() { return dualColorAliveSDLColor_; };
+	SDL_Color getDualColorDeadSDLColor() { return dualColorDeadSDLColor_; };
+	std::array<float, 3> getDualColorAliveColorFloat() { return dualColorAliveFloatColor_; };
+	std::array<float, 3> getDualColorDeadColorFloat() { return dualColorDeadFloatColor_; };
+
+	void setDualColorAliveColor(const SDL_Color& color);
+	void setDualColorDeadColor(const SDL_Color& color);
+	void setDualColorAliveColor(const std::array<float, 3>& color);
+	void setDualColorDeadColor(const std::array<float, 3>& color);
+
+	int selectedColorMapIndex = (int)ColormapType::DualColor;
 
 private:
+	//Alive and dead colors are stored as both an SDL_Color, which is used in the colormap, 
+	//and float arrays, which are used by ImGui.
+	//This prevents having to divide the float arrays every time I call the gui.
 	SDL_Color dualColorAliveSDLColor_ = SDL_Color(255, 255, 0, 255 );
 	SDL_Color dualColorDeadSDLColor_ = SDL_Color( 0, 0, 255, 255 );
+	std::array<float, 3> dualColorAliveFloatColor_ = { 1.0f, 1.0f, 0.0f };
+	std::array<float, 3> dualColorDeadFloatColor_ = { 0.0f, 0.0f, 1.0f };
 
 	constexpr std::array<SDL_Color, 256> getColormapData_(const tinycolormap::ColormapType colorMapType);
 };

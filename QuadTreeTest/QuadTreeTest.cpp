@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include "../src/model/LifeQuadTree.hpp"
+#include "../src/model/LifeQuadTreeModel.hpp"
 
 struct TestResult
 {
@@ -62,23 +63,8 @@ int main()
     std::cout << "Test result for Point{0,0}:\n";
     std::cout << result.resultString;
 
-    //auto startOrigin = testnode->origin;
-    //Origin should stay the same. 
-    //auto testNode = tree.setLeaf(LifeQuadTree::Point(3, 3), true);
-    //if (tree.rootNode->origin.x != startOrigin.x && tree.rootNode->origin.y != startOrigin.y)
-    //{
-    //    std::cout << "Wrong tree root after adding Point(3,3)." << "\n";//It got set to 3,3!
-    //}
+    LifeQuadTreeModel model;
+    model.initialize();//seems to work for generating random model? 
 
-    //testnode = tree.setLeaf(LifeQuadTree::Point{ 12,33 }, true);
-    ////This should also keep the origin the same. Never returns!
-    //if (tree.rootNode->origin.x != startOrigin.x && tree.rootNode->origin.y != startOrigin.y)
-    //{
-    //    std::cout << "Wrong tree root after adding Point(12,33)." << "\n";
-    //}
-    ////This should move the origin to the northwest to enclose (-5,-44)
-    //testnode = tree.setLeaf(LifeQuadTree::Point{ -5,-44 }, true);
-
-    //testnode = tree.setLeaf(LifeQuadTree::Point{ 0,3 }, false);
-    
+    std::cout << "Test complete.\n";
 }

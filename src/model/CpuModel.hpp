@@ -3,11 +3,10 @@
 
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
-#include "modelparameters.hpp"
+//#include "modelparameters.hpp"
 
 #include <vector>
-#include <../submodules/tinycolormap/include/tinycolormap.hpp>
-
+//#include <../submodules/tinycolormap/include/tinycolormap.hpp>
 
 class CpuModel : public AbstractModel 
 {
@@ -33,9 +32,17 @@ public:
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();
 
+	void generateModel(const ModelParameters& modelParameters);
+
 private:
-	void generateModel_(const ModelParameters& modelParameters);
+	
+	//Take a stream representing the RLE encoded model and populate board.
 	void populateFromRLE_(std::istream& modelStream);
+	//Load an RLE file and populate the board. Intended as a callback sent to gui.
+	void loadRLE_(const std::string& filePath);
+	//Convert and RLE string to a stream and call populateFromRLE_
+	void populateFromRLEString_(const std::string& rleString);
+
 	void resizeGrid_();
 	void clearGrid_();
 
@@ -47,14 +54,7 @@ private:
 		int columnEnd = 1;
 	};
 
-	//enum class DrawStrategy
-	//{
-	//	DualColor,
-	//	Decay
-	//};
-
 	GridDrawRange getDrawRange_(const int width, const int height);
-	//void drawDecay_(SDL_Renderer* renderer, const int width, const int height, const GridDrawRange& drawRange);
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
@@ -64,8 +64,6 @@ private:
 		400,
 		400
 	};
-	//My intention is that 0 is dead, 255 is alive, and in between numbers can either be the amount of time alive or the amount of time dead.
-	//valuses for aliveValue_ and deadValue_ can be changed for different visualization strategies.
 
 	ColorMapper colorMapper_;
 	const int aliveValue_ = 255;
@@ -73,17 +71,13 @@ private:
 	float dualColorAliveColor_[3] = { 1.0, 1.0, 0 };
 	float dualColorDeadColor_[3] = { 0.0, 0.0, 1.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
-	//DrawStrategy drawStrategy_ = DrawStrategy::DualColor;
 
-	//TODO:: no reason to stor a colormapLookup_.. I should just store the index
-	//std::array<SDL_Color, 256> colormapLookup_ = colorMapper_.ColormapMap[ColorMapper::ColormapType::Cividis];
-
-	int selectedColorMapIndex_ = 0;
+	//int selectedColorMapIndex_ = 0;
 
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
 
-	//for handling ImGui user input
+	//for handling ImGui RLE user input
 	std::string inputString_ = "";
 };
 

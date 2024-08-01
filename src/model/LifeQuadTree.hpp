@@ -5,7 +5,22 @@
 #include <bitset>
 #include <memory>
 
+//This quad tree is constructed so we can both ascend and descend the tree.
+//Normally, you would use raw pointers, or perhaps unique_ptr for hte children.
+//In my case, I am using a shared_ptr as I might implement lazy deletion with a garbage collector.
+//My thinking is that points very often go from alive to dead and back again, and these points
+//are clustered in space. I might be able to save allocations by keeping the nodes around for a while.
+//Memory is not really much of a concern, so I could set a limit on the number of nodes kept around before the garbage collector runs.
+//going to get it completely running before I worry about a garbage collector,
+//and if it doesn't seem necessary I'll switch the pointer types. 
+
+//What do I hope a quad tree buys me?
+//It allows me to represent an infinite grid that I can expand as necessary.
+//I am hoping that finding neighorhoods will be fast.
+//It also sets me up for doing some lookup tables later on that could speed things up.
+
 //I could also do a version where I stored chunks of cells in a single int and do bit manipulation to deal with them.
+// This would be more similar to quicklife.
 //But I want to do a simpler version first.
 
 
@@ -111,7 +126,9 @@ namespace LifeQuadTree
 		Tree();
 
 		std::shared_ptr<LifeQuadTree::Node> rootNode = std::make_unique<LifeQuadTree::Node>(1);
+
 		std::shared_ptr<LifeQuadTree::Node> setLeaf(LifeQuadTree::Point point, bool alive = true);
+		void clear();
 		//clockwise Moore neighborhood, with northwest being index 0; 
 		//std::array<std::shared_ptr<LifeQuadTree::Node>, 8> getMooreNeighborhood(std::shared_ptr<LifeQuadTree::Node> center);
 

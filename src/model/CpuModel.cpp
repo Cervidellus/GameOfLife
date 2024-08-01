@@ -1,5 +1,6 @@
 #include "CpuModel.hpp"
 #include "presets/modelpresets.hpp"
+#include "gui/WidgetFunctions.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
 #include <algorithm>
@@ -9,12 +10,11 @@
 #include <sstream>
 
 #include <imgui.h>
-#include <imgui_stdlib.h>
 #include <SDL.h>
 
 void CpuModel::initialize()
 {
-    generateModel_(activeModelParams_);
+    generateModel(activeModelParams_);
 }
 
 void CpuModel::resizeGrid_()
@@ -82,20 +82,18 @@ void CpuModel::update()
             if (!cellAlive) {
                 if (livingNeighbors == activeModelParams_.rule4) *cellValue = aliveValue_;
                 else *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
-                //else grid_[rowIndex][columnIndex] -= deadValueDecrement_;
             }
             //If neighbors are less than 2 or more than 3, kill it.
             else if (livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) {
                 *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
             }
-            //if (grid_[rowIndex][columnIndex] < 0) grid_[rowIndex][columnIndex] = 0;
         }
     }
 }
 
 void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, const int width, const int height)
 {
-    //TODO: Currently I am redrawing the model every time. It might be better to draw it to a texture and reuse the texture if model is not updated.
+    //TODO: It is redrawing the model every time. It might be better to draw it to a texture and reuse the texture if model is not updated.
     //I might even update the texture at the same time I update the model, if the view has drawn the last one. 
     //THe hard thing there is making sure that we aren't drawing the texture more often than we need. 
     //I could have a bool that says the texture needs updating before drawing and handle that in core.cpp.
@@ -106,8 +104,8 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     {
         for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
         {
-
-            SDL_Color color = colorMapper_.ColormapMap[static_cast<ColorMapper::ColormapType>(selectedColorMapIndex_)][grid_[rowIndex][columnIndex]];
+            
+            SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
             SDL_SetRenderDrawColor(
                 renderer,
@@ -131,173 +129,25 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 {
-    ImGuiInputTextFlags modelRunningFlag = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
+    WidgetFunctions::drawGOLRulesHeader(
+        activeModelParams_, 
+        [this](const ModelParameters& params) {generateModel(params);},
+        isModelRunning);
 
-    ImGui::SliderInt(
-        "X displacement",
-        &activeModelParams_.displacementX,
-        -500,
-        500);
-    ImGui::SliderInt(
-        "Y displacement",
-        &activeModelParams_.displacementY,
-        -500,
-        500);
-
-    if (ImGui::CollapsingHeader("CPU Model Parameters")) {
-
-        //TODO:: limit to positive values
-        //TODO:: ensure that input is 4-byte aligned
-        ImGui::InputInt("Width", &activeModelParams_.modelWidth, 100, 100, modelRunningFlag);
-        ImGui::InputInt("Height", &activeModelParams_.modelHeight, 100, 100, modelRunningFlag);
-        ImGui::SliderFloat("Model Fill Factor", &activeModelParams_.fillFactor, 0.001, 1);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("The proportion of 'alive' cells generated.");
-        if (ImGui::Button("Generate Model")) {
-            generateModel_(activeModelParams_);
-        }
-
-        ImGuiInputTextFlags ruleInputFlags = isModelRunning ? ImGuiInputTextFlags_ReadOnly : 0;
-
-        if (ImGui::InputInt("Conway Rule 1 Cutoff", &activeModelParams_.rule1, 1, 1))
-        {
-            if (activeModelParams_.rule1 < 0) activeModelParams_.rule1 = 0;
-            if (activeModelParams_.rule1 > 8) activeModelParams_.rule1 = 8;
-            if (activeModelParams_.rule1 >= activeModelParams_.rule3) activeModelParams_.rule1 = activeModelParams_.rule3 - 1;
-        };
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has fewer than this many neighbors, it dies.");
-
-        if (ImGui::InputInt("Conway Rule 3 Cutoff", &activeModelParams_.rule3, 1, 1))
-        {
-            if (activeModelParams_.rule3 < 1) activeModelParams_.rule3 = 1;
-            if (activeModelParams_.rule3 > 8) activeModelParams_.rule3 = 8;
-            if (activeModelParams_.rule3 <= activeModelParams_.rule1) activeModelParams_.rule3 = activeModelParams_.rule1 + 1;
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a living cell has more than this many neighbors, it dies.");
-
-        if (ImGui::InputInt("Conway Rule 4", &activeModelParams_.rule4, 1, 1))
-        {
-            if (activeModelParams_.rule4 < 0) activeModelParams_.rule4 = 0;
-            if (activeModelParams_.rule4 > 8) activeModelParams_.rule4 = 8;
-        };
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("If a dead cell has exactly this many neighbors, it becomes alive.");
-
-    }
-
-    //Visualization
-    if (ImGui::CollapsingHeader("Visualization")) {
-        ImGui::Combo("Coloring Strategy", &selectedColorMapIndex_, colorMapper_.ColorMapNames, 15);
-        
-        if (selectedColorMapIndex_ == (int)ColorMapper::ColormapType::DualColor)
-        {
-            if (ImGui::ColorPicker3("Alive Cell Color:", dualColorAliveColor_, 134217728)) 
-            {
-                colorMapper_.setDualColorAliveColor(
-                    SDL_Color(dualColorAliveColor_[0] * 255, dualColorAliveColor_[1] * 255, dualColorAliveColor_[2] * 255)
-                );
-            }
-            if (ImGui::ColorPicker3("Dead Cell Color:", dualColorDeadColor_, 134217728))
-            {
-                colorMapper_.setDualColorDeadColor(
-                    SDL_Color(dualColorDeadColor_[0] * 255, dualColorDeadColor_[1] * 255, dualColorDeadColor_[2] * 255)
-                );
-            }
-        }
-		else {
-		ImGui::InputInt("Decay Rate", &deadValueDecrement_, 1, 10, 0);
-        if (deadValueDecrement_ < 1) deadValueDecrement_ = 1;
-        else if (deadValueDecrement_ > 255) deadValueDecrement_ = 255;
-		}
-    }
-
-    if (ImGui::CollapsingHeader("presets"))
-    {
-        if (ImGui::Button("random")) {
-            generateModel_(ModelPresets::randomParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("a randomly generated field to observe conway's game of life.");
-
-        if (ImGui::Button("From File")) {
-            auto fileDialog = pfd::open_file(
-                "Choose file", 
-                pfd::path::home(),
-                {"RLE Pattern Files (.rle)", "*.rle"},
-                false
-            );
-            auto result = fileDialog.result();
-            if (!result.empty()) {
-                std::cout << "Opening: " << fileDialog.result()[0] << "\n";
-                std::ifstream filestream(result[0]);
-
-                if (filestream.is_open())
-                {
-                    clearGrid_();
-                    populateFromRLE_(filestream);
-                    filestream.close();
-                }
-            }
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("RLE encoded files can be downloaded from https://conwaylife.com/");
-
-        if (ImGui::Button("From String")) ImGui::OpenPopup("Enter RLE string:");
-        if (ImGui::BeginPopup("Enter RLE string:"))
-        {
-            //I need a temporary input buffer as userInput will be empty once Finished is pressed
-            std::string userInput;
-            if (ImGui::InputTextMultiline("Enter RLE String:", &userInput))
-            {
-                inputString_ = userInput;
-            }
-
-            if (ImGui::Button("Finished"))
-            {
-                ImGui::CloseCurrentPopup();
-                if (!inputString_.empty())
-                {
-                    std::cout << "Processing: " << inputString_ << "\n";
-                    clearGrid_();
-                    std::stringstream rleStream(inputString_);
-                    populateFromRLE_(rleStream);
-                }
-            }
-            ImGui::EndPopup();
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("RLE text can be copied and pasted from https://conwaylife.com/");
-
-        if (ImGui::Button("swiss cheese")) {
-            generateModel_(ModelPresets::swissCheeseParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("modified rules can produce different results.");
-
-        if (ImGui::Button("decomposition")) {
-            generateModel_(ModelPresets::decompositionParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("modified rules can produce different results.");
-
-        if (ImGui::Button("blinker")) {
-            generateModel_(ModelPresets::blinkerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest oscillator in conway's game of life.");
-
-        if (ImGui::Button("lightweight spaceship")) {
-            generateModel_(ModelPresets::lightweightSpaceshipParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest orthoganal spaceship in conway's game of life.");
-
-        if (ImGui::Button("blocker")) {
-            generateModel_(ModelPresets::blockerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("blocker.");
-
-        if (ImGui::Button("nihonium")) {
-            generateModel_(ModelPresets::nihoniumParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("nihonium emu.");
-
-        if (ImGui::Button("gabriel's p138 oscillator")) {
-            generateModel_(ModelPresets::gabrielsPOneThirtyEightParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("cool period 138 oscillator discovered by gabriel nivasch on october 13, 2002.");
-    }
+    WidgetFunctions::drawVisualizationHeader(
+		activeModelParams_,
+		colorMapper_,
+		deadValueDecrement_,
+		isModelRunning);
+    
+    WidgetFunctions::drawPresetsHeader(
+		activeModelParams_,
+		[this](const ModelParameters& params) {generateModel(params);},
+		[this](std::string filePath) {loadRLE_(filePath);},
+        [this]() {populateFromRLEString_(inputString_);},
+        inputString_,
+        isModelRunning
+        );
 }
 
 void CpuModel::handleSDLEvent(const SDL_Event& event)
@@ -341,13 +191,11 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             //This works MOSTLY but drifts more than I would like. 
             activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mousePosX);
             activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mousePosY);
-
-            
         }
     }
 }
 
-void CpuModel::generateModel_(const ModelParameters& params) {
+void CpuModel::generateModel(const ModelParameters& params) {
     //First set the members to correspond with the parameters
     if (activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
     if (activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
@@ -483,6 +331,23 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
             }
         }
     }
+}
+
+void CpuModel::loadRLE_(const std::string& filePath)
+{
+	std::ifstream filestream(filePath);
+	if (filestream.is_open())
+	{
+		clearGrid_();
+		populateFromRLE_(filestream);
+		filestream.close();
+	}
+}
+
+void CpuModel::populateFromRLEString_(const std::string& rleString)
+{
+	std::stringstream rleStream(rleString);
+	populateFromRLE_(rleStream);
 }
 
 CpuModel::GridDrawRange CpuModel::getDrawRange_(int width, int height)

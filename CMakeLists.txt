@@ -29,6 +29,8 @@ add_executable(gameoflife
     src/model/CpuModel.hpp
     src/model/LifeQuadTree.hpp
     src/model/LifeQuadTree.cpp
+    src/model/LifeQuadTreeModel.hpp
+    src/model/LifeQuadTreeModel.cpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
@@ -55,6 +57,8 @@ add_executable(quadtreetest
     QuadTreeTest/QuadTreeTest.cpp
     src/model/LifeQuadTree.hpp
     src/model/LifeQuadTree.cpp
+    src/model/LifeQuadTreeModel.hpp
+    src/model/LifeQuadTreeModel.cpp
 )
 
 target_include_directories(quadtreetest PRIVATE src)
