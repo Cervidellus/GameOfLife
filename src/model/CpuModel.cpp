@@ -98,11 +98,15 @@ void CpuModel::draw(SDL_Renderer* renderer, const int posX, const int posY, cons
     //THe hard thing there is making sure that we aren't drawing the texture more often than we need. 
     //I could have a bool that says the texture needs updating before drawing and handle that in core.cpp.
 
-    const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
+    if (recalcDrawRange_) {
+		drawRange_ = getDrawRange_(width, height);
+		recalcDrawRange_ = false;
+	}
+    //const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
 
-    for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
+    for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
     {
-        for (int columnIndex = drawRange.columnBegin; columnIndex <= drawRange.columnEnd; columnIndex++)
+        for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
         {
             
             SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
@@ -162,6 +166,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.displacementX += event.motion.xrel;
             activeModelParams_.displacementY += event.motion.yrel;
             //TODO:Check that it is within bounds of a maximum displacement
+            recalcDrawRange_ = true;
 
         }
         else if (event.type == SDL_MOUSEWHEEL)
@@ -191,6 +196,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             //This works MOSTLY but drifts more than I would like. 
             activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mousePosX);
             activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mousePosY);
+            recalcDrawRange_ = true;
         }
     }
 }
@@ -350,13 +356,13 @@ void CpuModel::populateFromRLEString_(const std::string& rleString)
 	populateFromRLE_(rleStream);
 }
 
+//I should only be calculating this when it changes.
 CpuModel::GridDrawRange CpuModel::getDrawRange_(int width, int height)
 {
     CpuModel::GridDrawRange drawRange;
     drawRange.rowBegin = 0-(int)(((double)activeModelParams_.displacementY / activeModelParams_.zoomLevel));
     drawRange.rowEnd = drawRange.rowBegin + (height / activeModelParams_.zoomLevel);
     drawRange.columnBegin = -(int)(((double)activeModelParams_.displacementX / activeModelParams_.zoomLevel));
-    /*drawRange.columnEnd = drawRange.columnBegin + (columnCount / activeModelParams_.zoomLevel) - 1;*/
     drawRange.columnEnd = drawRange.columnBegin + (width / activeModelParams_.zoomLevel);
 
     //make sure you don't try and draw something not in grid_

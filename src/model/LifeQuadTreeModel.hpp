@@ -41,15 +41,15 @@ private:
 	//void resizeGrid_();
 	//void clearGrid_();
 
-	//struct GridDrawRange
-	//{
-	//	int rowBegin = 0;
-	//	int rowEnd = 1;
-	//	int columnBegin = 0;
-	//	int columnEnd = 1;
-	//};
+	struct GridDrawRange
+	{
+		int rowBegin = 0;
+		int rowEnd = 1;
+		int columnBegin = 0;
+		int columnEnd = 1;
+	};
 
-	//GridDrawRange getDrawRange_(const int width, const int height);
+	GridDrawRange getDrawRange_(const int width, const int height);
 
 };
 

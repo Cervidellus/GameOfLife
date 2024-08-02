@@ -29,7 +29,19 @@ void LifeQuadTreeModel::draw(
 {
 	//need to draw the model
     std::cout << "LifeQuadTreeModel::draw() called\n";
-    //I need to define a rect that gets drawn.
+    //I need to define a rect that tells us which cells need to be drawn. 
+    //Needs to account for zoom level, and needs to center the model in the viewport + displacement.
+
+    
+    GridDrawRange drawRange = getDrawRange_(width, height);
+    
+
+    // 
+    // 
+    // For this model, we'll use 0,0 as the center and use displacement to calc.
+    
+
+
     //const CpuModel::GridDrawRange drawRange = getDrawRange_(width, height);
 
     //for (int rowIndex = drawRange.rowBegin; rowIndex <= drawRange.rowEnd; rowIndex++)
@@ -79,7 +91,7 @@ ModelParameters LifeQuadTreeModel::getParameters()
 
 void LifeQuadTreeModel::generateModel_(const ModelParameters& modelParameters)
 {
-	tree_.clear();
+    tree_.clear();
 
     if (activeModelParams_.modelWidth < modelParameters.minWidth) activeModelParams_.minWidth = modelParameters.minWidth;
     if (activeModelParams_.modelHeight < modelParameters.minHeight) activeModelParams_.minHeight = modelParameters.minHeight;
@@ -99,7 +111,7 @@ void LifeQuadTreeModel::generateModel_(const ModelParameters& modelParameters)
         //Fill random values based on fillFactor
         for (int i = 0; i < activeModelParams_.modelWidth; i++) {
             for (int j = 0; j < activeModelParams_.modelHeight; j++) {
-                if (distribution(rng) < activeModelParams_.fillFactor) tree_.setLeaf(LifeQuadTree::Point( i, j ), true);
+                if (distribution(rng) < activeModelParams_.fillFactor) tree_.setLeaf(LifeQuadTree::Point(i, j), true);
             }
         }
         return;
@@ -111,4 +123,15 @@ void LifeQuadTreeModel::generateModel_(const ModelParameters& modelParameters)
     //        populateFromRLE_(rleStream);
     //    }
     //}
+}
+
+LifeQuadTreeModel::GridDrawRange LifeQuadTreeModel::getDrawRange_(const int width, const int height)
+{
+    GridDrawRange drawRange;
+    drawRange.rowBegin = 0;
+    drawRange.rowEnd = activeModelParams_.modelHeight - 1;
+    drawRange.columnBegin = 0;
+    drawRange.columnEnd = activeModelParams_.modelWidth - 1;
+
+    return drawRange;
 }

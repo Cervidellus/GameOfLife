@@ -72,6 +72,11 @@ private:
 	float dualColorDeadColor_[3] = { 0.0, 0.0, 1.0 };
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 
+	//If the zoom level or displacement changes, recalculates the draw range.
+	//set to true so that it calculates on first draw.
+	bool recalcDrawRange_ = true;
+	GridDrawRange drawRange_;
+
 	//int selectedColorMapIndex_ = 0;
 
 	const double MAX_ZOOM = 100.0;
