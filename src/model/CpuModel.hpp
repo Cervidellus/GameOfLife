@@ -14,18 +14,13 @@ public:
 	CpuModel() = default;
 	~CpuModel() = default;
 
-	void initialize() override;
+	void initialize(const SDL_Rect& viewport) override;
 
 	void update() override;
 
 	void handleSDLEvent(const SDL_Event& event) override;
 
-	void draw(
-		SDL_Renderer* renderer, 
-		const int posX, 
-		const int posY, 
-		const int width, 
-		const int height) override;
+	void draw(SDL_Renderer* renderer) override;
 
 	void drawImGuiWidgets(const bool& isModelRunning) override;
 
@@ -54,7 +49,13 @@ private:
 		int columnEnd = 1;
 	};
 
-	GridDrawRange getDrawRange_(const int width, const int height);
+	GridDrawRange getDrawRange_
+	(
+		const int& width,
+		const int& height,
+		const int& displacementX, 
+		const int& displacementY
+	);
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.

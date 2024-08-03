@@ -48,7 +48,10 @@ bool Core::init_() {
 		return false;
 	}
 
-    cpuModel_.initialize();
+    //Intitialize the viewport here.
+    SDL_Rect modelViewport = {0, 0, 1260, 720};
+    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
+    cpuModel_.initialize(modelViewport);
 
     gui_.initialize("Game of Life");
 
@@ -63,7 +66,6 @@ void Core::processEvents_() {
 
     //each event handler function will recieve the SDL_Event as well as a global state struct containing e.g. current button states.
     //Or maybe I  can grab the state from SDL directly?
-
     
     SDL_Event event;
 
@@ -71,10 +73,18 @@ void Core::processEvents_() {
 
         switch(event.type)
         {
-            case SDL_QUIT:
+            case SDL_EventType::SDL_QUIT:
                 coreAppRunning_ = false;
                 break;
-            case SDL_KEYDOWN:
+            case SDL_EventType::SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    SDL_Rect modelViewport = { 0, 0, 1260, 720 };
+                    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
+                    cpuModel_.setViewPort(modelViewport);
+                }
+                break;
+            case SDL_EventType::SDL_KEYDOWN:
                 handleSDL_KEYDOWN(event);
                 break;
         }
@@ -96,10 +106,7 @@ void Core::update_() {
 void Core::render_() {
     gui_.mainWindow.clear();
 
-    int windowWidth, windowHeight;
-    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &windowWidth, &windowHeight);
-    cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
-
+    cpuModel_.draw(gui_.mainWindow.sdlRenderer);
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
     cpuModel_.drawImGuiWidgets(modelRunning_);
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);

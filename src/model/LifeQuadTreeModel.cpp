@@ -3,8 +3,9 @@
 #include <random>
 #include <iostream>
 
-void LifeQuadTreeModel::initialize()
+void LifeQuadTreeModel::initialize(const SDL_Rect& viewport)
 {
+    setViewPort(viewport);
 	generateModel_(activeModelParams_);
 }	
 
@@ -20,12 +21,7 @@ void LifeQuadTreeModel::handleSDLEvent(const SDL_Event& event)
     std::cout << "LifeQuadTreeModel::handleSDLEvent() called\n";
 }
 
-void LifeQuadTreeModel::draw(
-	SDL_Renderer* renderer,
-	const int posX,
-	const int posY,
-	const int width,
-	const int height)
+void LifeQuadTreeModel::draw(SDL_Renderer* renderer)
 {
 	//need to draw the model
     std::cout << "LifeQuadTreeModel::draw() called\n";
@@ -33,7 +29,7 @@ void LifeQuadTreeModel::draw(
     //Needs to account for zoom level, and needs to center the model in the viewport + displacement.
 
     
-    GridDrawRange drawRange = getDrawRange_(width, height);
+    //GridDrawRange drawRange = getDrawRange_(width, height);
     
 
     // 
@@ -77,17 +73,6 @@ void LifeQuadTreeModel::drawImGuiWidgets(const bool& isModelRunning)
     //std::cout << "LifeQuadTreeModel::drawImGuiWidgets() called\n";
 }
 
-void LifeQuadTreeModel::setParameters(const ModelParameters& modelParameters)
-{
-	//need to set the model parameters
-    std::cout << "LifeQuadTreeModel::setParameters() called\n";
-}
-
-ModelParameters LifeQuadTreeModel::getParameters()
-{
-	//need to get the model parameters
-	return modelParameters;
-}
 
 void LifeQuadTreeModel::generateModel_(const ModelParameters& modelParameters)
 {

@@ -10,23 +10,18 @@ class LifeQuadTreeModel : public AbstractModel
 	LifeQuadTreeModel() = default;
 	~LifeQuadTreeModel() = default;
 
-	void initialize() override;
+	void initialize(const SDL_Rect& viewport) override;
 
 	void update() override;
 
 	void handleSDLEvent(const SDL_Event& event) override;
 
-	void draw(
-		SDL_Renderer* renderer,
-		const int posX,
-		const int posY,
-		const int width,
-		const int height) override;
+	void draw(SDL_Renderer* renderer) override;
 
 	void drawImGuiWidgets(const bool& isModelRunning) override;
 
-	void setParameters(const ModelParameters& modelParameters);
-	ModelParameters getParameters();
+	//void setParameters(const ModelParameters& modelParameters);
+	//ModelParameters getParameters();
 
 private:
 	LifeQuadTree::Tree tree_;
