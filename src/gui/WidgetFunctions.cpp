@@ -57,6 +57,8 @@ void WidgetFunctions::drawVisualizationHeader(
 {
     if (ImGui::CollapsingHeader("Visualization")) {
 
+        ImGui::SliderInt("Zoom Level", &modelParameters.zoomLevel, 1, 100);
+
         ImGui::SliderInt(
             "X displacement",
             &modelParameters.displacementX,
@@ -67,6 +69,11 @@ void WidgetFunctions::drawVisualizationHeader(
             &modelParameters.displacementY,
             -500,
             500);
+        if(ImGui::Button("Recenter"))
+		{
+			modelParameters.displacementX = 0;
+			modelParameters.displacementY = 0;
+		}
 
         ImGui::Combo("Coloring Strategy", &colorMapper.selectedColorMapIndex, colorMapper.ColorMapNames, 15);
 
@@ -132,13 +139,6 @@ void WidgetFunctions::drawPresetsHeader(
             {
                 ImGui::CloseCurrentPopup();
                 if (!RLEString.empty()) loadRLEStringCallback();
-                //{
-                //    
-                //    std::cout << "Processing: " << inputString_ << "\n";
-                //    clearGrid_();
-                //    std::stringstream rleStream(inputString_);
-                //    populateFromRLE_(rleStream);
-                //}
             }
             ImGui::EndPopup();
         }

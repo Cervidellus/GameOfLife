@@ -27,6 +27,8 @@ public:
 	void setParameters(const ModelParameters& modelParameters);
 	ModelParameters getParameters();
 
+	void setViewPort(const SDL_Rect& viewPort) override;
+
 	void generateModel(const ModelParameters& modelParameters);
 
 private:
@@ -49,13 +51,7 @@ private:
 		int columnEnd = 1;
 	};
 
-	GridDrawRange getDrawRange_
-	(
-		const int& width,
-		const int& height,
-		const int& displacementX, 
-		const int& displacementY
-	);
+	GridDrawRange getDrawRange_();
 
 private:
 	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
@@ -77,8 +73,8 @@ private:
 	//set to true so that it calculates on first draw.
 	bool recalcDrawRange_ = true;
 	GridDrawRange drawRange_;
-
-	//int selectedColorMapIndex_ = 0;
+	int screenSpaceDisplacementX_ = 0;
+	int screenSpaceDisplacementY_ = 0;
 
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;

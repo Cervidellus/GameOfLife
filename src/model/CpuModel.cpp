@@ -16,6 +16,13 @@ void CpuModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
+    recalcDrawRange_ = true;
+}
+
+void CpuModel::setViewPort(const SDL_Rect& viewPort)
+{
+	viewPort_ = viewPort;
+	recalcDrawRange_ = true;
 }
 
 void CpuModel::resizeGrid_()
@@ -103,21 +110,15 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
     //For that I'll need to grab window resize events.
-    int screenspaceDisplacementX = (viewPort_.w / 2) - (activeModelParams_.modelWidth / 2) + activeModelParams_.displacementX;
-    int screenspaceDisplacementY = (viewPort_.h / 2) - (activeModelParams_.modelHeight / 2) + activeModelParams_.displacementY;
+
     if (recalcDrawRange_) {
-		drawRange_ = getDrawRange_(
-            viewPort_.w,
-            viewPort_.h,
-            screenspaceDisplacementX,
-            screenspaceDisplacementY
-        );
+        //TODO:: I might move hte screenSpaceDisplacement recalc into getDrawRange_, and rename getDrawRange_ to recalcDrawRange_, but with a better name.
+        //Recalc the screenSpaceDisplacement to account for zoom and displacement changes. 
+        screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
+        screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
+		drawRange_ = getDrawRange_();
 		recalcDrawRange_ = false;
 	}
-
-    //screenspace mapping... we determine the center of the screen, then start drawing half the width of the model to the left of the center.
-
-
 
     for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
     {
@@ -135,8 +136,8 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
             SDL_Rect rect =
             {
-                activeModelParams_.zoomLevel* columnIndex + screenspaceDisplacementX,
-                activeModelParams_.zoomLevel * rowIndex + screenspaceDisplacementY,
+                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX + screenSpaceDisplacementX_,
+                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY + screenSpaceDisplacementY_,
                 activeModelParams_.zoomLevel,
                 activeModelParams_.zoomLevel
             };
@@ -171,16 +172,20 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 
 void CpuModel::handleSDLEvent(const SDL_Event& event)
 {
-    int mousePosX, mousePosY;
-    int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-    
-    //TODO:: Rather than if else statements I might have a map? Or a switch statement
+//TODO:: Rather than if else statements I might have a map? Or a switch statement
     //I should profile it to see if it would make a difference before changing though. 
+    
+    //TODO:
+    //We only want to get the mouse state if the right events have been called.
 
     if (!ImGui::IsWindowHovered(4) && !ImGui::IsAnyItemActive())
     {
+        int mousePosX, mousePosY;
+        int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
+
         if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
         {
+      
             activeModelParams_.displacementX += event.motion.xrel;
             activeModelParams_.displacementY += event.motion.yrel;
             //TODO:Check that it is within bounds of a maximum displacement
@@ -188,27 +193,16 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         }
         else if (event.type == SDL_EventType::SDL_MOUSEWHEEL)
         {
+            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_ - activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
+            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_ - activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
             //Zoom
-            double newZoomLevel = activeModelParams_.zoomLevel;
-            if (event.wheel.y > 0)
-            {
-                newZoomLevel = activeModelParams_.zoomLevel + 1;
-                if (newZoomLevel > CpuModel::MAX_ZOOM) newZoomLevel = CpuModel::MAX_ZOOM;
-            }
-            else if (event.wheel.y < 0) {
-                newZoomLevel = activeModelParams_.zoomLevel - 1;
-                if (newZoomLevel < CpuModel::MIN_ZOOM) newZoomLevel = CpuModel::MIN_ZOOM;
-            }
+            if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
+            else if (event.wheel.y < 0)  activeModelParams_.zoomLevel -= 1;
+            activeModelParams_.zoomLevel = std::clamp<double>(activeModelParams_.zoomLevel, MIN_ZOOM, MAX_ZOOM);
             
-            //map the cursor position in viewport space to the index in model space. Zoomlevel is the width of 1 cell in viewport space.
-            int cursorModelIndexX = (int)(((double)mousePosX - (double)activeModelParams_.displacementX) / activeModelParams_.zoomLevel);
-            int cursorModelIndexY = (int)(((double)mousePosY - (double)activeModelParams_.displacementY) / activeModelParams_.zoomLevel);
-            activeModelParams_.zoomLevel = newZoomLevel;
-            //Calculate the new displacement, trying to keep the model in the same position relative to the cursor. 
-            //This works MOSTLY but drifts more than I would like. 
-            //TODO:: Need to fix for the new way of handling displacement!
-            activeModelParams_.displacementX = (int)(-((double)cursorModelIndexX * newZoomLevel) + (double)mousePosX);
-            activeModelParams_.displacementY = (int)(-((double)cursorModelIndexY * newZoomLevel) + (double)mousePosY);
+            //Calculate the new displacement, keeping the model in the same position relative to the cursor. 
+            activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX + (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2))/2;
+            activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY + (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2))/2;
             recalcDrawRange_ = true;
         }
     }
@@ -370,21 +364,15 @@ void CpuModel::populateFromRLEString_(const std::string& rleString)
 }
 
 //I should only be calculating this when it changes.
-CpuModel::GridDrawRange CpuModel::getDrawRange_
-(
-    const int& width,
-    const int& height,
-    const int& displacementX,
-    const int& displacementY
-)
+CpuModel::GridDrawRange CpuModel::getDrawRange_()
 {
     CpuModel::GridDrawRange drawRange;
-    drawRange.rowBegin = -((displacementY) / activeModelParams_.zoomLevel);
-    drawRange.rowEnd = drawRange.rowBegin + (height / activeModelParams_.zoomLevel);
-    drawRange.columnBegin = -(displacementX / activeModelParams_.zoomLevel);
-    drawRange.columnEnd = drawRange.columnBegin + (width / activeModelParams_.zoomLevel);
+    drawRange.rowBegin = -(screenSpaceDisplacementY_ + activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
+    drawRange.rowEnd = drawRange.rowBegin + (viewPort_.h / activeModelParams_.zoomLevel);
+    drawRange.columnBegin = -(screenSpaceDisplacementX_ + activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
+    drawRange.columnEnd = drawRange.columnBegin + (viewPort_.w / activeModelParams_.zoomLevel);
 
-    //make sure you don't try and draw something not in grid_
+    //Don't try and draw something not in grid_
     int gridRows = grid_.size();
     int gridColumns = grid_[0].size();
     if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
