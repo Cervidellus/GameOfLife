@@ -10,8 +10,6 @@ SDLManager::SDLManager() {
 }
 
 bool SDLManager::initialize_() {
-	//structured this way so I can add more initialization steps later.
-	//int result = SDL_Init(SDL_INIT_VIDEO);
 	if (SDL_Init(SDL_INIT_VIDEO) == 0) {
 		isInitialized_ = true;
 		std::cout << "SDL2 video initialized..." << std::endl;

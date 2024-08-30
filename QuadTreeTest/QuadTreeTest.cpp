@@ -64,7 +64,7 @@ int main()
     std::cout << result.resultString;
 
     LifeQuadTreeModel model;
-    model.initialize();//seems to work for generating random model? 
+    //model.initialize();
 
     std::cout << "Test complete.\n";
 }

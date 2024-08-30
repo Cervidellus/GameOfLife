@@ -1,6 +1,7 @@
 #include "CpuModel.hpp"
 #include "presets/modelpresets.hpp"
 #include "gui/WidgetFunctions.hpp"
+#include "../submodules/ImGuiScope/ImguiScope.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
 #include <algorithm>
@@ -31,6 +32,7 @@ void CpuModel::resizeGrid_()
     for (auto& row : grid_) {
 		row.resize(activeModelParams_.modelWidth, 0);
 	}
+    recalcDrawRange_ = true;
 }
 
 void CpuModel::clearGrid_()
@@ -120,29 +122,40 @@ void CpuModel::draw(SDL_Renderer* renderer)
 		recalcDrawRange_ = false;
 	}
 
-    for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
     {
-        for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
+        auto timer = ImGuiScope::TimeScope("draw", false);
+        int xDisplacement = activeModelParams_.displacementX + screenSpaceDisplacementX_;
+        int yDisplacement = activeModelParams_.displacementY + screenSpaceDisplacementY_;
+        for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
         {
-            
-            SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
-
-            SDL_SetRenderDrawColor(
-                renderer,
-                color.r,
-                color.g,
-                color.b,
-                255);
-
-            SDL_Rect rect =
+            for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
             {
-                activeModelParams_.zoomLevel * columnIndex + activeModelParams_.displacementX + screenSpaceDisplacementX_,
-                activeModelParams_.zoomLevel * rowIndex + activeModelParams_.displacementY + screenSpaceDisplacementY_,
-                activeModelParams_.zoomLevel,
-                activeModelParams_.zoomLevel
-            };
+                //if (grid_[rowIndex][columnIndex] == 0) continue;
 
-            SDL_RenderFillRect(renderer, &rect);
+                SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
+
+                SDL_SetRenderDrawColor(
+                    renderer,
+                    color.r,
+                    color.g,
+                    color.b,
+                    255);
+
+                SDL_Rect rect 
+                {
+                    activeModelParams_.zoomLevel * columnIndex + xDisplacement,
+                    activeModelParams_.zoomLevel * rowIndex + yDisplacement,
+                    activeModelParams_.zoomLevel,
+                    activeModelParams_.zoomLevel
+                };
+                    
+                SDL_RenderFillRect(renderer, &rect);
+
+                //SDL_RenderFillRects()
+
+            //For doing our own backbuffer:
+            //https://stackoverflow.com/questions/63759688/sdl-renderpresent-implementation
+            }
         }
     }
 }

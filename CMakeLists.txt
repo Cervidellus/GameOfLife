@@ -42,7 +42,12 @@ add_executable(gameoflife
     src/gui/mainwindow.hpp
     src/gui/WidgetFunctions.hpp
     src/gui/WidgetFunctions.cpp
+    submodules/ImGuiScope/ImGuiScope.hpp
+    submodules/ImGuiScope/ImGuiScope.cpp
+    submodules/ImGuiScope/TimerResultBuffer.hpp
+    submodules/ImGuiScope/TimerResultBuffer.cpp
 )
+
 
 target_include_directories(gameoflife PRIVATE src)
 

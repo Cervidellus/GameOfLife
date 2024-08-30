@@ -16,7 +16,7 @@ void MainWindow::initialize(std::string windowName)
 		SDL_WINDOWPOS_CENTERED,
 		1280,
 		720,
-		SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED
+		SDL_WINDOW_RESIZABLE 
 	);
 
 	sdlRenderer = SDL_CreateRenderer(

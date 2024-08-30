@@ -3,10 +3,12 @@
 
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
-//#include "modelparameters.hpp"
 
 #include <vector>
-//#include <../submodules/tinycolormap/include/tinycolormap.hpp>
+
+
+//Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
+
 
 class CpuModel : public AbstractModel 
 {
