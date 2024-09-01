@@ -305,11 +305,10 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         }
         else if (event.type == SDL_EventType::SDL_MOUSEWHEEL)
         {
-            //Working when centered at all zooms.
-            //Does not deal with displacement.
-            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_ ) / activeModelParams_.zoomLevel;
-            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_ ) / activeModelParams_.zoomLevel;
-            std::cout << cursorModelIndexX << ":" << cursorModelIndexY << "\n";
+            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
+            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
+
+            //std::cout << cursorModelIndexX << ":" << cursorModelIndexY;
 
             //Zoom
             if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
@@ -317,9 +316,28 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.zoomLevel = std::clamp<double>(activeModelParams_.zoomLevel, MIN_ZOOM, MAX_ZOOM);
             
             //Calculate the new displacement, keeping the model in the same position relative to the cursor. 
-            activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX + (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2))/2;
-            activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY + (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2))/2;
+            //original
+            //activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX + (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel ));
+            //activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY + (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel ));
+
+            ////Just the screenspace
+            //activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX);//this is the screen displacement
+            //activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY);
+
+            activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX  + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w )/ 2;
+            activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY  + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
+
+
             recalcDrawRange_ = true;
+
+
+            ////need to recalc screen discplacement... for this check to work.
+            //screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
+            //screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
+            //cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
+            //cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
+            //std::cout << ":" << cursorModelIndexX << ":" << cursorModelIndexY <<"\n";
+            //399 vs. 373...
         }
     }
 }
@@ -346,17 +364,11 @@ void CpuModel::generateModel(const ModelParameters& params) {
         std::random_device randomDevice;
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        int rowIndex = 0;
-        int colIndex = 0;
+
         for (auto& row : grid_) {
-            colIndex = 0;
             for (auto& cell : row) {
-                
-                //std::cout << "cell row: " << rowIndex << " col: " << colIndex << "\n";
 				cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
-                colIndex++;
 			}
-            rowIndex++;
 		}
         std::cout << "Random model generated" << std::endl;
         recalcDrawRange_ = true;
