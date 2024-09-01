@@ -14,11 +14,6 @@
 #include <SDL.h>
 #include <SDL_render.h>
 
-//Need in order to construct a unique_ptr to the texture.
-//void SDLTextureDeleter(SDL_Texture* texture) {
-//    SDL_DestroyTexture(texture);
-//}
-
 CpuModel::CpuModel() :
     gridBackBuffer_(nullptr, SDL_DestroyTexture)
 {}
@@ -28,15 +23,6 @@ void CpuModel::initialize(const SDL_Rect& viewport)
     setViewPort(viewport);
     generateModel(activeModelParams_);
     recalcDrawRange_ = true;
-    /*gridBackBuffer_.reset(
-        SDL_CreateTexture(
-            
-            SDL_PIXELFORMAT_RGB565,
-            SDL_TEXTUREACCESS_STREAMING,
-            500,
-            500
-        )
-    )*/
 }
 
 void CpuModel::setViewPort(const SDL_Rect& viewPort)
@@ -156,32 +142,22 @@ void CpuModel::draw(SDL_Renderer* renderer)
     if (initBackbufferRequired_) initBackbuffer_(renderer);
 
     //****Drawing by swapping my backbuffer****
-    //Drawing just what WOULD be displayed if zoom was working.
-    //I'll have to do the zoom in a different way if I do it this way.
-    //NEXT: Get the zoom and panning working. 
-    // Zoom displacement calculations need to be better, and I need to have it rendered based on screen space. 
-    //Then try it by using sdl to set the pixels, rather than accessing them directly. 
+    // NEXT:
     //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
+
     if (!gridBackBuffer_) {
         std::cout << "Invalid backbuffer!\n";
         return;
     }
     auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
-    //auto pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGB565);
-    //Uint32* textureFormat;
-    //int* width;
-    //int* height;
-    //SDL_QueryTexture(gridBackBuffer_.get(), textureFormat, nullptr, width, height);
+
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
-    //int pitch = pixelFormat->BytesPerPixel * activeModelParams_.modelWidth;
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
     int rowCount = grid_.size();
     int columnCount = grid_[0].size();
-    //drawrange will have to be determined differently.
-    //for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
     {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
@@ -191,7 +167,7 @@ void CpuModel::draw(SDL_Renderer* renderer)
             //and having pitch defined just one when model size changes.
             SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
-            pixels[(rowIndex ) * (pitch/2) + columnIndex ] = SDL_MapRGB(
+            pixels[(rowIndex ) * grid_[0].size() + columnIndex] = SDL_MapRGB(
                 SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
                 color.r,
                 color.g,
@@ -202,60 +178,12 @@ void CpuModel::draw(SDL_Renderer* renderer)
     SDL_UnlockTexture(gridBackBuffer_.get());
     SDL_SetRenderTarget(renderer, nullptr);
     auto destRect = SDL_Rect{
-        //activeModelParams_.displacementX,
         screenSpaceDisplacementX_,
         screenSpaceDisplacementY_,
-        //activeModelParams_.displacementY,
         (int)grid_[0].size() * activeModelParams_.zoomLevel, 
         (int)grid_.size() * activeModelParams_.zoomLevel };
     SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
     drawBackBufferTimer.reset();
-
-
-    ////*****Dawing with SDL_RenderFillRect
-
-    ////auto timer = ImGuiScope::TimeScope("draw", false);
-    //auto drawRenderFillRectTimer = std::make_optional<ImGuiScope::TimeScope>("Draw SDL_RenderFillRect");
-    //int xDisplacement = activeModelParams_.displacementX + screenSpaceDisplacementX_;
-    //int yDisplacement = activeModelParams_.displacementY + screenSpaceDisplacementY_;
-
-
-
-    //for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
-    //{
-    //    for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
-    //    {
-    //        //if (grid_[rowIndex][columnIndex] == 0) continue;
-
-    //        SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
-
-    //        SDL_SetRenderDrawColor(
-    //            renderer,
-    //            color.r,
-    //            color.g,
-    //            color.b,
-    //            255);
-
-    //        SDL_Rect rect 
-    //        {
-    //            activeModelParams_.zoomLevel * columnIndex + xDisplacement,
-    //            activeModelParams_.zoomLevel * rowIndex + yDisplacement,
-    //            activeModelParams_.zoomLevel,
-    //            activeModelParams_.zoomLevel
-    //        };
-    //                
-    //        SDL_RenderFillRect(renderer, &rect);
-
-    //        //SDL_RenderFillRects()
-
-    //    //For doing our own backbuffer:
-    //    //https://stackoverflow.com/questions/63759688/sdl-renderpresent-implementation
-    //    }
-    //}
-
-    //drawRenderFillRectTimer.reset();
-
-
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -308,36 +236,15 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
             int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
 
-            //std::cout << cursorModelIndexX << ":" << cursorModelIndexY;
-
             //Zoom
             if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
             else if (event.wheel.y < 0)  activeModelParams_.zoomLevel -= 1;
             activeModelParams_.zoomLevel = std::clamp<double>(activeModelParams_.zoomLevel, MIN_ZOOM, MAX_ZOOM);
-            
-            //Calculate the new displacement, keeping the model in the same position relative to the cursor. 
-            //original
-            //activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX + (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel ));
-            //activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY + (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel ));
-
-            ////Just the screenspace
-            //activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX);//this is the screen displacement
-            //activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY);
 
             activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX  + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w )/ 2;
             activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY  + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
 
-
             recalcDrawRange_ = true;
-
-
-            ////need to recalc screen discplacement... for this check to work.
-            //screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
-            //screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
-            //cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
-            //cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
-            //std::cout << ":" << cursorModelIndexX << ":" << cursorModelIndexY <<"\n";
-            //399 vs. 373...
         }
     }
 }
