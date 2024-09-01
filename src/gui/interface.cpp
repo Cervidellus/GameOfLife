@@ -18,7 +18,7 @@ void Interface::startDraw(
 	ImGui::NewFrame();
 
     ImGui::Begin("Options");
-    ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 120);
+    ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 1000);
     ImGui::Text("Measured FPS: %d", measuredModelFPS);
     if (modelRunning) {
         if (ImGui::Button("Pause Model")) {
@@ -38,23 +38,6 @@ void Interface::endDraw(SDL_Renderer* renderer) {
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
-//bool Interface::isAnyItemActive() {
-//    return ImGui::IsAnyItemActive();
-//}
-//
-//bool Interface::isPointInOverlay(int x, int y)
-//{
-//    bool pointInOverlay = false;
-//    if (x >= imGuiRect_.x && x <= imGuiRect_.x + imGuiRect_.w) {
-//        if (y >= imGuiRect_.y && y <= imGuiRect_.y + imGuiRect_.h) pointInOverlay = true;
-//    }
-//    return pointInOverlay;
-//}
-
 Interface::~Interface() {
-    if (isInitialized_) {
-		ImGui_ImplSDLRenderer2_Shutdown();
-		ImGui_ImplSDL2_Shutdown();
-		ImGui::DestroyContext();
-	}
+
 }

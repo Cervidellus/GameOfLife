@@ -25,12 +25,17 @@ bool GUI::initialize(
 	if (!ImGui_ImplSDL2_InitForSDLRenderer(mainWindow.sdlWindow, mainWindow.sdlRenderer)) return false;
 	if (!ImGui_ImplSDLRenderer2_Init(mainWindow.sdlRenderer)) return false;
 
-	//interface.init(mainWindow.sdlWindow, mainWindow.sdlRenderer);
-
 	return true;
 };
 
+void GUI::shutdown()
+{
+	ImGui_ImplSDLRenderer2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+}
+
 GUI::~GUI() 
 {
-	ImGui::DestroyContext();
+	
 };

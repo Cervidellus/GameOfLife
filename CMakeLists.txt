@@ -23,18 +23,31 @@ add_executable(gameoflife
     src/core.hpp 
     src/model/abstract_model.hpp
     src/model/modelparameters.hpp
+    src/model/ColorMapper.hpp
+    src/model/ColorMapper.cpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
+    src/model/LifeQuadTree.hpp
+    src/model/LifeQuadTree.cpp
+    src/model/LifeQuadTreeModel.hpp
+    src/model/LifeQuadTreeModel.cpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
+    src/gui/gui.cpp
+    src/gui/gui.hpp
     src/gui/interface.cpp 
     src/gui/interface.hpp 
     src/gui/mainwindow.cpp 
     src/gui/mainwindow.hpp
-    src/gui/gui.cpp
-    src/gui/gui.hpp
+    src/gui/WidgetFunctions.hpp
+    src/gui/WidgetFunctions.cpp
+    submodules/ImGuiScope/ImGuiScope.hpp
+    submodules/ImGuiScope/ImGuiScope.cpp
+    submodules/ImGuiScope/TimerResultBuffer.hpp
+    submodules/ImGuiScope/TimerResultBuffer.cpp
 )
+
 
 target_include_directories(gameoflife PRIVATE src)
 
@@ -47,16 +60,12 @@ add_custom_command(
                 ${CMAKE_SOURCE_DIR}/resources
                 $<TARGET_FILE_DIR:gameoflife>/resources)
 
+add_executable(quadtreetest
+    QuadTreeTest/QuadTreeTest.cpp
+    src/model/LifeQuadTree.hpp
+    src/model/LifeQuadTree.cpp
+    src/model/LifeQuadTreeModel.hpp
+    src/model/LifeQuadTreeModel.cpp
+)
 
-# Set the "Use Debug Libraries" property for Debug configuration
-# doesn't seem to work.
-#if(MSVC)
-#    set_target_properties(gameoflife PROPERTIES
-#       VS_DEBUGGER_USE_DEBUG_LIBRARIES TRUE
- #   )
-#endif()
-
-#ImGui conflicts with window default libraries
-#if(MSVC)
- #   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-#endif()
+target_include_directories(quadtreetest PRIVATE src)

@@ -44,7 +44,6 @@ namespace ModelPresets {
 		3,
 		3,
 		3,
-		{},
 		"3o!"
 	);
 
@@ -58,7 +57,6 @@ namespace ModelPresets {
 		3,
 		40,
 		40,
-		{},
 		"bo2bo$o4b$o3bo$4o!"
 	);
 
@@ -72,7 +70,6 @@ namespace ModelPresets {
 		3,
 		110,
 		110,
-		{},
 		"6bobob$5bo4b$2o2bo4bo$2obo2bob2o$4b2o!"
 	};
 
@@ -86,7 +83,6 @@ namespace ModelPresets {
 	3,
 	110,
 	110,
-	{},
 	"42b2o$42b2o5b2o$49b2o$13b2o$14bo$13bo33b2o$13b2o32b2o$53b2o$2o51b2o$b"
 	"o$bob2o$2bo$14b2o$4bobo8bo$5bo7b3o$6bo46bo$3b4o45bobo$2bo49bobo$2b2ob"
 	"2o44b2ob2o$3bobo49bo$3bobo45b4o$4bo46bo$42b3o7bo$42bo8bobo$42b2o$55bo"
@@ -104,7 +100,6 @@ const ModelParameters gabrielsPOneThirtyEightParams = {
 	3,
 	33,
 	33,
-	{},
 	"8b3o10b$7bo2bo10b$7bo2bo10b$7b2o12b4$17b3ob$17bo2bo$20bo$3o15b3o$o20b$"
 	"o2bo17b$b3o17b4$12b2o7b$10bo2bo7b$10bo2bo7b$10b3o!"
 	};

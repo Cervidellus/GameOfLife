@@ -1,4 +1,5 @@
 #include <core.hpp>
+#include "../submodules/ImGuiScope/ImGuiScope.hpp"
 
 #include <iostream>
 #include <string>
@@ -14,12 +15,30 @@ Core::Core()
 {
 }
 
+bool Core::init_() {
+    if (!sdlManager_.isInitialized()) {
+        coreAppRunning_ = false;
+        return false;
+    }
+
+    SDL_Rect modelViewport = { 0, 0, 1260, 720 };
+    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
+    cpuModel_.initialize(modelViewport);
+
+    gui_.initialize("Game of Life");
+
+    coreAppRunning_ = true;
+
+    return true;
+}
+
 bool Core::run() {
     if(!init_()) return false;
     int lastDisplayUpdate, lastModelUpdate, now;
     now = lastDisplayUpdate = lastModelUpdate = SDL_GetTicks();
 
     while (coreAppRunning_) {  
+
         now = SDL_GetTicks();
 
         processEvents_();
@@ -34,25 +53,9 @@ bool Core::run() {
             render_();
             lastDisplayUpdate = now;
         }
-        //wait function so we don't burn too much cpu
         int waitTime = std::min(1000 / displayFPS_ - (now - lastDisplayUpdate), 1000 / desiredModelFPS_ - (now - lastModelUpdate));
         if (waitTime > 0) SDL_Delay(waitTime);
     }
-
-    return true;
-}
-
-bool Core::init_() {
-    if (!sdlManager_.isInitialized()) {
-		coreAppRunning_ = false;
-		return false;
-	}
-
-    cpuModel_.initialize();
-
-    gui_.initialize("Game of Life");
-
-    coreAppRunning_ = true;
 
     return true;
 }
@@ -63,18 +66,26 @@ void Core::processEvents_() {
 
     //each event handler function will recieve the SDL_Event as well as a global state struct containing e.g. current button states.
     //Or maybe I  can grab the state from SDL directly?
-
     
+    auto timer = ImGuiScope::TimeScope("process events", false);
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
 
         switch(event.type)
         {
-            case SDL_QUIT:
+            case SDL_EventType::SDL_QUIT:
                 coreAppRunning_ = false;
                 break;
-            case SDL_KEYDOWN:
+            case SDL_EventType::SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    SDL_Rect modelViewport = { 0, 0, 1260, 720 };
+                    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
+                    cpuModel_.setViewPort(modelViewport);
+                }
+                break;
+            case SDL_EventType::SDL_KEYDOWN:
                 handleSDL_KEYDOWN(event);
                 break;
         }
@@ -90,20 +101,26 @@ void Core::processEvents_() {
 
 void Core::update_() {
     //I might also have a model manager where I can register models, and have the manager call update on all models.
+    auto timer = ImGuiScope::TimeScope("update", false);
     cpuModel_.update();
 }
 
 void Core::render_() {
-    gui_.mainWindow.clear();
+    auto timer = ImGuiScope::TimeScope("render", false);
+    gui_.mainWindow.clear();//I should have it pass in the color
 
-    int windowWidth, windowHeight;
-    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &windowWidth, &windowHeight);
-    cpuModel_.draw(gui_.mainWindow.sdlRenderer, 0, 0, windowWidth, windowHeight);
+    cpuModel_.draw(gui_.mainWindow.sdlRenderer);
 
+    auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui");
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
     cpuModel_.drawImGuiWidgets(modelRunning_);
+    ImGuiScope::drawResultsHeader("Timer Results");
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);
+    guiDrawTimer.reset();
+
+    auto presentTimer = std::make_optional<ImGuiScope::TimeScope>("renderpresent");
     gui_.mainWindow.renderPresent();
+    //guiDrawTimer.reset();
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
@@ -120,5 +137,6 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
 
 Core::~Core() {
     //ImGui interface must be deleted before SDL
+    gui_.shutdown();
     sdlManager_.shutdown();
 }
