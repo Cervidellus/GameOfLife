@@ -12,12 +12,31 @@
 
 #include <imgui.h>
 #include <SDL.h>
+#include <SDL_render.h>
+
+//Need in order to construct a unique_ptr to the texture.
+//void SDLTextureDeleter(SDL_Texture* texture) {
+//    SDL_DestroyTexture(texture);
+//}
+
+CpuModel::CpuModel() :
+    gridBackBuffer_(nullptr, SDL_DestroyTexture)
+{}
 
 void CpuModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
     recalcDrawRange_ = true;
+    /*gridBackBuffer_.reset(
+        SDL_CreateTexture(
+            
+            SDL_PIXELFORMAT_RGB565,
+            SDL_TEXTUREACCESS_STREAMING,
+            500,
+            500
+        )
+    )*/
 }
 
 void CpuModel::setViewPort(const SDL_Rect& viewPort)
@@ -42,6 +61,20 @@ void CpuModel::clearGrid_()
 	}
 }
 
+void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
+{
+    gridBackBuffer_.reset(
+        SDL_CreateTexture(
+            renderer,
+            SDL_PIXELFORMAT_RGB565,
+            SDL_TEXTUREACCESS_STREAMING,
+            activeModelParams_.modelWidth,
+            activeModelParams_.modelHeight
+        )
+    );
+    initBackbufferRequired_ = false;
+}
+
 void CpuModel::setParameters(const ModelParameters& modelParameters)
 {
 	activeModelParams_ = modelParameters;
@@ -54,6 +87,7 @@ ModelParameters CpuModel::getParameters()
 
 void CpuModel::update()
 {
+    //I should just be swapping these between two allocated vectors.
     std::vector<std::vector<uint8_t>> previousState = grid_;
     int livingNeighbors = 0;
     bool cellAlive = false;
@@ -112,52 +146,153 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
     //For that I'll need to grab window resize events.
-
     if (recalcDrawRange_) {
-        //TODO:: I might move hte screenSpaceDisplacement recalc into getDrawRange_, and rename getDrawRange_ to recalcDrawRange_, but with a better name.
-        //Recalc the screenSpaceDisplacement to account for zoom and displacement changes. 
         screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
         screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
 		drawRange_ = getDrawRange_();
 		recalcDrawRange_ = false;
 	}
 
+    if (initBackbufferRequired_) initBackbuffer_(renderer);
+
+    //****Drawing by swapping my backbuffer****
+    //Drawing just what WOULD be displayed if zoom was working.
+    //I'll have to do the zoom in a different way if I do it this way.
+    if (!gridBackBuffer_) {
+        std::cout << "Invalid backbuffer!\n";
+        return;
+    }
+    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
+    //auto pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGB565);
+    //Uint32* textureFormat;
+    //int* width;
+    //int* height;
+    //SDL_QueryTexture(gridBackBuffer_.get(), textureFormat, nullptr, width, height);
+    SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
+    Uint16* pixels;
+    //int pitch = pixelFormat->BytesPerPixel * activeModelParams_.modelWidth;
+    int pitch = 0;
+    SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
+
+    int rowCount = grid_.size();
+    int columnCount = grid_[0].size();
+    for (int rowIndex = 0; rowIndex < 400; rowIndex++)
     {
-        auto timer = ImGuiScope::TimeScope("draw", false);
-        int xDisplacement = activeModelParams_.displacementX + screenSpaceDisplacementX_;
-        int yDisplacement = activeModelParams_.displacementY + screenSpaceDisplacementY_;
-        for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
+        for (int columnIndex = 0; columnIndex < 400; columnIndex++)
         {
-            for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
-            {
-                //if (grid_[rowIndex][columnIndex] == 0) continue;
+            //I could optimize this a tiny bit by having pixel format defined at compile time,
+            //and having pitch defined just one when model size changes.
+            SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
-                SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
-
-                SDL_SetRenderDrawColor(
-                    renderer,
-                    color.r,
-                    color.g,
-                    color.b,
-                    255);
-
-                SDL_Rect rect 
-                {
-                    activeModelParams_.zoomLevel * columnIndex + xDisplacement,
-                    activeModelParams_.zoomLevel * rowIndex + yDisplacement,
-                    activeModelParams_.zoomLevel,
-                    activeModelParams_.zoomLevel
-                };
-                    
-                SDL_RenderFillRect(renderer, &rect);
-
-                //SDL_RenderFillRects()
-
-            //For doing our own backbuffer:
-            //https://stackoverflow.com/questions/63759688/sdl-renderpresent-implementation
-            }
+            pixels[rowIndex * (pitch/2) + columnIndex] = SDL_MapRGB(
+                SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
+                color.r,
+                color.g,
+                color.b);
         }
     }
+
+    SDL_UnlockTexture(gridBackBuffer_.get());
+    SDL_SetRenderTarget(renderer, nullptr);
+    auto destRect = SDL_Rect{ 0,0,400,400 };
+    SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+    drawBackBufferTimer.reset();
+
+
+    ////*****Dawing with SDL_RenderFillRect
+
+    ////auto timer = ImGuiScope::TimeScope("draw", false);
+    //auto drawRenderFillRectTimer = std::make_optional<ImGuiScope::TimeScope>("Draw SDL_RenderFillRect");
+    //int xDisplacement = activeModelParams_.displacementX + screenSpaceDisplacementX_;
+    //int yDisplacement = activeModelParams_.displacementY + screenSpaceDisplacementY_;
+
+
+
+    //for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
+    //{
+    //    for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
+    //    {
+    //        //if (grid_[rowIndex][columnIndex] == 0) continue;
+
+    //        SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
+
+    //        SDL_SetRenderDrawColor(
+    //            renderer,
+    //            color.r,
+    //            color.g,
+    //            color.b,
+    //            255);
+
+    //        SDL_Rect rect 
+    //        {
+    //            activeModelParams_.zoomLevel * columnIndex + xDisplacement,
+    //            activeModelParams_.zoomLevel * rowIndex + yDisplacement,
+    //            activeModelParams_.zoomLevel,
+    //            activeModelParams_.zoomLevel
+    //        };
+    //                
+    //        SDL_RenderFillRect(renderer, &rect);
+
+    //        //SDL_RenderFillRects()
+
+    //    //For doing our own backbuffer:
+    //    //https://stackoverflow.com/questions/63759688/sdl-renderpresent-implementation
+    //    }
+    //}
+
+    //drawRenderFillRectTimer.reset();
+
+
+    //auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
+
+    ////****Drawing by swapping my backbuffer****
+    ////Drawing just what WOULD be displayed if zoom was working.
+    ////I'll have to do the zoom in a different way if I do it this way.
+    //if (!gridBackBuffer_) {
+    //    std::cout << "Invalid backbuffer!\n";
+    //    return;
+    //}
+
+    //auto pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGB565);
+
+    //SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
+    //Uint32* pixels;
+    //int pitch = pixelFormat->BytesPerPixel *activeModelParams_.modelWidth;
+    //SDL_LockTexture(gridBackBuffer_.get(), nullptr , (void**)&pixels, &pitch);
+
+    //int rowCount = grid_.size();
+    //int columnCount = grid_[0].size();
+    //for (int rowIndex = 0; rowIndex < rowCount-1; rowIndex++)
+    //{
+    //    for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+    //    {
+    //        //I could optimize this a tiny bit by having pixel format defined at compile time,
+    //        //and having pitch defined just one when model size changes.
+    //        SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
+    //        //this is failing. Memory access violation.
+    //        int textureWidth = 0;
+    //        int textureHeight = 0;
+    //        SDL_QueryTexture(gridBackBuffer_.get(), nullptr, nullptr, &textureWidth, &textureHeight);
+
+    //        if (rowIndex == 399 && columnIndex == 399)
+    //        {
+    //            std::cout << "here";
+    //        }
+
+    //        pixels[rowIndex * (activeModelParams_.modelWidth/2) + columnIndex] = SDL_MapRGBA(
+    //            SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
+    //            color.r,
+    //            color.g,
+    //            color.b,
+    //            color.a);
+    //    }
+    //}
+
+    //SDL_UnlockTexture(gridBackBuffer_.get());
+    //SDL_SetRenderTarget(renderer, nullptr);
+    //auto destRect = SDL_Rect{ 0,0,400,400 };
+    //SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+    //drawBackBufferTimer.reset();
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -259,6 +394,8 @@ void CpuModel::generateModel(const ModelParameters& params) {
             populateFromRLE_(rleStream);
         }
     }
+
+    initBackbufferRequired_ = true;
 }
 
 void CpuModel::populateFromRLE_(std::istream& modelStream)
@@ -357,6 +494,9 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
             }
         }
     }
+
+    recalcDrawRange_ = true;
+    initBackbufferRequired_ = true;
 }
 
 void CpuModel::loadRLE_(const std::string& filePath)
