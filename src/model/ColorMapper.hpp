@@ -56,7 +56,7 @@ public:
 	void setDualColorAliveColor(const std::array<float, 3>& color);
 	void setDualColorDeadColor(const std::array<float, 3>& color);
 
-	int selectedColorMapIndex = (int)ColormapType::DualColor;
+	int selectedColorMapIndex = (int)ColormapType::Plasma;
 
 private:
 	//Alive and dead colors are stored as both an SDL_Color, which is used in the colormap, 

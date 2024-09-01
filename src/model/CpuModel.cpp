@@ -158,6 +158,10 @@ void CpuModel::draw(SDL_Renderer* renderer)
     //****Drawing by swapping my backbuffer****
     //Drawing just what WOULD be displayed if zoom was working.
     //I'll have to do the zoom in a different way if I do it this way.
+    //NEXT: Get the zoom and panning working. 
+    // Zoom displacement calculations need to be better, and I need to have it rendered based on screen space. 
+    //Then try it by using sdl to set the pixels, rather than accessing them directly. 
+    //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
     if (!gridBackBuffer_) {
         std::cout << "Invalid backbuffer!\n";
         return;
@@ -176,15 +180,18 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     int rowCount = grid_.size();
     int columnCount = grid_[0].size();
-    for (int rowIndex = 0; rowIndex < 400; rowIndex++)
+    //drawrange will have to be determined differently.
+    //for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
+    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
     {
-        for (int columnIndex = 0; columnIndex < 400; columnIndex++)
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+        //for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
         {
             //I could optimize this a tiny bit by having pixel format defined at compile time,
             //and having pitch defined just one when model size changes.
             SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
-            pixels[rowIndex * (pitch/2) + columnIndex] = SDL_MapRGB(
+            pixels[(rowIndex ) * (pitch/2) + columnIndex ] = SDL_MapRGB(
                 SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
                 color.r,
                 color.g,
@@ -194,7 +201,13 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     SDL_UnlockTexture(gridBackBuffer_.get());
     SDL_SetRenderTarget(renderer, nullptr);
-    auto destRect = SDL_Rect{ 0,0,400,400 };
+    auto destRect = SDL_Rect{
+        //activeModelParams_.displacementX,
+        screenSpaceDisplacementX_,
+        screenSpaceDisplacementY_,
+        //activeModelParams_.displacementY,
+        (int)grid_[0].size() * activeModelParams_.zoomLevel, 
+        (int)grid_.size() * activeModelParams_.zoomLevel };
     SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
     drawBackBufferTimer.reset();
 
@@ -243,56 +256,6 @@ void CpuModel::draw(SDL_Renderer* renderer)
     //drawRenderFillRectTimer.reset();
 
 
-    //auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
-
-    ////****Drawing by swapping my backbuffer****
-    ////Drawing just what WOULD be displayed if zoom was working.
-    ////I'll have to do the zoom in a different way if I do it this way.
-    //if (!gridBackBuffer_) {
-    //    std::cout << "Invalid backbuffer!\n";
-    //    return;
-    //}
-
-    //auto pixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGB565);
-
-    //SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
-    //Uint32* pixels;
-    //int pitch = pixelFormat->BytesPerPixel *activeModelParams_.modelWidth;
-    //SDL_LockTexture(gridBackBuffer_.get(), nullptr , (void**)&pixels, &pitch);
-
-    //int rowCount = grid_.size();
-    //int columnCount = grid_[0].size();
-    //for (int rowIndex = 0; rowIndex < rowCount-1; rowIndex++)
-    //{
-    //    for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-    //    {
-    //        //I could optimize this a tiny bit by having pixel format defined at compile time,
-    //        //and having pitch defined just one when model size changes.
-    //        SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
-    //        //this is failing. Memory access violation.
-    //        int textureWidth = 0;
-    //        int textureHeight = 0;
-    //        SDL_QueryTexture(gridBackBuffer_.get(), nullptr, nullptr, &textureWidth, &textureHeight);
-
-    //        if (rowIndex == 399 && columnIndex == 399)
-    //        {
-    //            std::cout << "here";
-    //        }
-
-    //        pixels[rowIndex * (activeModelParams_.modelWidth/2) + columnIndex] = SDL_MapRGBA(
-    //            SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
-    //            color.r,
-    //            color.g,
-    //            color.b,
-    //            color.a);
-    //    }
-    //}
-
-    //SDL_UnlockTexture(gridBackBuffer_.get());
-    //SDL_SetRenderTarget(renderer, nullptr);
-    //auto destRect = SDL_Rect{ 0,0,400,400 };
-    //SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
-    //drawBackBufferTimer.reset();
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -306,6 +269,7 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 		activeModelParams_,
 		colorMapper_,
 		deadValueDecrement_,
+        recalcDrawRange_,
 		isModelRunning);
     
     WidgetFunctions::drawPresetsHeader(
@@ -341,8 +305,12 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         }
         else if (event.type == SDL_EventType::SDL_MOUSEWHEEL)
         {
-            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_ - activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
-            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_ - activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
+            //Working when centered at all zooms.
+            //Does not deal with displacement.
+            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_ ) / activeModelParams_.zoomLevel;
+            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_ ) / activeModelParams_.zoomLevel;
+            std::cout << cursorModelIndexX << ":" << cursorModelIndexY << "\n";
+
             //Zoom
             if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
             else if (event.wheel.y < 0)  activeModelParams_.zoomLevel -= 1;
@@ -378,13 +346,21 @@ void CpuModel::generateModel(const ModelParameters& params) {
         std::random_device randomDevice;
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
-
+        int rowIndex = 0;
+        int colIndex = 0;
         for (auto& row : grid_) {
+            colIndex = 0;
             for (auto& cell : row) {
+                
+                //std::cout << "cell row: " << rowIndex << " col: " << colIndex << "\n";
 				cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
+                colIndex++;
 			}
+            rowIndex++;
 		}
         std::cout << "Random model generated" << std::endl;
+        recalcDrawRange_ = true;
+        initBackbufferRequired_ = true;
         return;
     }
 
