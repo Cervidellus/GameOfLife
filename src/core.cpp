@@ -110,14 +110,7 @@ void Core::render_() {
     gui_.mainWindow.clear();//I should have it pass in the color
 
     cpuModel_.draw(gui_.mainWindow.sdlRenderer);
-    //std::optional<ImGuiScope::TimeScope> guiDrawTimer = ImGuiScope::TimeScope("guiDraw", false);
-    //{
-    //    std::optional<int> testInt(45);
-    //    auto timer2 = std::make_optional< ImGuiScope::TimeScope>("test");
-    //    //std::optional<ImGuiScope::TimeScope> guiDrawTimer(std::string(), const bool());
-    //    gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
-    //    
-    //}
+
     auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui");
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
     cpuModel_.drawImGuiWidgets(modelRunning_);

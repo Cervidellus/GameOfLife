@@ -12,6 +12,11 @@
 
 #include <imgui.h>
 #include <SDL.h>
+#include <SDL_render.h>
+
+CpuModel::CpuModel() :
+    gridBackBuffer_(nullptr, SDL_DestroyTexture)
+{}
 
 void CpuModel::initialize(const SDL_Rect& viewport)
 {
@@ -42,6 +47,20 @@ void CpuModel::clearGrid_()
 	}
 }
 
+void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
+{
+    gridBackBuffer_.reset(
+        SDL_CreateTexture(
+            renderer,
+            SDL_PIXELFORMAT_RGB565,
+            SDL_TEXTUREACCESS_STREAMING,
+            activeModelParams_.modelWidth,
+            activeModelParams_.modelHeight
+        )
+    );
+    initBackbufferRequired_ = false;
+}
+
 void CpuModel::setParameters(const ModelParameters& modelParameters)
 {
 	activeModelParams_ = modelParameters;
@@ -54,6 +73,7 @@ ModelParameters CpuModel::getParameters()
 
 void CpuModel::update()
 {
+    //I should just be swapping these between two allocated vectors.
     std::vector<std::vector<uint8_t>> previousState = grid_;
     int livingNeighbors = 0;
     bool cellAlive = false;
@@ -112,52 +132,58 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
     //For that I'll need to grab window resize events.
-
     if (recalcDrawRange_) {
-        //TODO:: I might move hte screenSpaceDisplacement recalc into getDrawRange_, and rename getDrawRange_ to recalcDrawRange_, but with a better name.
-        //Recalc the screenSpaceDisplacement to account for zoom and displacement changes. 
         screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
         screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
 		drawRange_ = getDrawRange_();
 		recalcDrawRange_ = false;
 	}
 
+    if (initBackbufferRequired_) initBackbuffer_(renderer);
+
+    //****Drawing by swapping my backbuffer****
+    // NEXT:
+    //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
+
+    if (!gridBackBuffer_) {
+        std::cout << "Invalid backbuffer!\n";
+        return;
+    }
+    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
+
+    SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
+    Uint16* pixels;
+    int pitch = 0;
+    SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
+
+    int rowCount = grid_.size();
+    int columnCount = grid_[0].size();
+    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
     {
-        auto timer = ImGuiScope::TimeScope("draw", false);
-        int xDisplacement = activeModelParams_.displacementX + screenSpaceDisplacementX_;
-        int yDisplacement = activeModelParams_.displacementY + screenSpaceDisplacementY_;
-        for (int rowIndex = drawRange_.rowBegin; rowIndex <= drawRange_.rowEnd; rowIndex++)
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+        //for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
         {
-            for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
-            {
-                //if (grid_[rowIndex][columnIndex] == 0) continue;
+            //I could optimize this a tiny bit by having pixel format defined at compile time,
+            //and having pitch defined just one when model size changes.
+            SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
-                SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
-
-                SDL_SetRenderDrawColor(
-                    renderer,
-                    color.r,
-                    color.g,
-                    color.b,
-                    255);
-
-                SDL_Rect rect 
-                {
-                    activeModelParams_.zoomLevel * columnIndex + xDisplacement,
-                    activeModelParams_.zoomLevel * rowIndex + yDisplacement,
-                    activeModelParams_.zoomLevel,
-                    activeModelParams_.zoomLevel
-                };
-                    
-                SDL_RenderFillRect(renderer, &rect);
-
-                //SDL_RenderFillRects()
-
-            //For doing our own backbuffer:
-            //https://stackoverflow.com/questions/63759688/sdl-renderpresent-implementation
-            }
+            pixels[(rowIndex ) * grid_[0].size() + columnIndex] = SDL_MapRGB(
+                SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
+                color.r,
+                color.g,
+                color.b);
         }
     }
+
+    SDL_UnlockTexture(gridBackBuffer_.get());
+    SDL_SetRenderTarget(renderer, nullptr);
+    auto destRect = SDL_Rect{
+        screenSpaceDisplacementX_,
+        screenSpaceDisplacementY_,
+        (int)grid_[0].size() * activeModelParams_.zoomLevel, 
+        (int)grid_.size() * activeModelParams_.zoomLevel };
+    SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+    drawBackBufferTimer.reset();
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -171,6 +197,7 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 		activeModelParams_,
 		colorMapper_,
 		deadValueDecrement_,
+        recalcDrawRange_,
 		isModelRunning);
     
     WidgetFunctions::drawPresetsHeader(
@@ -206,16 +233,17 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         }
         else if (event.type == SDL_EventType::SDL_MOUSEWHEEL)
         {
-            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_ - activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
-            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_ - activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
+            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
+            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
+
             //Zoom
             if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
             else if (event.wheel.y < 0)  activeModelParams_.zoomLevel -= 1;
             activeModelParams_.zoomLevel = std::clamp<double>(activeModelParams_.zoomLevel, MIN_ZOOM, MAX_ZOOM);
-            
-            //Calculate the new displacement, keeping the model in the same position relative to the cursor. 
-            activeModelParams_.displacementX = -(cursorModelIndexX * activeModelParams_.zoomLevel - mousePosX + (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2))/2;
-            activeModelParams_.displacementY = -(cursorModelIndexY * activeModelParams_.zoomLevel - mousePosY + (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2))/2;
+
+            activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX  + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w )/ 2;
+            activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY  + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
+
             recalcDrawRange_ = true;
         }
     }
@@ -250,6 +278,8 @@ void CpuModel::generateModel(const ModelParameters& params) {
 			}
 		}
         std::cout << "Random model generated" << std::endl;
+        recalcDrawRange_ = true;
+        initBackbufferRequired_ = true;
         return;
     }
 
@@ -259,6 +289,8 @@ void CpuModel::generateModel(const ModelParameters& params) {
             populateFromRLE_(rleStream);
         }
     }
+
+    initBackbufferRequired_ = true;
 }
 
 void CpuModel::populateFromRLE_(std::istream& modelStream)
@@ -357,6 +389,9 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
             }
         }
     }
+
+    recalcDrawRange_ = true;
+    initBackbufferRequired_ = true;
 }
 
 void CpuModel::loadRLE_(const std::string& filePath)

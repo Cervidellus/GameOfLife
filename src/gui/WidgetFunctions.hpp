@@ -26,6 +26,7 @@ namespace WidgetFunctions
 		ModelParameters& modelParameters,
 		ColorMapper& colorMapper,
 		int& colorDecayRate,
+		bool& displacementChanged,
 		const bool modelRunning
 	);
 

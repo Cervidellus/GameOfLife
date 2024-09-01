@@ -53,26 +53,29 @@ void WidgetFunctions::drawVisualizationHeader(
 	ModelParameters& modelParameters,
 	ColorMapper& colorMapper,
     int& colorDecayRate,
+    bool& displacementChanged,
 	const bool modelRunning)
 {
     if (ImGui::CollapsingHeader("Visualization")) {
 
-        ImGui::SliderInt("Zoom Level", &modelParameters.zoomLevel, 1, 100);
+        if(ImGui::SliderInt("Zoom Level", &modelParameters.zoomLevel, 1, 100)) displacementChanged = true;
 
-        ImGui::SliderInt(
+        if(ImGui::SliderInt(
             "X displacement",
             &modelParameters.displacementX,
             -500,
-            500);
-        ImGui::SliderInt(
+            500)) displacementChanged = true;
+        if (ImGui::SliderInt(
             "Y displacement",
             &modelParameters.displacementY,
             -500,
-            500);
+            500))displacementChanged = true;
         if(ImGui::Button("Recenter"))
 		{
 			modelParameters.displacementX = 0;
 			modelParameters.displacementY = 0;
+            //I need to retrigger a recalcDrawRange from this?
+            displacementChanged = true;
 		}
 
         ImGui::Combo("Coloring Strategy", &colorMapper.selectedColorMapIndex, colorMapper.ColorMapNames, 15);

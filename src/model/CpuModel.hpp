@@ -4,16 +4,22 @@
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
 
+
 #include <vector>
+
+//#include <SDL.h>
+#include <memory>
+//#include <SDL2/SDL_render.h>
+//#include <SDL_render.h>
 
 
 //Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
-
+struct SDL_Texture;
 
 class CpuModel : public AbstractModel 
 {
 public:
-	CpuModel() = default;
+	CpuModel();
 	~CpuModel() = default;
 
 	void initialize(const SDL_Rect& viewport) override;
@@ -41,9 +47,10 @@ private:
 	void loadRLE_(const std::string& filePath);
 	//Convert and RLE string to a stream and call populateFromRLE_
 	void populateFromRLEString_(const std::string& rleString);
-
 	void resizeGrid_();
 	void clearGrid_();
+	//Whenever the model size is changed, the backbuffer texture must be reinitialized.
+	void initBackbuffer_(SDL_Renderer* renderer);
 
 	struct GridDrawRange
 	{
@@ -56,7 +63,15 @@ private:
 	GridDrawRange getDrawRange_();
 
 private:
-	std::vector<std::vector<uint8_t>> grid_; //I use an 8 but int so I can represent some other info for visualization.
+	//I might change this to a struct that has a flag for if I should check it,
+	//and an int with the value. 
+	//Or I could do some bit shifting to have it all in an int.
+
+	std::vector<std::vector<uint8_t>> grid_; //I use an 8 bit int so I can represent some other info for visualization.
+
+	//Because the SDL_Texture type is obfuscated and requires an SDL deleter, 
+	//we need a template that can accept that deleter.
+	std::unique_ptr<SDL_Texture, void(*)(SDL_Texture*)> gridBackBuffer_;
 	
 	ModelParameters activeModelParams_{
 		true,
@@ -72,8 +87,12 @@ private:
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 
 	//If the zoom level or displacement changes, recalculates the draw range.
-	//set to true so that it calculates on first draw.
 	bool recalcDrawRange_ = true;
+	//On first pass or on resized model, backbuffer needs reinitialized.
+	bool initBackbufferRequired_ = true;
+	////On backbuffer reinitilization or zoom change, complete redraw of 
+	//bool completeBackbufferRedrawRequired_ = true;
+
 	GridDrawRange drawRange_;
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;
