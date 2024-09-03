@@ -144,6 +144,8 @@ void CpuModel::draw(SDL_Renderer* renderer)
     //****Drawing by swapping my backbuffer****
     // NEXT:
     //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
+    //To do this I might actually do the drawing in update loop, and just draw the texture here. 
+    //This would set it up well for hte quadtree version where I will only check what is needed also.
 
     if (!gridBackBuffer_) {
         std::cout << "Invalid backbuffer!\n";
@@ -161,7 +163,6 @@ void CpuModel::draw(SDL_Renderer* renderer)
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
     {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-        //for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
         {
             //I could optimize this a tiny bit by having pixel format defined at compile time,
             //and having pitch defined just one when model size changes.
