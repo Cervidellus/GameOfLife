@@ -114,7 +114,7 @@ void WidgetFunctions::drawPresetsHeader(
     const bool modelRunning
 )
 {
-    if (ImGui::CollapsingHeader("presets"))
+    if (ImGui::CollapsingHeader("Presets"))
     {
         if (ImGui::Button("random")) {
             generateModelCallback(ModelPresets::randomParams);

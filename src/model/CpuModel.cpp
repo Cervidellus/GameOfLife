@@ -349,9 +349,9 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
     else {
         clearGrid_();
     }
-
-    int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth / 2);
-    int startRow = activeModelParams_.modelHeight / 2 - (activeModelParams_.minHeight / 2);
+    //minwidth is wrong!
+    int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth/2);
+    int startRow = (activeModelParams_.modelHeight - activeModelParams_.minHeight) / 2;
     int row = startRow;
     int column = startColumn;
 
