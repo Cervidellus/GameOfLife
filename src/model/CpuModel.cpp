@@ -251,10 +251,19 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 
 void CpuModel::generateModel(const ModelParameters& params) {
     //First set the members to correspond with the parameters
-    if (activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
-    if (activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
+
+    activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, params.minWidth);
+    activeModelParams_.modelHeight = std::max<int>(activeModelParams_.modelHeight, params.minHeight);
+    //if (activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
+    //if (activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
+    activeModelParams_.minWidth = params.minWidth;
+    activeModelParams_.minHeight = params.minHeight;
+
+
     if (params.modelWidth > 0) activeModelParams_.modelWidth = params.modelWidth;
     if (params.modelHeight > 0) activeModelParams_.modelHeight = params.modelHeight;
+
+
     if (params.fillFactor > 0) activeModelParams_.fillFactor = params.fillFactor;
     if (params.rule1 > 0) activeModelParams_.rule1 = params.rule1;
     if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
@@ -349,9 +358,9 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
     else {
         clearGrid_();
     }
-
-    int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth / 2);
-    int startRow = activeModelParams_.modelHeight / 2 - (activeModelParams_.minHeight / 2);
+    //minwidth is wrong!
+    int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth/2);
+    int startRow = (activeModelParams_.modelHeight - activeModelParams_.minHeight) / 2;
     int row = startRow;
     int column = startColumn;
 
