@@ -157,29 +157,96 @@ void WidgetFunctions::drawPresetsHeader(
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("modified rules can produce different results.");
 
-        if (ImGui::Button("blinker")) {
-            generateModelCallback(ModelPresets::blinkerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest oscillator in conway's game of life.");
+        //if (ImGui::Button("blinker")) {
+        //    generateModelCallback(ModelPresets::blinkerParams);
+        //}
+        //if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest oscillator in conway's game of life.");
 
-        if (ImGui::Button("lightweight spaceship")) {
-            generateModelCallback(ModelPresets::lightweightSpaceshipParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest orthoganal spaceship in conway's game of life.");
+        //if (ImGui::Button("lightweight spaceship")) {
+        //    generateModelCallback(ModelPresets::lightweightSpaceshipParams);
+        //}
+        //if (ImGui::IsItemHovered()) ImGui::SetTooltip("the smallest orthoganal spaceship in conway's game of life.");
 
-        if (ImGui::Button("blocker")) {
-            generateModelCallback(ModelPresets::blockerParams);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("blocker.");
+        //if (ImGui::Button("blocker")) {
+        //    generateModelCallback(ModelPresets::blockerParams);
+        //}
+        //if (ImGui::IsItemHovered()) ImGui::SetTooltip("blocker.");
 
         if (ImGui::Button("nihonium")) {
             generateModelCallback(ModelPresets::nihoniumParams);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("nihonium emu.");
 
+
+
         if (ImGui::Button("gabriel's p138 oscillator")) {
             generateModelCallback(ModelPresets::gabrielsPOneThirtyEightParams);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("cool period 138 oscillator discovered by gabriel nivasch on october 13, 2002.");
+
+        if (ImGui::Button("Backrack 1 Puffer")) {
+            generateModelCallback(ModelPresets::backrakeOnePufferVarTwo);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Variation 2 of backrake puffer discovered by Jason Summers in 2001.");
+
+        if (ImGui::Button("Connected Phoenix Parts")) {
+            generateModelCallback(ModelPresets::connectedPhoenix);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("In a phoenix pattern, all live cells die every generation. Here a are a bunch of them connected together.");
+
+        if (ImGui::Button("Double X")) {
+            generateModelCallback(ModelPresets::doubleX);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 46 oscillator discovered by Robert Wainwright");
+
+        if (ImGui::Button("Frothing Puffer Rake")) {
+            generateModelCallback(ModelPresets::frothingPufferRake);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 270 puffer rake.");
+
+        if (ImGui::Button("New Shuttle")) {
+            generateModelCallback(ModelPresets::newShuttle);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 28 oscillator discovered by David Buckingham in 1973.");
+
+        if (ImGui::Button("P28 Glider Shuttle")) {
+            generateModelCallback(ModelPresets::pTwentyEightGliderShuttle);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 28 glider shuttle constructed from 4 34P14 glider shuttles. Discovered 2018.");
+
+        if (ImGui::Button("p47 B-heptomino hassler")) {
+            generateModelCallback(ModelPresets::pFourtySevenBHeptominoHassler);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Constructed from P47 Pre-Pulsar Shuttles.");
+
+        if (ImGui::Button("Pre-Pulsar Shuttle 26")) {
+            generateModelCallback(ModelPresets::prePulsarShuttle26);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 26 Pre-Pulsar Shuttle Oscillatory discovered by David Buckingham in 1983.");
+
+        if (ImGui::Button("Ring Of Fire")) {
+            generateModelCallback(ModelPresets::ringOfFire);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Period 2 oscillator discovered by Dean Hickerson in 1992.");
+
+        if (ImGui::Button("Sir Robin")) {
+            generateModelCallback(ModelPresets::sirRobbin);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Interesting spaceship that known as a knightship that travels like a chess knight rather than on a pure diagonal.");
+
+        if (ImGui::Button("Slow Puffer 2")) {
+            generateModelCallback(ModelPresets::slowPuffer2);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Puffer that forms a large wick.");
+
+        if (ImGui::Button("T-Nosed P8")) {
+            generateModelCallback(ModelPresets::tNosedP8);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("T-Nosed P8.");
+
+        if (ImGui::Button("Vex Stabilization")) {
+            generateModelCallback(ModelPresets::vexStabilisation);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stabilization of Vex, a pattern discovered by Achim Flammenkamp in 1994.");
     }
 }

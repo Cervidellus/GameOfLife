@@ -98,8 +98,8 @@ const ModelParameters gabrielsPOneThirtyEightParams = {
 	2,
 	3,
 	3,
-	33,
-	33,
+	21,
+	21,
 	"8b3o10b$7bo2bo10b$7bo2bo10b$7b2o12b4$17b3ob$17bo2bo$20bo$3o15b3o$o20b$"
 	"o2bo17b$b3o17b4$12b2o7b$10bo2bo7b$10bo2bo7b$10b3o!"
 	};
