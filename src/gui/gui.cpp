@@ -1,9 +1,10 @@
 #include "gui.hpp"
 
+
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_sdlrenderer3.h>
 #include <imgui.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
-#include <SDL2/sdl_pixels.h>
+#include <SDL3/sdl_pixels.h>
 
 
 GUI::GUI() {};
@@ -22,16 +23,16 @@ bool GUI::initialize(
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-	if (!ImGui_ImplSDL2_InitForSDLRenderer(mainWindow.sdlWindow, mainWindow.sdlRenderer)) return false;
-	if (!ImGui_ImplSDLRenderer2_Init(mainWindow.sdlRenderer)) return false;
+	if (!ImGui_ImplSDL3_InitForSDLRenderer(mainWindow.sdlWindow, mainWindow.sdlRenderer)) return false;
+	if (!ImGui_ImplSDLRenderer3_Init(mainWindow.sdlRenderer)) return false;
 
 	return true;
 };
 
 void GUI::shutdown()
 {
-	ImGui_ImplSDLRenderer2_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
+	ImGui_ImplSDLRenderer3_Shutdown();
+	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
 }
 

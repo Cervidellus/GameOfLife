@@ -8,7 +8,7 @@
 	path = submodules/ImGuiScope
 	url = https://github.com/Cervidellus/ImGuiScope.git
 [submodule "submodules/sdl2"]
-	path = submodules/sdl2
+	path = submodules/sdl3
 	url = https://github.com/libsdl-org/SDL.git
 [submodule "submodules/imgui"]
 	path = submodules/imgui

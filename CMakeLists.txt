@@ -49,6 +49,8 @@ add_executable(gameoflife
     src/gui/mainwindow.hpp
     src/gui/WidgetFunctions.hpp
     src/gui/WidgetFunctions.cpp
+    submodules/imgui/imgui.h
+    submodules/imgui/imgui.cpp
     submodules/ImGuiScope/ImGuiScope.hpp
     submodules/ImGuiScope/ImGuiScope.cpp
     submodules/ImGuiScope/TimerResultBuffer.hpp
@@ -58,7 +60,7 @@ add_executable(gameoflife
 
 target_include_directories(gameoflife PRIVATE src submodules/sdl2/include submodules/imgui)
 
-target_link_libraries(gameoflife SDL2::SDL2 imgui)
+target_link_libraries(gameoflife SDL3::SDL3 )
 
 #copy resources
 add_custom_command(
@@ -75,4 +77,4 @@ add_executable(quadtreetest
     src/model/LifeQuadTreeModel.cpp
 )
 
-target_include_directories(quadtreetest PRIVATE src)
+target_include_directories(quadtreetest PRIVATE src submodules/sdl2/include)

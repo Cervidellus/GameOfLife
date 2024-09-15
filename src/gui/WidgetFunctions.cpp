@@ -2,8 +2,8 @@
 #include "../presets/modelpresets.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 #include <imgui.h>
-#include <imgui_stdlib.h>
-#include <SDL.h>
+#include <misc/cpp/imgui_stdlib.h>
+#include <SDL3/SDL.h>
 
 void WidgetFunctions::drawGOLRulesHeader(
     ModelParameters& modelParameters,

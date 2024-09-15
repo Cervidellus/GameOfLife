@@ -4,17 +4,18 @@
 
 #include <iostream>
 
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
 #include <imgui.h>
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_sdlrenderer3.h>
+
 
 void Interface::startDraw(
     bool& modelRunning,
     int& desiredModelFPS,
     const int measuredModelFPS) 
 {
-	ImGui_ImplSDLRenderer2_NewFrame();
-	ImGui_ImplSDL2_NewFrame();
+	ImGui_ImplSDLRenderer3_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
 	ImGui::NewFrame();
 
     ImGui::Begin("Options");
@@ -35,7 +36,7 @@ void Interface::startDraw(
 void Interface::endDraw(SDL_Renderer* renderer) {
     ImGui::End();
 	ImGui::Render();
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+	ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
 Interface::~Interface() {

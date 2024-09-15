@@ -1,9 +1,9 @@
 #include "mainwindow.hpp"
 
-#include "imgui.h"
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
-#include <SDL2/SDL.h>
+#include <imgui.h>"
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_sdlrenderer3.h>
+#include <SDL3/SDL.h>
 
 
 MainWindow::MainWindow(){}
@@ -12,8 +12,8 @@ void MainWindow::initialize(std::string windowName)
 {
 	sdlWindow = SDL_CreateWindow(
 		windowName.c_str(),
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
+		//SDL_WINDOWPOS_CENTERED,
+		//SDL_WINDOWPOS_CENTERED,
 		1280,
 		720,
 		SDL_WINDOW_RESIZABLE 
@@ -21,14 +21,15 @@ void MainWindow::initialize(std::string windowName)
 
 	sdlRenderer = SDL_CreateRenderer(
 		sdlWindow,
-		-1,
-		SDL_RENDERER_ACCELERATED
+		"MainWindowRenderer"
+		//-1,
+		//SDL_RENDERER_ACCELERATED
 	);
 }
 
 void MainWindow::processEvent(SDL_Event& event)
 {
-	ImGui_ImplSDL2_ProcessEvent(&event);
+	ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
 MainWindowSize MainWindow::getSize()
@@ -38,9 +39,9 @@ MainWindowSize MainWindow::getSize()
 	return size;
 }
 
-void MainWindow::drawTexture(SDL_Texture* texture, SDL_Rect destination)
+void MainWindow::drawTexture(SDL_Texture* texture, SDL_FRect destination)
 {
-	SDL_RenderCopy(sdlRenderer, texture, NULL, &destination);
+	SDL_RenderTexture(sdlRenderer, texture, NULL, &destination);
 }
 
 
