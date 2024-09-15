@@ -1,15 +1,26 @@
 #include <core.hpp>
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdlrenderer2.h>
+
 #include "../submodules/ImGuiScope/ImGuiScope.hpp"
+
+
 
 #include <iostream>
 #include <string>
 #include <vector>
 
+//#include <imgui.h>
+//#include <imgui_impl_sdl2.h>
+//#include <imgui_impl_sdlrenderer2.h>
+
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
-#include <imgui.h>
+//#include <imgui_impl_sdl2.h>
+//#include <imgui_impl_sdlrenderer2.h>
+//#include <imgui.h>
 
 Core::Core() 
 {

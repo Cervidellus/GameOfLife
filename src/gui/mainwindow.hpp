@@ -14,8 +14,7 @@
 union SDL_Event;
 struct SDL_Rect;
 struct SDL_Renderer;
-//class SDL_Surface;
-class SDL_Texture;
+struct SDL_Texture;
 struct SDL_Window;
 
 struct MainWindowSize

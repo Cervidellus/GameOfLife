@@ -13,7 +13,7 @@ class ColorMapper
 public:
 	ColorMapper();
 
-	static enum class ColormapType
+	enum class ColormapType
 	{
 		DualColor = 0, Cividis, Cubehelix, Github, Gray, Heat, Hot,
 		HSV, Inferno, Jet, Magma, Parula, Plasma, Turbo, Viridis
