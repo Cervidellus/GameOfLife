@@ -10,12 +10,26 @@ SDLManager::SDLManager() {
 }
 
 bool SDLManager::initialize_() {
-	if (SDL_Init(SDL_INIT_VIDEO) == 0) {
+	SDL_Window* window = 
+		SDL_CreateWindow(
+			"windowName",
+			//SDL_WINDOWPOS_CENTERED,
+			//SDL_WINDOWPOS_CENTERED,
+			1280,
+			720,
+			SDL_WINDOW_RESIZABLE
+		);
+
+	std::cout << &window;
+
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
 		isInitialized_ = true;
-		std::cout << "SDL2 video initialized..." << std::endl;
+		std::cout << "SDL3 video initialized..." << std::endl;
 	}
 	else {
-		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+		char errorMessage[256];
+		SDL_strlcpy(errorMessage, SDL_GetError(), sizeof(errorMessage));
+		std::cerr << "SDL_Init Error: " << errorMessage << std::endl;
 		isInitialized_ = false;
 	}
 	return isInitialized_;

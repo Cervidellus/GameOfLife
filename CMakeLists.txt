@@ -5,25 +5,13 @@ project(gameoflife LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#the goal is to remove VCPKG as every dependency can be built from git submodules
-#set(VCPKG_DIR $ENV{VCPKG_DIR})
-#if(NOT VCPKG_DIR)
-#    message(FATAL_ERROR "VCPKG_DIR is not set")
-#endif()
-#message(STATUS "Using path: ${VCPKG_DIR}")
-#set(CMAKE_TOOLCHAIN_FILE "${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
-
-#find_package(sdl2 CONFIG REQUIRED)
-#message(STATUS "SDL2 found: ${SDL2_FOUND}")
-#find_package(imgui CONFIG REQUIRED)
-#message(STATUS "imgui found: ${imgui_FOUND}")
+# Add submodules
+add_subdirectory(submodules/sdl3)
+##add_subdirectory(submodules/imgui)
+add_subdirectory(cmake/imgui)
 
 
-
-
-
-add_subdirectory(submodules/sdl2)
-
+# Add the executable
 add_executable(gameoflife  
     src/main.cpp 
     src/core.cpp 
@@ -49,32 +37,48 @@ add_executable(gameoflife
     src/gui/mainwindow.hpp
     src/gui/WidgetFunctions.hpp
     src/gui/WidgetFunctions.cpp
-    submodules/imgui/imgui.h
-    submodules/imgui/imgui.cpp
     submodules/ImGuiScope/ImGuiScope.hpp
     submodules/ImGuiScope/ImGuiScope.cpp
     submodules/ImGuiScope/TimerResultBuffer.hpp
     submodules/ImGuiScope/TimerResultBuffer.cpp
 )
 
+# Include directories for gameoflife
+target_include_directories(gameoflife PRIVATE src submodules/sdl3/include submodules/imgui)
 
-target_include_directories(gameoflife PRIVATE src submodules/sdl2/include submodules/imgui)
+# Link against SDL3 and ImGui libraries
+target_link_libraries(gameoflife PRIVATE SDL3::SDL3 imgui)
 
-target_link_libraries(gameoflife SDL3::SDL3 )
-
-#copy resources
-add_custom_command(
-        TARGET gameoflife POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_SOURCE_DIR}/resources
-                $<TARGET_FILE_DIR:gameoflife>/resources)
-
-add_executable(quadtreetest
-    QuadTreeTest/QuadTreeTest.cpp
-    src/model/LifeQuadTree.hpp
-    src/model/LifeQuadTree.cpp
-    src/model/LifeQuadTreeModel.hpp
-    src/model/LifeQuadTreeModel.cpp
+# Set output directories for ImGui library
+set_target_properties(imgui PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug"
+    ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release"
 )
 
-target_include_directories(quadtreetest PRIVATE src submodules/sdl2/include)
+# Copy resources
+add_custom_command(
+    TARGET gameoflife POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/resources
+            $<TARGET_FILE_DIR:gameoflife>/resources
+)
+
+#copy SDL3.dll
+add_custom_command(
+    TARGET gameoflife POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#           "$<IF:$<CONFIG:Debug>, ${PROJECT_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll, ${PROJECT_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>"
+            ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll
+            $<TARGET_FILE_DIR:gameoflife>
+)
+
+# Uncomment if you need to add another executable
+# add_executable(quadtreetest
+#     QuadTreeTest/QuadTreeTest.cpp
+#     src/model/LifeQuadTree.hpp
+#     src/model/LifeQuadTree.cpp
+#     src/model/LifeQuadTreeModel.hpp
+#     src/model/LifeQuadTreeModel.cpp
+# )
+
+# target_include_directories(quadtreetest PRIVATE src submodules/sdl3/include)

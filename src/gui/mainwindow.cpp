@@ -1,5 +1,7 @@
 #include "mainwindow.hpp"
 
+#include <iostream>
+
 #include <imgui.h>"
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
@@ -21,10 +23,9 @@ void MainWindow::initialize(std::string windowName)
 
 	sdlRenderer = SDL_CreateRenderer(
 		sdlWindow,
-		"MainWindowRenderer"
-		//-1,
-		//SDL_RENDERER_ACCELERATED
+		NULL
 	);
+	//std::cout << SDL_GetCurrentVideoDriver();//returns nothing!
 }
 
 void MainWindow::processEvent(SDL_Event& event)
