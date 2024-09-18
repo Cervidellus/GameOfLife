@@ -50,6 +50,7 @@ void CpuModel::clearGrid_()
 
 void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
 {
+    
     gridBackBuffer_.reset(
         SDL_CreateTexture(
             renderer,
@@ -59,6 +60,7 @@ void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
             activeModelParams_.modelHeight
         )
     );
+    SDL_SetTextureScaleMode(gridBackBuffer_.get(), SDL_SCALEMODE_NEAREST);
     initBackbufferRequired_ = false;
 }
 
