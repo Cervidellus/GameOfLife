@@ -6,12 +6,8 @@
 
 
 #include <vector>
-
 //#include <SDL.h>
 #include <memory>
-//#include <SDL2/SDL_render.h>
-//#include <SDL_render.h>
-
 
 //Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
 struct SDL_Texture;

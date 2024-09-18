@@ -4,15 +4,16 @@
 #include "../submodules/ImGuiScope/ImguiScope.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
+#include <imgui.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <random>
 #include <sstream>
 
-#include <imgui.h>
-#include <SDL.h>
-#include <SDL_render.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_render.h>
 
 CpuModel::CpuModel() :
     gridBackBuffer_(nullptr, SDL_DestroyTexture)
@@ -49,6 +50,7 @@ void CpuModel::clearGrid_()
 
 void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
 {
+    
     gridBackBuffer_.reset(
         SDL_CreateTexture(
             renderer,
@@ -58,6 +60,7 @@ void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
             activeModelParams_.modelHeight
         )
     );
+    SDL_SetTextureScaleMode(gridBackBuffer_.get(), SDL_SCALEMODE_NEAREST);
     initBackbufferRequired_ = false;
 }
 
@@ -168,7 +171,8 @@ void CpuModel::draw(SDL_Renderer* renderer)
             SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
 
             pixels[(rowIndex ) * grid_[0].size() + columnIndex] = SDL_MapRGB(
-                SDL_AllocFormat(SDL_PIXELFORMAT_RGB565),
+                SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
+                nullptr,
                 color.r,
                 color.g,
                 color.b);
@@ -177,12 +181,12 @@ void CpuModel::draw(SDL_Renderer* renderer)
 
     SDL_UnlockTexture(gridBackBuffer_.get());
     SDL_SetRenderTarget(renderer, nullptr);
-    auto destRect = SDL_Rect{
-        screenSpaceDisplacementX_,
-        screenSpaceDisplacementY_,
-        (int)grid_[0].size() * activeModelParams_.zoomLevel, 
-        (int)grid_.size() * activeModelParams_.zoomLevel };
-    SDL_RenderCopy(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+    auto destRect = SDL_FRect{
+        (float)screenSpaceDisplacementX_,
+        (float)screenSpaceDisplacementY_,
+        (float)grid_[0].size() * activeModelParams_.zoomLevel, 
+        (float)grid_.size() * activeModelParams_.zoomLevel };
+    SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
     drawBackBufferTimer.reset();
 }
 
@@ -220,10 +224,10 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 
     if (!ImGui::IsWindowHovered(4) && !ImGui::IsAnyItemActive())
     {
-        int mousePosX, mousePosY;
+        float mousePosX, mousePosY;
         int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
 
-        if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_MOUSEMOTION)
+        if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
         {
       
             activeModelParams_.displacementX += event.motion.xrel;
@@ -231,7 +235,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             //TODO:Check that it is within bounds of a maximum displacement
             recalcDrawRange_ = true;
         }
-        else if (event.type == SDL_EventType::SDL_MOUSEWHEEL)
+        else if (event.type == SDL_EventType::SDL_EVENT_MOUSE_WHEEL)
         {
             int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
             int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
@@ -251,14 +255,10 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
 
 void CpuModel::generateModel(const ModelParameters& params) {
     //First set the members to correspond with the parameters
-
     activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, params.minWidth);
     activeModelParams_.modelHeight = std::max<int>(activeModelParams_.modelHeight, params.minHeight);
-    //if (activeModelParams_.modelWidth < params.minWidth) activeModelParams_.minWidth = params.minWidth;
-    //if (activeModelParams_.modelHeight < params.minHeight) activeModelParams_.minHeight = params.minHeight;
     activeModelParams_.minWidth = params.minWidth;
     activeModelParams_.minHeight = params.minHeight;
-
 
     if (params.modelWidth > 0) activeModelParams_.modelWidth = params.modelWidth;
     if (params.modelHeight > 0) activeModelParams_.modelHeight = params.modelHeight;

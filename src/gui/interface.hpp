@@ -7,7 +7,7 @@
 
 #include <functional>
 #include <memory>
-#include <SDL2/SDL_rect.h>
+#include <SDL3/SDL_rect.h>
 
 //class ModelPresets::ModelPresetName;
 struct SDL_Window;

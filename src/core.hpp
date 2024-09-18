@@ -1,13 +1,13 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
-#include <memory>
+//#include <memory>
 
-#include "gui\mainwindow.hpp"
-#include "gui\interface.hpp"
+//#include "gui\mainwindow.hpp"
+//#include "gui\interface.hpp"
 #include "gui\gui.hpp"
 #include "model\CpuModel.hpp"
-#include "presets\modelpresets.hpp"
+//#include "presets\modelpresets.hpp"
 #include "sdl_manager.hpp"
 
 union SDL_Event;

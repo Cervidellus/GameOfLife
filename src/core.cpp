@@ -1,15 +1,16 @@
 #include <core.hpp>
+#include <imgui.h>
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_sdlrenderer3.h>
+
 #include "../submodules/ImGuiScope/ImGuiScope.hpp"
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_render.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_sdlrenderer2.h>
-#include <imgui.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_render.h>
 
 Core::Core() 
 {
@@ -74,18 +75,17 @@ void Core::processEvents_() {
 
         switch(event.type)
         {
-            case SDL_EventType::SDL_QUIT:
+            case SDL_EventType::SDL_EVENT_QUIT:
                 coreAppRunning_ = false;
                 break;
-            case SDL_EventType::SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_RESIZED)
-                {
-                    SDL_Rect modelViewport = { 0, 0, 1260, 720 };
-                    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
-                    cpuModel_.setViewPort(modelViewport);
-                }
+            case SDL_EventType::SDL_EVENT_WINDOW_RESIZED:
+            {
+                SDL_Rect modelViewport = { 0, 0, 1260, 720 };
+                SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
+                cpuModel_.setViewPort(modelViewport);
+            }
                 break;
-            case SDL_EventType::SDL_KEYDOWN:
+            case SDL_EventType::SDL_EVENT_KEY_DOWN:
                 handleSDL_KEYDOWN(event);
                 break;
         }
@@ -124,7 +124,8 @@ void Core::render_() {
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
-    switch(event.key.keysym.sym)
+    switch(event.key.key)
+    //switch(event.key.keysym.sym)
     {
         case SDLK_ESCAPE:
             coreAppRunning_ = false;
