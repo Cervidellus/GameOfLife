@@ -6,14 +6,14 @@
 #include <array>
 #include <map>
 
-#include <SDL2/SDL_pixels.h>
+#include <SDL3/SDL_pixels.h>
 
 class ColorMapper
 {
 public:
 	ColorMapper();
 
-	static enum class ColormapType
+	enum class ColormapType
 	{
 		DualColor = 0, Cividis, Cubehelix, Github, Gray, Heat, Hot,
 		HSV, Inferno, Jet, Magma, Parula, Plasma, Turbo, Viridis

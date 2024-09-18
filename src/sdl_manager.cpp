@@ -2,22 +2,25 @@
 
 #include <iostream>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_render.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_render.h>
 
 SDLManager::SDLManager() {
 	initialize_();
 }
 
 bool SDLManager::initialize_() {
-	if (SDL_Init(SDL_INIT_VIDEO) == 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
 		isInitialized_ = true;
-		std::cout << "SDL2 video initialized..." << std::endl;
+		std::cout << "SDL3 video initialized..." << std::endl;
 	}
 	else {
-		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+		char errorMessage[256];
+		SDL_strlcpy(errorMessage, SDL_GetError(), sizeof(errorMessage));
+		std::cerr << "SDL_Init Error: " << errorMessage << std::endl;
 		isInitialized_ = false;
 	}
+	
 	return isInitialized_;
 }
 
