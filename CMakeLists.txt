@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add submodules
 add_subdirectory(submodules/sdl3)
-##add_subdirectory(submodules/imgui)
+#imgui does not provide a CMakeLists.txt file, so we need to add it manually
 add_subdirectory(cmake/imgui)
 
 
@@ -65,12 +65,39 @@ add_custom_command(
 
 #copy SDL3.dll
 add_custom_command(
-    TARGET gameoflife POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#           "$<IF:$<CONFIG:Debug>, ${PROJECT_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll, ${PROJECT_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>"
-            ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll
-            $<TARGET_FILE_DIR:gameoflife>
+    TARGET gameoflife 
+    POST_BUILD
+
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying SDL3.dll from: $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>"
+
+    COMMAND ${CMAKE_COMMAND} -E copy
+    $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
+    $<TARGET_FILE_DIR:gameoflife>
+
+ #   COMMAND ${CMAKE_COMMAND} -E copy
+ #          $<IF:$<CONFIG:Release>, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
+ #           ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll
+ #           $<TARGET_FILE_DIR:gameoflife>
 )
+
+#copy imgui 
+add_custom_command(
+    TARGET gameoflife 
+    POST_BUILD
+
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying imgui.dll from: $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/cmake/imgui/Debug/imgui.dll,${CMAKE_SOURCE_DIR}/build/cmake/imgui/Release/imgui.dll>"
+
+    COMMAND ${CMAKE_COMMAND} -E copy
+    $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/cmake/imgui/Debug/imgui.dll,${CMAKE_SOURCE_DIR}/build/cmake/imgui/Release/imgui.dll>
+    $<TARGET_FILE_DIR:gameoflife>
+)
+
+
+#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    message(STATUS "Debug: YES")
+#else()
+#    message(STATUS "Debug: NO")
+#endif()
 
 # Uncomment if you need to add another executable
 # add_executable(quadtreetest

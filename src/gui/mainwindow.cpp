@@ -18,14 +18,15 @@ void MainWindow::initialize(std::string windowName)
 		//SDL_WINDOWPOS_CENTERED,
 		1280,
 		720,
-		SDL_WINDOW_RESIZABLE 
+		SDL_WINDOW_RESIZABLE /*| SDL_WINDOW_OPENGL */
 	);
 
 	sdlRenderer = SDL_CreateRenderer(
 		sdlWindow,
-		NULL
+		nullptr
 	);
-	//std::cout << SDL_GetCurrentVideoDriver();//returns nothing!
+	SDL_SetRenderVSync(sdlRenderer, 1);
+	SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
 void MainWindow::processEvent(SDL_Event& event)

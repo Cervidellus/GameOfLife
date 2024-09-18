@@ -10,19 +10,7 @@ SDLManager::SDLManager() {
 }
 
 bool SDLManager::initialize_() {
-	SDL_Window* window = 
-		SDL_CreateWindow(
-			"windowName",
-			//SDL_WINDOWPOS_CENTERED,
-			//SDL_WINDOWPOS_CENTERED,
-			1280,
-			720,
-			SDL_WINDOW_RESIZABLE
-		);
-
-	std::cout << &window;
-
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
 		isInitialized_ = true;
 		std::cout << "SDL3 video initialized..." << std::endl;
 	}

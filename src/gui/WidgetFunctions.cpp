@@ -120,8 +120,6 @@ void WidgetFunctions::drawPresetsHeader(
             generateModelCallback(ModelPresets::randomParams);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("a randomly generated field to observe conway's game of life.");
-
-        //Here I should just return result in a callback, and handle the file in the other object.
         if (ImGui::Button("From File")) {
             auto fileDialog = pfd::open_file(
                 "Choose file",
@@ -249,4 +247,5 @@ void WidgetFunctions::drawPresetsHeader(
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stabilization of Vex, a pattern discovered by Achim Flammenkamp in 1994.");
     }
+    //ImDrawData* draw_data = ImGui::GetDrawData();//null
 }
