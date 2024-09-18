@@ -7,15 +7,12 @@
 #include <backends/imgui_impl_sdlrenderer3.h>
 #include <SDL3/SDL.h>
 
-
 MainWindow::MainWindow(){}
 
 void MainWindow::initialize(std::string windowName)
 {
 	sdlWindow = SDL_CreateWindow(
 		windowName.c_str(),
-		//SDL_WINDOWPOS_CENTERED,
-		//SDL_WINDOWPOS_CENTERED,
 		1280,
 		720,
 		SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL 
@@ -26,7 +23,6 @@ void MainWindow::initialize(std::string windowName)
 		nullptr
 	);
 	SDL_SetRenderVSync(sdlRenderer, 1);
-	//SDL_SetRenderDrawBlendMode(sdlRenderer, SDL_BLENDMODE_NONE);
 	SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 

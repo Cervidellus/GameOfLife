@@ -4,7 +4,6 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
-//#include <SDL3/SDL_hints.h>
 
 SDLManager::SDLManager() {
 	initialize_();
@@ -21,7 +20,6 @@ bool SDLManager::initialize_() {
 		std::cerr << "SDL_Init Error: " << errorMessage << std::endl;
 		isInitialized_ = false;
 	}
-	//SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 	
 	return isInitialized_;
 }

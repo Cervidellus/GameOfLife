@@ -26,14 +26,8 @@ bool GUI::initialize(
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-	//auto testing = SDL_GetWindowFlags(mainWindow.sdlWindow);
-	// Delay is not sufficient to make it work.
-	//SDL_Delay(1000);
-	
-	////for testing: This will make it work in release mode
-	SDL_GetCurrentVideoDriver();
-	
-	//std::cout << x;
+	io.FontGlobalScale = 2;
+
 	if (!ImGui_ImplSDL3_InitForSDLRenderer(mainWindow.sdlWindow, mainWindow.sdlRenderer)) return false;//fails... mainwindow does not have a renderer
 	if (!ImGui_ImplSDLRenderer3_Init(mainWindow.sdlRenderer)) return false;
 
