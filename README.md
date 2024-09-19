@@ -1,9 +1,8 @@
-My purpose here is to learn something about making an application using SDL and Dear ImGui, as I am used to using Qt and wanted to learn a different way. I've implemented an interface to play with the parameters of the model, as well as to choose cool colormaps to make it look nice. You can choose some presets of these parameters as well as a couple of samples of some more complex oscillators. Where does it go next? I'd like to be able to load presets from files downloaded from https://conwaylife.com/wiki/, and to allow you to copy and paste RLE encoded patterns from the same site.
-If I am still having fun I might play around with different SDL backends and/or implement and optimize the rules with CUDA to make it run as fast as I can for some reason (though it runs plenty fine as it is..). 
+Play around with cellular automata!
 
-https://github.com/Cervidellus/GameOfLife/assets/17419420/796a69a1-8693-4318-b78d-75960b464bd2
+![puffer](https://github.com/user-attachments/assets/d98d4233-5967-4553-8693-14cc39affcbf)
 
-It is already a fun toy to play with. Here is what you can do:
+Here is what you can do:
 
 1. Change the speed of model updates.
   Sometimes it is fun to slow it down so you can see what is going on.
@@ -24,7 +23,22 @@ It is already a fun toy to play with. Here is what you can do:
    To load from file rowse the excellent https://conwaylife.com/wiki/ and download it.
    Then under the presets menu select From File and point to it's path.
    Or, you can just copy the RLE encoded model from the same website, select From String and paste it in there!
-6. Get some debug info under the Timer Results tab. 
+6. Get some debug info under the Timer Results tab.
+
+![GOL2](https://github.com/user-attachments/assets/698e2586-0422-4bf2-a8f5-eef92775ae54)
+
+Build Instructions:
+It uses a pretty standard CMAKE build.
+Make sure to get the submodules when you clone:
+```
+git clone --recurse-submodules https://github.com/Cervidellus/GameOfLife.git
+
+cd GameOfLife
+mkdir build 
+cd build
+cmake ..
+cmake --build . --config Release
+```
    
   
 
