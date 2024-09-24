@@ -10,7 +10,6 @@ add_subdirectory(submodules/sdl3)
 #imgui does not provide a CMakeLists.txt file, so we need to add it manually
 add_subdirectory(cmake/imgui)
 
-
 # Add the executable
 add_executable(gameoflife  
     src/main.cpp 
@@ -73,11 +72,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy
     $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
     $<TARGET_FILE_DIR:gameoflife>
-
- #   COMMAND ${CMAKE_COMMAND} -E copy
- #          $<IF:$<CONFIG:Release>, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
- #           ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll
- #           $<TARGET_FILE_DIR:gameoflife>
 )
 
 #copy imgui 
@@ -92,6 +86,15 @@ add_custom_command(
     $<TARGET_FILE_DIR:gameoflife>
 )
 
+#configure the .sln file
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT gameoflife)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+# Set runtime library for Debug and Release configurations
+target_compile_options(gameoflife PRIVATE
+    $<$<CONFIG:Debug>:/MTd>  # Multi-threaded Debug DLL
+    $<$<CONFIG:Release>:/MT> # Multi-threaded DLL
+)
 
 #if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 #    message(STATUS "Debug: YES")
