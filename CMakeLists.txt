@@ -21,10 +21,12 @@ add_executable(gameoflife
     src/model/ColorMapper.cpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
-    src/model/LifeQuadTree.hpp
-    src/model/LifeQuadTree.cpp
-    src/model/LifeQuadTreeModel.hpp
-    src/model/LifeQuadTreeModel.cpp
+    src/model/HashLifeTree.cpp
+    src/model/HashLifeTree.hpp
+ #   src/model/LifeQuadTree.hpp
+ #  src/model/LifeQuadTree.cpp
+ #   src/model/LifeQuadTreeModel.hpp
+ #   src/model/LifeQuadTreeModel.cpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp

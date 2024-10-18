@@ -3,6 +3,8 @@
 
 #include <array>
 #include <memory>
+#include <unordered_map>
+#include <variant>
 
 //This is intended to be based on the HashLife implementation as a part of the Golly project for cellular automata.
 //https://sourceforge.net/projects/golly/
@@ -34,30 +36,73 @@
 
 //ghashbase::step() is the main function called.
 
-//I think hte first steps are to get the ability to assemble a tree working. 
 
-struct Node {
-	std::shared_ptr<Node> nw;
-	std::shared_ptr<Node> ne;
-	std::shared_ptr<Node> sw;
-	std::shared_ptr<Node> se;
-	//leaving these commented out until I understand them.
-	//std::shared_ptr<Node> next;//Maybe this just to iterate over the nodes?
-	//std::shared_ptr<Node> res;//This is the cache?
-};
+//I don't really understand 100% how they are using a hash table, but I need to make one. 
+
+//I need a data structure to store it in,a hash function, and a collision handling scheme.
+// 
+// FOr the data structure, I think I will just use std::unordered_map at first..
+// Not the most optimal, but easy to implement. 
+// 
+// For the hash function:
+//I'm storing stuff as shared_ptr.. so I theoretically could hash the shared_ptr address with std::hash
+//Or should I copy the hash function that they have done?
+// FNV-1a seems like a performant hash algorithm?
+
+//I guess I can use std::vector for the container?
+// For collisions:
+//I don't think I need to call delete, so I could use open-addressing with a lazy deletion flag? 
+
+//For probing collisions, I could try double hashing? So I need two hashing functions. 
+//Or robin hood probing? https://www.youtube.com/watch?v=IMnbytvHCjM
 
 class LifeHashTree {
 public:
 	LifeHashTree() {};
 	~LifeHashTree() {};
 
+	struct Node;
+	struct Leaf;
+	typedef std::variant<Node, Leaf> NodeOrLeaf;
+
+	//ghashbase::setcell
 	void setCell(int x, int y, uint8_t state);
+
+	struct Node {
+		std::shared_ptr<NodeOrLeaf> nw;
+		std::shared_ptr<NodeOrLeaf> ne;
+		std::shared_ptr<NodeOrLeaf> sw;
+		std::shared_ptr<NodeOrLeaf> se;
+		//leaving these commented out until I understand them.
+		//std::shared_ptr<Node> next;//Maybe this just to iterate over the nodes?
+		//std::shared_ptr<Node> res;//This is the cache?
+	};
+
+	struct Leaf {
+		uint8_t nw = 0;
+		uint8_t ne = 0;
+		uint8_t sw = 0;
+		uint8_t se = 0;
+		//THey had a leafpop and a bool isleaf.
+		//I don't understand leafpop, and we don't need isleaf if we are a leaf!
+		//They also have a next pointer that I don't yet understand.
+	};
 
 private:
 	//Create a new root node, centered on the old root.
 	bool increaseTreeDepth_();
 
-	std::shared_ptr<Node> root_;
+
+	//ghashbase::gsetbit
+	std::shared_ptr<NodeOrLeaf> recursiveSetCellState_(
+		std::shared_ptr<NodeOrLeaf> nodeOrLeaf, 
+		int x, 
+		int y, 
+		int newstate, 
+		int nodeDepth);
+
+	std::shared_ptr<NodeOrLeaf> root_;
+	std::unordered_map<int, NodeOrLeaf> hashTable_;
 	int treeDepth_ = 0; 
 };
 
