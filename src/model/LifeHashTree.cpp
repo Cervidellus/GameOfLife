@@ -20,8 +20,6 @@ void LifeHashTree::setCell(int x, int y, uint8_t state)
 	{
 		//They had an if (hashed) thing in here which I don't understand, 
 		//So we'll leave it out for now.
-		//They called a function pushroot_1();
-		//I've renamed it to increaseTreeDepth();
 		increaseTreeDepth_();
         shiftedx >>= 1;
         shiftedy >>= 1;
@@ -29,7 +27,20 @@ void LifeHashTree::setCell(int x, int y, uint8_t state)
 
 	////Here is where they actually set the value.
 	//root = gsetbit(root, x, y, newstate, depth);
-	
+    root_ = recursiveSetCellState_(root_, x, y, state, treeDepth_);
+}
+
+int LifeHashTree::getCell(int x, int y)
+{
+    int shiftedx = x;
+    int shiftedy = y;
+
+    shiftedx >>= treeDepth_;
+    shiftedy >>= treeDepth_;
+
+    //If the point is outside the bounds of the quadtree, return 0;
+    if (shiftedx != 0 || shiftedy != 0) return 0;
+    return recursiveGetCellState_(root_, x, y, treeDepth_)
 }
 
 bool LifeHashTree::increaseTreeDepth_()
@@ -72,16 +83,12 @@ std::shared_ptr<LifeHashTree::NodeOrLeaf> LifeHashTree::recursiveSetCellState_(
     int nodeDepth)
 {
     //nodeOrLeaf is a Node. This will include empty NodeOrLeaf.
-    //auto node = std::get_if<Node>(nodeOrLeaf.get());
-    if (nodeDepth > 0/* && auto node = std::get_if<Node>(nodeOrLeaf.get())*/ /*&& nodeDepth > 0*/)
+    if (auto node = std::get_if<Node>(nodeOrLeaf.get()))
     {
-        auto node = std::get_if<Node>(nodeOrLeaf.get());
-        
         //avoiding division. We can bit shift because of the quad tree scaling by 2 in each dimension.
         int width = 1 << nodeDepth;
         int halfWidth = 1 << (nodeDepth - 1);
         nodeDepth--;
-
 
         std::shared_ptr<NodeOrLeaf> childPointer;
 
@@ -100,7 +107,6 @@ std::shared_ptr<LifeHashTree::NodeOrLeaf> LifeHashTree::recursiveSetCellState_(
                 childPointer = node->ne;
         }
 
-
         // Create a new node if the child pointer is null
         if (!childPointer) {
             if (nodeDepth == 0) childPointer = std::make_shared<NodeOrLeaf>(Leaf{});
@@ -108,10 +114,9 @@ std::shared_ptr<LifeHashTree::NodeOrLeaf> LifeHashTree::recursiveSetCellState_(
         }
 
         // Recursively set the bit in the child node
-        //Bitwise operators make sure that they are within range.. I should technically be able to get rid of that?
         //Subtracting the halfwidth realigns the coordinate space to the selected child node.
-        std::shared_ptr<LifeHashTree::NodeOrLeaf> updatedChild = recursiveSetCellState_(childPointer, (x & (width - 1)) - halfWidth,
-            (y & (width - 1)) - halfWidth, newState, nodeDepth);
+        std::shared_ptr<LifeHashTree::NodeOrLeaf> updatedChild = recursiveSetCellState_(childPointer, x - halfWidth,
+            y - halfWidth, newState, nodeDepth);
 
         //This is for caching. 
         // Update the parent node with the new child node
@@ -154,140 +159,51 @@ std::shared_ptr<LifeHashTree::NodeOrLeaf> LifeHashTree::recursiveSetCellState_(
     return nodeOrLeaf;
 }
 
-//
-//
-//
-//
-//
-//
-//
-//
-////CHatgpt version wiht explicit names and explanation:
-//ghnode* ghashbase::gsetbit(ghnode* node, int x, int y, int newState, int depth) {
-//    if (depth == 0) {
-//        // Cast the node to a leaf node
-//        ghleaf* leaf = (ghleaf*)node;
-//        if (hashed) {
-//            // Save the current states of the quadrants
-//            state nwState = leaf->nw;
-//            state swState = leaf->sw;
-//            state neState = leaf->ne;
-//            state seState = leaf->se;
-//
-//            // Set the new state based on the coordinates
-//            if (x < 0) {
-//                if (y < 0)
-//                    swState = (state)newState;
-//                else
-//                    nwState = (state)newState;
-//            }
-//            else {
-//                if (y < 0)
-//                    seState = (state)newState;
-//                else
-//                    neState = (state)newState;
-//            }
-//
-//            // Save and return the updated node
-//            return save((ghnode*)find_ghleaf(nwState, neState, swState, seState));
-//        }
-//
-//        // Set the new state directly in the leaf node
-//        if (x < 0) {
-//            if (y < 0)
-//                leaf->sw = (state)newState;
-//            else
-//                leaf->nw = (state)newState;
-//        }
-//        else {
-//            if (y < 0)
-//                leaf->se = (state)newState;
-//            else
-//                leaf->ne = (state)newState;
-//        }
-//        return (ghnode*)leaf;
-//    }
-//    else {
-//        unsigned int width = 0, halfWidth = 0;
-//        if (depth > 31) {
-//            if (depth == 32)
-//                halfWidth = 0x80000000;
-//            width = 0;
-//        }
-//        else {
-//            width = 1 << depth;
-//            halfWidth = 1 << (depth - 1);
-//        }
-//        depth--;
-//
-//        ghnode** childPointer;
-//
-//        // Determine which quadrant to traverse
-//        if (depth + 1 == this->depth || depth < 31) {
-//            if (x < 0) {
-//                if (y < 0)
-//                    childPointer = &(node->sw);
-//                else
-//                    childPointer = &(node->nw);
-//            }
-//            else {
-//                if (y < 0)
-//                    childPointer = &(node->se);
-//                else
-//                    childPointer = &(node->ne);
-//            }
-//        }
-//        else {
-//            if (x >= 0) {
-//                if (y >= 0)
-//                    childPointer = &(node->sw);
-//                else
-//                    childPointer = &(node->nw);
-//            }
-//            else {
-//                if (y >= 0)
-//                    childPointer = &(node->se);
-//                else
-//                    childPointer = &(node->ne);
-//            }
-//        }
-//
-//        // Create a new node if the child pointer is null
-//        if (*childPointer == 0) {
-//            if (depth == 0)
-//                *childPointer = (ghnode*)newclearedghleaf();
-//            else
-//                *childPointer = newclearedghnode();
-//        }
-//
-//        // Recursively set the bit in the child node
-//        ghnode* updatedChild = gsetbit(*childPointer, (x & (width - 1)) - halfWidth,
-//            (y & (width - 1)) - halfWidth, newState, depth);
-//
-//        // Update the parent node with the new child node
-//        if (hashed) {
-//            ghnode* nw = (childPointer == &(node->nw) ? updatedChild : node->nw);
-//            ghnode* sw = (childPointer == &(node->sw) ? updatedChild : node->sw);
-//            ghnode* ne = (childPointer == &(node->ne) ? updatedChild : node->ne);
-//            ghnode* se = (childPointer == &(node->se) ? updatedChild : node->se);
-//            node = save(find_ghnode(nw, ne, sw, se));
-//        }
-//        else {
-//            *childPointer = updatedChild;
-//        }
-//        return node;
-//    }
-//}
+//ghashbase::getcell
+int LifeHashTree::recursiveGetCellState_(
+    std::shared_ptr<NodeOrLeaf> nodeOrLeaf,
+    int x,
+    int y,
+    int nodeDepth)
+{
+    //check if leaf node. Base case to stop recursion.
+    if (auto leaf = std::get_if<Leaf>(nodeOrLeaf.get()))
+    {
+        if (x < 0)
+            if (y < 0)
+                return leaf->sw;
+            else
+                return leaf->nw;
+        else
+            if (y < 0)
+                return leaf->se;
+            else
+                return leaf->ne;
+    }
 
+    auto node = std::get_if<Node>(nodeOrLeaf.get());
 
-//Explanation:
-//Base Case(Leaf Node) :
-//    If depth is 0, the function treats the node as a leaf(ghleaf).
-//    It sets the state of the appropriate quadrant(nw, sw, ne, se) based on the coordinates(x, y).
-//    If hashed is true, it saves the new state and returns the updated node.
-//    Recursive Case :
-//If depth is greater than 0, it calculates the width and half - width of the current level.
-//It determines which child node to traverse based on the coordinates(x, y).
-//If the child node is null, it creates a new cleared node.
-//It recursively calls gsetbit on the child node with updated coordinates and depth.
-//After the recursive call, it updates the parent node with the new child node.
+    int width = 1 << nodeDepth;
+    int halfWidth = 1 << (nodeDepth - 1);
+    nodeDepth--;
+
+    std::shared_ptr<NodeOrLeaf> childPointer;
+
+    if (x < 0) {
+        if (y < 0)
+            childPointer = node->sw;
+        else
+            childPointer = node->nw;
+    }
+    else {
+        if (y < 0)
+            childPointer = node->se;
+        else
+            childPointer = node->ne;
+    }
+
+    //If no node, no need to keep traversing down the tree.
+    if (!childPointer) return 0;
+
+    return recursiveGetCellState_(childPointer, x - halfWidth, y - halfWidth, nodeDepth);
+}

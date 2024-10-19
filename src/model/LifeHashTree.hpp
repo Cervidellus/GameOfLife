@@ -68,6 +68,9 @@ public:
 	//ghashbase::setcell
 	void setCell(int x, int y, uint8_t state);
 
+	//ghbase::getcell
+	std::shared_ptr<LifeHashTree::NodeOrLeaf> getCell(int x, int y);
+
 	struct Node {
 		std::shared_ptr<NodeOrLeaf> nw;
 		std::shared_ptr<NodeOrLeaf> ne;
