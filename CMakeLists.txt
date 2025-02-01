@@ -21,8 +21,8 @@ add_executable(gameoflife
     src/model/ColorMapper.cpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
-    src/model/HashLifeTree.cpp
-    src/model/HashLifeTree.hpp
+ #   src/model/HashLifeTree.cpp
+ #   src/model/HashLifeTree.hpp
  #   src/model/LifeQuadTree.hpp
  #  src/model/LifeQuadTree.cpp
  #   src/model/LifeQuadTreeModel.hpp
@@ -98,11 +98,25 @@ target_compile_options(gameoflife PRIVATE
     $<$<CONFIG:Release>:/MT> # Multi-threaded DLL
 )
 
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#    message(STATUS "Debug: YES")
-#else()
-#    message(STATUS "Debug: NO")
-#endif()
+#if debug, also compile the tests
+#isDebug is set correctly in either a visual studio or normal cmake build.
+if(CMAKE_CONFIGURATION_TYPES)
+    foreach(config ${CMAKE_CONFIGURATION_TYPES})
+        if(config STREQUAL "Debug")
+            set(isDebug TRUE)
+        endif()
+    endforeach()
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(isDebug TRUE)
+endif()
+
+if(isDebug)
+    message(STATUS "Debug: YES")
+    add_subdirectory(tests)
+else()
+    message(STATUS "Debug: NO")
+endif()
+
 
 # Uncomment if you need to add another executable
 # add_executable(quadtreetest

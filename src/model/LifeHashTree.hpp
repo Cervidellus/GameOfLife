@@ -15,7 +15,6 @@
 //Life Hashlife, I store cells in 16*16 blocks, and use a quadtree to store the blocks.
 //Results for blocks are stored in a hash table, so that they can be reused.
 
-
 //What I need:
 //1. A struct to store a node that offers pointers to 4 children. 
 // Golly is also storing a next and a res, so I have to figure out what that is for.
@@ -49,10 +48,6 @@
 //Or should I copy the hash function that they have done?
 // FNV-1a seems like a performant hash algorithm?
 
-//I guess I can use std::vector for the container?
-// For collisions:
-//I don't think I need to call delete, so I could use open-addressing with a lazy deletion flag? 
-
 //For probing collisions, I could try double hashing? So I need two hashing functions. 
 //Or robin hood probing? https://www.youtube.com/watch?v=IMnbytvHCjM
 
@@ -61,27 +56,28 @@ public:
 	LifeHashTree() {};
 	~LifeHashTree() {};
 
-	struct Node;
-	struct Leaf;
-	typedef std::variant<Node, Leaf> NodeOrLeaf;
+	struct InternalNode;
+	struct TerminalNode;
+	typedef std::variant<InternalNode, TerminalNode> Node;
 
 	//ghashbase::setcell
 	void setCell(int x, int y, uint8_t state);
 
 	//ghbase::getcell
-	std::shared_ptr<LifeHashTree::NodeOrLeaf> getCell(int x, int y);
+	int getCell(int x, int y);
 
-	struct Node {
-		std::shared_ptr<NodeOrLeaf> nw;
-		std::shared_ptr<NodeOrLeaf> ne;
-		std::shared_ptr<NodeOrLeaf> sw;
-		std::shared_ptr<NodeOrLeaf> se;
+	struct InternalNode {
+		std::shared_ptr<Node> nw;
+		std::shared_ptr<Node> ne;
+		std::shared_ptr<Node> sw;
+		std::shared_ptr<Node> se;
 		//leaving these commented out until I understand them.
 		//std::shared_ptr<Node> next;//Maybe this just to iterate over the nodes?
 		//std::shared_ptr<Node> res;//This is the cache?
 	};
 
-	struct Leaf {
+	//terminal nodes contain 4 leaves
+	struct TerminalNode {
 		uint8_t nw = 0;
 		uint8_t ne = 0;
 		uint8_t sw = 0;
@@ -97,16 +93,25 @@ private:
 
 
 	//ghashbase::gsetbit
-	std::shared_ptr<NodeOrLeaf> recursiveSetCellState_(
-		std::shared_ptr<NodeOrLeaf> nodeOrLeaf, 
+	std::shared_ptr<Node> recursiveSetCellState_(
+		std::shared_ptr<Node> nodeOrLeaf, 
 		int x, 
 		int y, 
 		int newstate, 
-		int nodeDepth);
+		int nodeDepth
+	);
 
-	std::shared_ptr<NodeOrLeaf> root_;
-	std::unordered_map<int, NodeOrLeaf> hashTable_;
-	int treeDepth_ = 0; 
+	int recursiveGetCellState_(
+		std::shared_ptr<Node> nodeOrLeaf,
+		int x,
+		int y,
+		int nodeDepth
+	);
+
+	std::shared_ptr<Node> root_ = std::make_shared<Node>(InternalNode());
+	std::unordered_map<int, Node> hashTable_;
+	// The minimum root node depth is 2. Depth 1 is a terminal node. depth 0 is an individual cell (or leaf). 
+	int treeDepth_ = 2;
 };
 
 #endif // LIFEHASH_TREE_HPP

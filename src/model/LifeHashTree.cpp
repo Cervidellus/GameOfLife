@@ -1,73 +1,82 @@
 #include "LifeHashTree.hpp"
+#include <iostream>
+#include <cmath>
+#include <format>
 
 void LifeHashTree::setCell(int x, int y, uint8_t state)
 {
-    //std::variant ALWAYS holds something.. in this case of default of a Node. 
-    // It will be initialized with an empty node. 
-	if (!root_) root_ = std::make_shared<NodeOrLeaf>(Node());
-
-	int shiftedx = x;
-	int shiftedy = y;
-
 	//Determine the tree depth required to contain x and y
-	//It works because each the size of the tree doubles in each dimension every time you add a new root.
+	//Binary operations work because the size of the tree doubles in each dimension every time you add a new root.
 	//We must be sure that treeDepth_ never exceeds 31 so we don't shift out of our int!
-	shiftedx >>= treeDepth_;
-	shiftedy >>= treeDepth_;
+    int shiftedx = std::abs(x);
+    int shiftedy = std::abs(y);
+	shiftedx >>= (treeDepth_ );
+	shiftedy >>= (treeDepth_ );
 
 	//Add root nodes if we need to.
 	while (shiftedx != 0 || shiftedy != 0)
 	{
-		//They had an if (hashed) thing in here which I don't understand, 
+		//Original algo had an if (hashed) thing in here which I don't understand, 
 		//So we'll leave it out for now.
 		increaseTreeDepth_();
         shiftedx >>= 1;
         shiftedy >>= 1;
 	}
 
-	////Here is where they actually set the value.
-	//root = gsetbit(root, x, y, newstate, depth);
+    //Navigate the tree to set the bit.
     root_ = recursiveSetCellState_(root_, x, y, state, treeDepth_);
 }
 
 int LifeHashTree::getCell(int x, int y)
 {
-    int shiftedx = x;
-    int shiftedy = y;
-
+    int shiftedx = std::abs(x);
+    int shiftedy = std::abs(y);
     shiftedx >>= treeDepth_;
     shiftedy >>= treeDepth_;
 
     //If the point is outside the bounds of the quadtree, return 0;
     if (shiftedx != 0 || shiftedy != 0) return 0;
-    return recursiveGetCellState_(root_, x, y, treeDepth_)
+    return recursiveGetCellState_(root_, x, y, treeDepth_);
 }
 
 bool LifeHashTree::increaseTreeDepth_()
 {
 	//Replace the children of root_ such that the old root children are centered in the new root children.
     //This modifies the root in place and swaps in new children at 1 higher depth.
-    Node* root = std::get_if<Node>(root_.get());
+    InternalNode* root = std::get_if<InternalNode>(root_.get());
     if (!root) return false;
 
+    //I need to modify to better handle the zero value case, so I don't need to navigate all the way down.
     //Construct the Node that will be the NW child of the new root.
-    auto newChildNW = std::make_shared<NodeOrLeaf>(Node{});
-    //Swap in what was the nw child of the old root into the se child position of the new child. 
-    std::get<Node>(*newChildNW).se.swap(root->nw);
-    //Now that the nw child of the new root it complete, swap it in.
-    root->nw.swap(newChildNW);
+    if (root->nw)
+    {
+        auto newChildNW = std::make_shared<Node>(InternalNode{});
+        //Swap in what was the nw child of the old root into the se child position of the new child. 
+        std::get<InternalNode>(*newChildNW).se.swap(root->nw);
+        //Now that the nw child of the new root it complete, swap it in.
+        root->nw.swap(newChildNW);
+    }
 
-    auto newChildNE = std::make_shared<NodeOrLeaf>(Node{});
-    std::get<Node>(*newChildNE).sw.swap(root->ne);
-    root->ne.swap(newChildNE);
+    if (root->nw)
+    {
+        auto newChildNE = std::make_shared<Node>(InternalNode{});
+        std::get<InternalNode>(*newChildNE).sw.swap(root->ne);
+        root->ne.swap(newChildNE);
+    }
 
-    auto newChildSW = std::make_shared<NodeOrLeaf>(Node{});
-    std::get<Node>(*newChildSW).ne.swap(root->sw);
-    root->sw.swap(newChildSW);
+    if (root->sw)
+    {
+        auto newChildSW = std::make_shared<Node>(InternalNode{});
+        std::get<InternalNode>(*newChildSW).ne.swap(root->sw);
+        root->sw.swap(newChildSW);
+    }
 
-    auto newChildSE = std::make_shared<NodeOrLeaf>(Node{});
-    std::get<Node>(*newChildSE).nw.swap(root->se);
-    root->se.swap(newChildSE);
+    if (root->se)
+    {
+        auto newChildSE = std::make_shared<Node>(InternalNode{});
+        std::get<InternalNode>(*newChildSE).nw.swap(root->se);
+        root->se.swap(newChildSE);
+    }
 
 	treeDepth_++;
     return true;
@@ -75,135 +84,128 @@ bool LifeHashTree::increaseTreeDepth_()
 
 
 //ghashbase::gsetbit
-std::shared_ptr<LifeHashTree::NodeOrLeaf> LifeHashTree::recursiveSetCellState_(
-    std::shared_ptr<NodeOrLeaf> nodeOrLeaf, 
+std::shared_ptr<LifeHashTree::Node> LifeHashTree::recursiveSetCellState_(
+    std::shared_ptr<Node> node, 
     int x, 
     int y, 
     int newState, 
     int nodeDepth)
 {
     //nodeOrLeaf is a Node. This will include empty NodeOrLeaf.
-    if (auto node = std::get_if<Node>(nodeOrLeaf.get()))
+    if (auto internalNode = std::get_if<InternalNode>(node.get()))
     {
         //avoiding division. We can bit shift because of the quad tree scaling by 2 in each dimension.
         int width = 1 << nodeDepth;
         int halfWidth = 1 << (nodeDepth - 1);
-        nodeDepth--;
 
-        std::shared_ptr<NodeOrLeaf> childPointer;
-
-        // Determine which quadrant to traverse
-        //if (nodeDepth + 1 == treeDepth_ || depth < 31) {
-        if (x < 0) {
-            if (y < 0)
-                childPointer = node->sw;
-            else
-                childPointer = node->nw;
-        }
-        else {
-            if (y < 0)
-                childPointer = node->se;
-            else
-                childPointer = node->ne;
-        }
-
-        // Create a new node if the child pointer is null
+        //Which quadrant should it be in?
+        std::shared_ptr<Node>& childPointer = (x < 0) ? ((y < 0) ? internalNode->sw : internalNode->nw) : ((y < 0) ? internalNode->se : internalNode->ne);
+        // Handle the case where the child pointer is null
+        //TODO: don't make a new node if newState is zero.
         if (!childPointer) {
-            if (nodeDepth == 0) childPointer = std::make_shared<NodeOrLeaf>(Leaf{});
-            else childPointer = std::make_shared<NodeOrLeaf>(Node{});
+            //NodeDepth 1 will contain 4 leaves. 
+            if (nodeDepth == 2) {
+                childPointer = std::make_shared<Node>(TerminalNode{});
+            }
+            else {
+                childPointer = std::make_shared<Node>(InternalNode{});
+            }
         }
 
-        // Recursively set the bit in the child node
-        //Subtracting the halfwidth realigns the coordinate space to the selected child node.
-        std::shared_ptr<LifeHashTree::NodeOrLeaf> updatedChild = recursiveSetCellState_(childPointer, x - halfWidth,
-            y - halfWidth, newState, nodeDepth);
-
-        //This is for caching. 
-        // Update the parent node with the new child node
-        //if (hashed) {
-        //    ghnode* nw = (childPointer == &(node->nw) ? updatedChild : node->nw);
-        //    ghnode* sw = (childPointer == &(node->sw) ? updatedChild : node->sw);
-        //    ghnode* ne = (childPointer == &(node->ne) ? updatedChild : node->ne);
-        //    ghnode* se = (childPointer == &(node->se) ? updatedChild : node->se);
-        //    node = save(find_ghnode(nw, ne, sw, se));
-        //}
-        //else {
-        //    childPointer = updatedChild;
-        //}
-        //return node;
-
+        nodeDepth--;
+        std::shared_ptr<Node> updatedChild = recursiveSetCellState_(
+            childPointer,
+            (x & (width -1)) - halfWidth,//this tells us which quadrant to look in at the next level down
+            (y & (width - 1)) - halfWidth,
+            newState, 
+            nodeDepth);
     }
     
-    //NodeOrLeaf is a Leaf, the base case that stops recursion.
+    //Case where the node is a terminal node. Base case that stops recursion.
     else
     {
+        //Determine x and y that will tell us which leaf in the terminal node to set
+        int width = 1 << nodeDepth;
+        int halfWidth = 1 << (nodeDepth - 1);
+        x = (x & (width - 1)) - halfWidth;
+        y = (y & (width - 1)) - halfWidth;
         //Set the state of the correct leaf
-        auto leaf = std::get_if<Leaf>(nodeOrLeaf.get());
-        if (leaf)
+        auto terminalNode = std::get_if<TerminalNode>(node.get());
+
+        //if (x < 0)
+        //{
+        //    if (y < 0) terminalNode->sw = newState;
+        //    else terminalNode->nw = newState;
+        //}
+        //else
+        //{
+        //    if (y < 0) terminalNode->se = newState;
+        //    else terminalNode->ne = newState;
+        //}
+        if (terminalNode)
         {
             //set the correct quadrant value
             //For now with no caching
             if (x < 0)
             {
-                if (y < 0) leaf->sw = newState;
-                else leaf->nw = newState;
+                if (y < 0) terminalNode->sw = newState;
+                else terminalNode->nw = newState;
             }
             else
             {
-                if (y < 0) leaf->se = newState;
-                else leaf->nw = newState;
+                if (y < 0) terminalNode->se = newState;
+                else terminalNode->ne = newState;
             }
         }
     }
 
-    return nodeOrLeaf;
+    return node;
 }
 
 //ghashbase::getcell
 int LifeHashTree::recursiveGetCellState_(
-    std::shared_ptr<NodeOrLeaf> nodeOrLeaf,
+    std::shared_ptr<Node> nodeOrLeaf,
     int x,
     int y,
     int nodeDepth)
 {
-    //check if leaf node. Base case to stop recursion.
-    if (auto leaf = std::get_if<Leaf>(nodeOrLeaf.get()))
-    {
-        if (x < 0)
-            if (y < 0)
-                return leaf->sw;
-            else
-                return leaf->nw;
-        else
-            if (y < 0)
-                return leaf->se;
-            else
-                return leaf->ne;
-    }
-
-    auto node = std::get_if<Node>(nodeOrLeaf.get());
-
     int width = 1 << nodeDepth;
     int halfWidth = 1 << (nodeDepth - 1);
+    //check if leaf node. Base case to stop recursion.
+    if (auto terminalNode = std::get_if<TerminalNode>(nodeOrLeaf.get()))
+    {
+        //navigate to next level down
+        int width = 1 << nodeDepth;
+        int halfWidth = 1 << (nodeDepth - 1);
+        x = (x & (width - 1)) - halfWidth;
+        y = (y & (width - 1)) - halfWidth;
+        if (x < 0)
+            if (y < 0)
+            {
+                return terminalNode->sw;
+            }
+            else
+            {
+                return terminalNode->nw;
+            }
+        else
+            if (y < 0)
+            {
+                return terminalNode->se;
+            }
+            else
+            {
+                return terminalNode->ne;
+            }
+    }
+    auto node = std::get_if<InternalNode>(nodeOrLeaf.get());
+
+    std::shared_ptr<Node>& childPointer = (x < 0) ? ((y < 0) ? node->sw : node->nw) : ((y < 0) ? node->se : node->ne);
+
     nodeDepth--;
-
-    std::shared_ptr<NodeOrLeaf> childPointer;
-
-    if (x < 0) {
-        if (y < 0)
-            childPointer = node->sw;
-        else
-            childPointer = node->nw;
-    }
-    else {
-        if (y < 0)
-            childPointer = node->se;
-        else
-            childPointer = node->ne;
-    }
-
-    //If no node, no need to keep traversing down the tree.
-    if (!childPointer) return 0;
-
-    return recursiveGetCellState_(childPointer, x - halfWidth, y - halfWidth, nodeDepth);
+    return recursiveGetCellState_(
+        childPointer,
+        (x & (width - 1)) - halfWidth,
+        (y & (width - 1)) - halfWidth,
+        nodeDepth);
 }
