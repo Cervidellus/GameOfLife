@@ -26,7 +26,7 @@ void testInsertRetrieve(LifeHashTree &tree, std::vector<CellValue> values, bool 
 		testPass = expectSuccess ? (retrieved == value.value) : (retrieved != value.value);
 
 		if (testPass) std::cout << std::format("Pass for CellValue:{} {} {}\n", value.x, value.y, value.value);
-		else std::cout << std::format("Fail for CellValue:{} {} {}\n", value.x, value.y, value.value);
+		else std::cout << std::format("********Fail******** for CellValue:{} {} {}\n", value.x, value.y, value.value);
 	}
 }
 
@@ -80,11 +80,12 @@ const std::vector<CellValue> largeCellValues{
 	{ -1, 1, 255 },
 	{ 55, 0, 100 },
 	{ -500, 15, 255 },
+	//Special case of insertion of an initial zero value. Will not allocate, but should return 0 correctly.
 	{ 200, -1000, 0 },
 	{ -10000, -12, 55 },
 	{ 0, 0, 99 },
 	{ 102, 11, 22 },
-	{1, 1, 25},
+	{7348, 1, 25},
 	{-53454, 43236, 2}
 };
 
@@ -94,6 +95,28 @@ std::vector<CellValue> outOfRangeCellValues
 	{2,2,2000},
 	{3,3,-1},
 	{4,4,-5000}
+};
+
+//Make sure behavior works setting things back to zero
+std::vector<CellValue> zeroValues
+{
+	{0,0,0},
+	{0,-1,0},
+	{-1,-1,0},
+	{-1,0,0},
+	{0,1,0},
+	{1,1,0},
+	{1,0,0},
+	{1,-1,0},
+	{1,-2,0},
+	{0,-2,0},
+	{-1,-2,0},
+	{-2,-2,0},
+	{-2,-1,0},
+	{-2,0,0},
+	{-2,1,0},
+	{-1,1,0},
+	{0,4,0}//expect increase in tree depth to 3. Requires successful tree resizing for successful reads.
 };
 
 int main(int argc, char** argv) {
@@ -106,5 +129,7 @@ int main(int argc, char** argv) {
 	testInsertRetrieve(tree, largeCellValues);
 	std::cout << "\n****Testing out of range values. Pass means the values were not retrieved correctly.\n";
 	testInsertRetrieve(tree, outOfRangeCellValues, false);
+	std::cout << "\n****Testing resetting values to zero.\n";
+	testInsertRetrieve(tree, zeroValues);
 	return 0;
 }

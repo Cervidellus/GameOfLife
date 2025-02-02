@@ -24,7 +24,7 @@ void LifeHashTree::setCell(int x, int y, uint8_t state)
 	}
 
     //Navigate the tree to set the bit.
-    root_ = recursiveSetCellState_(root_, x, y, state, treeDepth_);
+    recursiveSetCellState_(root_, x, y, state, treeDepth_);
 }
 
 int LifeHashTree::getCell(int x, int y)
@@ -82,16 +82,13 @@ bool LifeHashTree::increaseTreeDepth_()
     return true;
 }
 
-
-//ghashbase::gsetbit
-std::shared_ptr<LifeHashTree::Node> LifeHashTree::recursiveSetCellState_(
+void LifeHashTree::recursiveSetCellState_(
     std::shared_ptr<Node> node, 
     int x, 
     int y, 
     int newState, 
     int nodeDepth)
 {
-    //nodeOrLeaf is a Node. This will include empty NodeOrLeaf.
     if (auto internalNode = std::get_if<InternalNode>(node.get()))
     {
         //avoiding division. We can bit shift because of the quad tree scaling by 2 in each dimension.
@@ -99,21 +96,16 @@ std::shared_ptr<LifeHashTree::Node> LifeHashTree::recursiveSetCellState_(
         int halfWidth = 1 << (nodeDepth - 1);
 
         //Which quadrant should it be in?
-        std::shared_ptr<Node>& childPointer = (x < 0) ? ((y < 0) ? internalNode->sw : internalNode->nw) : ((y < 0) ? internalNode->se : internalNode->ne);
-        // Handle the case where the child pointer is null
-        //TODO: don't make a new node if newState is zero.
+        auto& childPointer = (x < 0) ? ((y < 0) ? internalNode->sw : internalNode->nw) : ((y < 0) ? internalNode->se : internalNode->ne);
         if (!childPointer) {
-            //NodeDepth 1 will contain 4 leaves. 
-            if (nodeDepth == 2) {
-                childPointer = std::make_shared<Node>(TerminalNode{});
-            }
-            else {
-                childPointer = std::make_shared<Node>(InternalNode{});
-            }
+            //No need to allocate if newState is zero.
+            if (newState == 0) return;
+            //Allocate child to either internal or terminal node
+            childPointer = (nodeDepth == 2) ? std::make_shared<Node>(TerminalNode{}) : std::make_shared<Node>(InternalNode{});
         }
 
         nodeDepth--;
-        std::shared_ptr<Node> updatedChild = recursiveSetCellState_(
+        recursiveSetCellState_(
             childPointer,
             (x & (width -1)) - halfWidth,//this tells us which quadrant to look in at the next level down
             (y & (width - 1)) - halfWidth,
@@ -121,7 +113,7 @@ std::shared_ptr<LifeHashTree::Node> LifeHashTree::recursiveSetCellState_(
             nodeDepth);
     }
     
-    //Case where the node is a terminal node. Base case that stops recursion.
+    //Bae Case where the node is a terminal node.
     else
     {
         //Determine x and y that will tell us which leaf in the terminal node to set
@@ -131,35 +123,19 @@ std::shared_ptr<LifeHashTree::Node> LifeHashTree::recursiveSetCellState_(
         y = (y & (width - 1)) - halfWidth;
         //Set the state of the correct leaf
         auto terminalNode = std::get_if<TerminalNode>(node.get());
-
-        //if (x < 0)
-        //{
-        //    if (y < 0) terminalNode->sw = newState;
-        //    else terminalNode->nw = newState;
-        //}
-        //else
-        //{
-        //    if (y < 0) terminalNode->se = newState;
-        //    else terminalNode->ne = newState;
-        //}
-        if (terminalNode)
+        //TODO: I might want to add garbage collection to occassionally clear terminal nodes that become empty.
+        //Doing it aggressively would slow things down as cells will often flicker between zero and non zero states.
+        if (x < 0)
         {
-            //set the correct quadrant value
-            //For now with no caching
-            if (x < 0)
-            {
-                if (y < 0) terminalNode->sw = newState;
-                else terminalNode->nw = newState;
-            }
-            else
-            {
-                if (y < 0) terminalNode->se = newState;
-                else terminalNode->ne = newState;
-            }
+            if (y < 0) terminalNode->sw = newState;
+            else terminalNode->nw = newState;
+        }
+        else
+        {
+            if (y < 0) terminalNode->se = newState;
+            else terminalNode->ne = newState;
         }
     }
-
-    return node;
 }
 
 //ghashbase::getcell
@@ -179,28 +155,14 @@ int LifeHashTree::recursiveGetCellState_(
         int halfWidth = 1 << (nodeDepth - 1);
         x = (x & (width - 1)) - halfWidth;
         y = (y & (width - 1)) - halfWidth;
-        if (x < 0)
-            if (y < 0)
-            {
-                return terminalNode->sw;
-            }
-            else
-            {
-                return terminalNode->nw;
-            }
-        else
-            if (y < 0)
-            {
-                return terminalNode->se;
-            }
-            else
-            {
-                return terminalNode->ne;
-            }
+
+        return (x < 0) ? ((y < 0) ? terminalNode->sw : terminalNode->nw) : ((y < 0) ? terminalNode->se : terminalNode->ne);
     }
     auto node = std::get_if<InternalNode>(nodeOrLeaf.get());
+    auto& childPointer = (x < 0) ? ((y < 0) ? node->sw : node->nw) : ((y < 0) ? node->se : node->ne);
 
-    std::shared_ptr<Node>& childPointer = (x < 0) ? ((y < 0) ? node->sw : node->nw) : ((y < 0) ? node->se : node->ne);
+    //Stop recursion if empty
+    if (!childPointer) return 0;
 
     nodeDepth--;
     return recursiveGetCellState_(

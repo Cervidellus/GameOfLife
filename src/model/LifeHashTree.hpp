@@ -93,7 +93,7 @@ private:
 
 
 	//ghashbase::gsetbit
-	std::shared_ptr<Node> recursiveSetCellState_(
+	void recursiveSetCellState_(
 		std::shared_ptr<Node> nodeOrLeaf, 
 		int x, 
 		int y, 
