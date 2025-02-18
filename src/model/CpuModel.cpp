@@ -34,8 +34,8 @@ void CpuModel::setViewPort(const SDL_Rect& viewPort)
 
 void CpuModel::resizeGrid_()
 {
-	grid_.resize(activeModelParams_.modelHeight, std::vector<uint8_t>(activeModelParams_.modelWidth, 0));
-    for (auto& row : grid_) {
+	currentGrid_.resize(activeModelParams_.modelHeight, std::vector<uint8_t>(activeModelParams_.modelWidth, 0));
+    for (auto& row : currentGrid_) {
 		row.resize(activeModelParams_.modelWidth, 0);
 	}
     recalcDrawRange_ = true;
@@ -43,7 +43,7 @@ void CpuModel::resizeGrid_()
 
 void CpuModel::clearGrid_()
 {
-    for (auto& row : grid_) {
+    for (auto& row : currentGrid_) {
         row.assign(row.size(), 0);
 	}
 }
@@ -76,19 +76,16 @@ ModelParameters CpuModel::getParameters()
 
 void CpuModel::update()
 {
-    //I should just be swapping these between two allocated vectors.
-    std::vector<std::vector<uint8_t>> previousState = grid_;
+    previousGrid_ = currentGrid_;
     int livingNeighbors = 0;
-    bool cellAlive = false;
-    int rowCount = grid_.size();
-    int columnCount = grid_[0].size();
+    int rowCount = currentGrid_.size();
+    int columnCount = currentGrid_[0].size();
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            uint8_t* cellValue = &grid_[rowIndex][columnIndex];
-            cellAlive = (*cellValue == aliveValue_) ? true: false;
+            uint8_t* cellValue = &currentGrid_[rowIndex][columnIndex];
             livingNeighbors = 0;
-            //count living neighbors
 
+            //count living neighbors with a naive approach that is PLENTY fast enough!
             for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
                 int neighborRowIndex = rowIndex + neighborRow;
 
@@ -96,6 +93,8 @@ void CpuModel::update()
                 if (neighborRowIndex < 0) neighborRowIndex = rowCount - 1;
                 if (neighborRowIndex >= rowCount) neighborRowIndex = 0;
 
+
+                //having the color info combined with the alive state has us need to do some unneccessary if statements. 
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //skip center pixel
                     if (neighborRow == 0 && neighborColumn == 0) continue;
@@ -107,17 +106,21 @@ void CpuModel::update()
                     if (neighborColumnIndex >= columnCount) neighborColumnIndex = 0;
 
                     //count
-                    if (previousState[neighborRowIndex][neighborColumnIndex] == aliveValue_) livingNeighbors++;
+                    if (previousGrid_[neighborRowIndex][neighborColumnIndex] == aliveValue_) livingNeighbors++;
                 }
             }
 
-            //If not alive and has 3 neighbors, become alive
-            if (!cellAlive) {
-                if (livingNeighbors == activeModelParams_.rule4) *cellValue = aliveValue_;
-                else *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
+
+
+            if (*cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4 ||
+                *cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors)
+            {
+                *cellValue = aliveValue_;
             }
-            //If neighbors are less than 2 or more than 3, kill it.
-            else if (livingNeighbors < activeModelParams_.rule1 || livingNeighbors > activeModelParams_.rule3) {
+            else
+            {
+                //Cell is dead, so I decrement the value for a nice visualization.
+                //a 'normal' GOL would just be setting this to zero, and would use 1 for the alive value.
                 *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
             }
         }
@@ -126,15 +129,9 @@ void CpuModel::update()
 
 void CpuModel::draw(SDL_Renderer* renderer)
 {
-    //TODO: It is redrawing the model every time. It might be better to draw it to a texture and reuse the texture if model is not updated.
-    //I might even update the texture at the same time I update the model, if the view has drawn the last one. 
-    //THe hard thing there is making sure that we aren't drawing the texture more often than we need. 
-    //I could have a bool that says the texture needs updating before drawing and handle that in core.cpp.
-    //This also shouldn't be calculated every frame.. 
-    
-
     //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
     //For that I'll need to grab window resize events.
+    
     if (recalcDrawRange_) {
         screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
         screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
@@ -159,18 +156,13 @@ void CpuModel::draw(SDL_Renderer* renderer)
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
-    int rowCount = grid_.size();
-    int columnCount = grid_[0].size();
-    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+    for (int rowIndex = 0; rowIndex < currentGrid_.size(); rowIndex++)
     {
-        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-        //for (int columnIndex = drawRange_.columnBegin; columnIndex <= drawRange_.columnEnd; columnIndex++)
+        for (int columnIndex = 0; columnIndex < currentGrid_[0].size(); columnIndex++)
         {
-            //I could optimize this a tiny bit by having pixel format defined at compile time,
-            //and having pitch defined just one when model size changes.
-            SDL_Color color = colorMapper_.getSDLColor(grid_[rowIndex][columnIndex]);
+            SDL_Color color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
 
-            pixels[(rowIndex ) * grid_[0].size() + columnIndex] = SDL_MapRGB(
+            pixels[(rowIndex ) *currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
                 SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
                 nullptr,
                 color.r,
@@ -184,8 +176,8 @@ void CpuModel::draw(SDL_Renderer* renderer)
     auto destRect = SDL_FRect{
         (float)screenSpaceDisplacementX_,
         (float)screenSpaceDisplacementY_,
-        (float)grid_[0].size() * activeModelParams_.zoomLevel, 
-        (float)grid_.size() * activeModelParams_.zoomLevel };
+        (float)currentGrid_[0].size() * activeModelParams_.zoomLevel,
+        (float)currentGrid_.size() * activeModelParams_.zoomLevel };
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
     drawBackBufferTimer.reset();
 }
@@ -269,7 +261,7 @@ void CpuModel::generateModel(const ModelParameters& params) {
     if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
     if (params.rule4 > 0) activeModelParams_.rule4 = params.rule4;
 
-    if (grid_.size() != activeModelParams_.modelHeight || grid_[0].size() != activeModelParams_.modelWidth) {
+    if (currentGrid_.size() != activeModelParams_.modelHeight || currentGrid_[0].size() != activeModelParams_.modelWidth) {
 		resizeGrid_();
 	}
     else {
@@ -281,7 +273,7 @@ void CpuModel::generateModel(const ModelParameters& params) {
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-        for (auto& row : grid_) {
+        for (auto& row : currentGrid_) {
             for (auto& cell : row) {
 				cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
 			}
@@ -352,7 +344,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
 	}
     activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, activeModelParams_.minWidth);
     activeModelParams_.modelHeight= std::max<int>(activeModelParams_.modelHeight, activeModelParams_.minHeight);
-    if (grid_.size() != activeModelParams_.modelHeight || grid_[0].size() != activeModelParams_.modelWidth) {
+    if (currentGrid_.size() != activeModelParams_.modelHeight || currentGrid_[0].size() != activeModelParams_.modelWidth) {
         resizeGrid_();
     }
     else {
@@ -386,7 +378,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
         }
         else if (*it == 'o') {
             for (int i = 0; i < count; i++) {
-                grid_[row][column] = aliveValue_;
+                currentGrid_[row][column] = aliveValue_;
                 column++;
             }
         }
@@ -430,8 +422,8 @@ CpuModel::GridDrawRange CpuModel::getDrawRange_()
     drawRange.columnEnd = drawRange.columnBegin + (viewPort_.w / activeModelParams_.zoomLevel);
 
     //Don't try and draw something not in grid_
-    int gridRows = grid_.size();
-    int gridColumns = grid_[0].size();
+    int gridRows = currentGrid_.size();
+    int gridColumns = currentGrid_[0].size();
     if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
     if (drawRange.columnEnd >= gridColumns) drawRange.columnEnd = gridColumns - 1;
     if (drawRange.rowBegin < 0) drawRange.rowBegin = 0;

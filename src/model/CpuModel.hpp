@@ -6,7 +6,6 @@
 
 
 #include <vector>
-//#include <SDL.h>
 #include <memory>
 
 //Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
@@ -59,11 +58,12 @@ private:
 	GridDrawRange getDrawRange_();
 
 private:
-	//I might change this to a struct that has a flag for if I should check it,
-	//and an int with the value. 
-	//Or I could do some bit shifting to have it all in an int.
-
-	std::vector<std::vector<uint8_t>> grid_; //I use an 8 bit int so I can represent some other info for visualization.
+	//primary storage of the model
+	std::vector<std::vector<uint8_t>> currentGrid_;
+	//used to hold state while we count neighbors to update model
+	std::vector<std::vector<uint8_t>> previousGrid_;
+	//Used to create the color fading effect in visualization.
+	std::vector<std::vector<uint8_t>> colorGrid_;
 
 	//Because the SDL_Texture type is obfuscated and requires an SDL deleter, 
 	//we need a template that can accept that deleter.

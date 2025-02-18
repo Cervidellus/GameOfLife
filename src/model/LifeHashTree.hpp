@@ -66,12 +66,14 @@ public:
 	//ghbase::getcell
 	int getCell(int x, int y);
 
+	//I am using shared_ptr as I inend to implement garbage collection.
+	//I might decide to change to unique_ptr for slightly less overhead.
 	struct InternalNode {
 		std::shared_ptr<Node> nw;
 		std::shared_ptr<Node> ne;
 		std::shared_ptr<Node> sw;
 		std::shared_ptr<Node> se;
-		//leaving these commented out until I understand them.
+		//leaving these commented out until I understand them. They are in the original algo.
 		//std::shared_ptr<Node> next;//Maybe this just to iterate over the nodes?
 		//std::shared_ptr<Node> res;//This is the cache?
 	};
