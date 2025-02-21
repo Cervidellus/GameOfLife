@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 project(gameoflife LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add submodules
@@ -21,12 +21,9 @@ add_executable(gameoflife
     src/model/ColorMapper.cpp
     src/model/CpuModel.cpp
     src/model/CpuModel.hpp
- #   src/model/HashLifeTree.cpp
- #   src/model/HashLifeTree.hpp
- #   src/model/LifeQuadTree.hpp
- #  src/model/LifeQuadTree.cpp
- #   src/model/LifeQuadTreeModel.hpp
- #   src/model/LifeQuadTreeModel.cpp
+    src/model/PrefixSumModel.hpp
+    src/model/PrefixSumModel.cpp
+    src/model/VectorGrid.hpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
