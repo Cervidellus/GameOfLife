@@ -1,12 +1,5 @@
-//I need an abstract model class that will act as an interface for rendering.
-//I can have different implementations underneath
-
-//I'll have a simple CPU square grid representation.Use a vector of vectors for rows and columns
-// Maybe I should do a sparse representation? I can build my own data type or use Eigen. 
-//I'll implement a square grid with CUDA
-//I'll implement a grid with intel's sycl or dpc++. 
-//AdaptiveCpp(hipSYCL) from AMD
-//Vulkan?
+#ifndef ABSTRACT_MODEL
+#define ABSTRACT_MODEL
 
 #include "modelparameters.hpp"
 
@@ -34,5 +27,7 @@ public:
 	virtual void handleSDLEvent(const SDL_Event& event){};
 
 protected:
-	SDL_Rect viewPort_;
+	SDL_Rect viewPort_ = SDL_Rect(0,0,0,0);
 };
+
+#endif //ABSTRACT_MODEL

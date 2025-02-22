@@ -3,7 +3,7 @@
 
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
-
+#include "VectorGrid.hpp"
 
 #include <vector>
 #include <memory>
@@ -11,7 +11,7 @@
 //Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
 struct SDL_Texture;
 
-typedef std::vector<std::vector<uint8_t>> VectorGrid;
+//typedef std::vector<std::vector<uint8_t>> VectorGrid;
 //I should really use std::mdspan to create a 2dview of a 1d vector. 
 //This keeps things MUCH closer in memory.
 //I think I will make a VectorGrid class that contains this view, as well as some methods for resizing and clearing.

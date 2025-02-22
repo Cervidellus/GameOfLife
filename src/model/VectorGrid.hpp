@@ -25,6 +25,15 @@ struct VectorGrid
 		return gridView[std::array{ x, y }];  // Column-major access
 	}
 
+	auto begin() { return vector.begin(); }
+
+	auto end() { return vector.end(); }
+
+	auto begin() const { return vector.begin(); }
+
+	auto end() const { return vector.end(); }
+
+
 	//intended to be called within the struct for getting and setting, but can also be accessed externally.
 	bool checkBounds(std::size_t x, std::size_t y) const
 	{
@@ -54,7 +63,18 @@ struct VectorGrid
 	{
 		std::fill(vector.begin(), vector.end(), 0);
 	}
+
+	std::size_t rows()
+	{
+		return gridView.extent(1);
+	}
+
+	std::size_t columns()
+	{
+		return gridView.extent(0);
+	}
 };
 
 
 #endif// VECTOR_GRID
+

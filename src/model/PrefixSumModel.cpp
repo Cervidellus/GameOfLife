@@ -35,18 +35,18 @@ void PrefixSumModel::setViewPort(const SDL_Rect& viewPort)
 
 void PrefixSumModel::resizeGrid_()
 {
-    currentGrid_.resize(activeModelParams_.modelHeight, std::vector<uint8_t>(activeModelParams_.modelWidth, 0));
-    for (auto& row : currentGrid_) {
-        row.resize(activeModelParams_.modelWidth, 0);
-    }
+    currentGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
+    previousGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
+    colorGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
+    //I should  switch to std::mdspan rather than the drawRange_.
     recalcDrawRange_ = true;
 }
 
 void PrefixSumModel::clearGrid_()
 {
-    for (auto& row : currentGrid_) {
-        row.assign(row.size(), 0);
-    }
+    currentGrid_.zero();
+    previousGrid_.zero();
+    colorGrid_.zero();
 }
 
 void PrefixSumModel::initBackbuffer_(SDL_Renderer* renderer)
@@ -79,11 +79,11 @@ void PrefixSumModel::update()
 {
     previousGrid_ = currentGrid_;
     int livingNeighbors = 0;
-    int rowCount = currentGrid_.size();
-    int columnCount = currentGrid_[0].size();
-    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            uint8_t* cellValue = &currentGrid_[rowIndex][columnIndex];
+    int rowCount = currentGrid_.rows();
+    int columnCount = currentGrid_.columns();
+    for (size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        for (size_t columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+            uint8_t& cellValue = currentGrid_(columnIndex, rowIndex);
             livingNeighbors = 0;
 
             //count living neighbors with a naive approach that is PLENTY fast enough!
@@ -107,22 +107,23 @@ void PrefixSumModel::update()
                     if (neighborColumnIndex >= columnCount) neighborColumnIndex = 0;
 
                     //count
-                    if (previousGrid_[neighborRowIndex][neighborColumnIndex] == aliveValue_) livingNeighbors++;
+                    if (previousGrid_(columnIndex, rowIndex) == aliveValue_) livingNeighbors++;
                 }
             }
 
 
 
-            if (*cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4 ||
-                *cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors)
+            if (cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4 ||
+                cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors)
             {
-                *cellValue = aliveValue_;
+                cellValue = aliveValue_;
+                //*cellValue = aliveValue_;
             }
             else
             {
                 //Cell is dead, so I decrement the value for a nice visualization.
                 //a 'normal' GOL would just be setting this to zero, and would use 1 for the alive value.
-                *cellValue = (*cellValue >= deadValueDecrement_) ? *cellValue -= deadValueDecrement_ : 0;
+                cellValue = (cellValue >= deadValueDecrement_) ? cellValue -= deadValueDecrement_ : 0;
             }
         }
     }
@@ -157,13 +158,13 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
-    for (int rowIndex = 0; rowIndex < currentGrid_.size(); rowIndex++)
+    for (int rowIndex = 0; rowIndex < currentGrid_.rows(); rowIndex++)
     {
-        for (int columnIndex = 0; columnIndex < currentGrid_[0].size(); columnIndex++)
+        for (int columnIndex = 0; columnIndex < currentGrid_.columns(); columnIndex++)
         {
-            SDL_Color color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
+            SDL_Color color = colorMapper_.getSDLColor(currentGrid_(columnIndex, rowIndex));
 
-            pixels[(rowIndex)*currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
+            pixels[(rowIndex)*currentGrid_.columns() + columnIndex] = SDL_MapRGB(
                 SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
                 nullptr,
                 color.r,
@@ -177,11 +178,21 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     auto destRect = SDL_FRect{
         (float)screenSpaceDisplacementX_,
         (float)screenSpaceDisplacementY_,
-        (float)currentGrid_[0].size() * activeModelParams_.zoomLevel,
-        (float)currentGrid_.size() * activeModelParams_.zoomLevel };
+        (float)currentGrid_.columns() * activeModelParams_.zoomLevel,
+        (float)currentGrid_.rows() * activeModelParams_.zoomLevel };
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
     drawBackBufferTimer.reset();
 }
+
+//typedef struct SDL_FRect
+//{
+//    float x;
+//    float y;
+//    float w;
+//    float h;
+//} SDL_FRect;
+
+
 
 void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
 {
@@ -262,7 +273,7 @@ void PrefixSumModel::generateModel(const ModelParameters& params) {
     if (params.rule3 > 0) activeModelParams_.rule3 = params.rule3;
     if (params.rule4 > 0) activeModelParams_.rule4 = params.rule4;
 
-    if (currentGrid_.size() != activeModelParams_.modelHeight || currentGrid_[0].size() != activeModelParams_.modelWidth) {
+    if (currentGrid_.rows() != activeModelParams_.modelHeight || currentGrid_.columns() != activeModelParams_.modelWidth) {
         resizeGrid_();
     }
     else {
@@ -274,11 +285,11 @@ void PrefixSumModel::generateModel(const ModelParameters& params) {
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-        for (auto& row : currentGrid_) {
-            for (auto& cell : row) {
-                cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
-            }
+        for (auto& cell : currentGrid_.vector)
+        {
+            cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
         }
+
         std::cout << "Random model generated" << std::endl;
         recalcDrawRange_ = true;
         initBackbufferRequired_ = true;
@@ -345,13 +356,13 @@ void PrefixSumModel::populateFromRLE_(std::istream& modelStream)
     }
     activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, activeModelParams_.minWidth);
     activeModelParams_.modelHeight = std::max<int>(activeModelParams_.modelHeight, activeModelParams_.minHeight);
-    if (currentGrid_.size() != activeModelParams_.modelHeight || currentGrid_[0].size() != activeModelParams_.modelWidth) {
+    if (currentGrid_.rows() != activeModelParams_.modelHeight || currentGrid_.columns()!= activeModelParams_.modelWidth) {
         resizeGrid_();
     }
     else {
         clearGrid_();
     }
-    //minwidth is wrong!
+
     int startColumn = (activeModelParams_.modelWidth / 2) - (activeModelParams_.minWidth / 2);
     int startRow = (activeModelParams_.modelHeight - activeModelParams_.minHeight) / 2;
     int row = startRow;
@@ -379,7 +390,7 @@ void PrefixSumModel::populateFromRLE_(std::istream& modelStream)
         }
         else if (*it == 'o') {
             for (int i = 0; i < count; i++) {
-                currentGrid_[row][column] = aliveValue_;
+                currentGrid_(column, row) = aliveValue_;
                 column++;
             }
         }
@@ -423,8 +434,8 @@ PrefixSumModel::GridDrawRange PrefixSumModel::getDrawRange_()
     drawRange.columnEnd = drawRange.columnBegin + (viewPort_.w / activeModelParams_.zoomLevel);
 
     //Don't try and draw something not in grid_
-    int gridRows = currentGrid_.size();
-    int gridColumns = currentGrid_[0].size();
+    int gridRows = currentGrid_.rows();
+    int gridColumns = currentGrid_.columns();
     if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
     if (drawRange.columnEnd >= gridColumns) drawRange.columnEnd = gridColumns - 1;
     if (drawRange.rowBegin < 0) drawRange.rowBegin = 0;

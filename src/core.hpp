@@ -7,6 +7,7 @@
 //#include "gui\interface.hpp"
 #include "gui\gui.hpp"
 #include "model\CpuModel.hpp"
+#include "model\PrefixSumModel.hpp"
 //#include "presets\modelpresets.hpp"
 #include "sdl_manager.hpp"
 
@@ -43,7 +44,7 @@ private:
 
     SDLManager sdlManager_;
     GUI gui_;
-    CpuModel cpuModel_;
+    PrefixSumModel cpuModel_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
