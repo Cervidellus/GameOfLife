@@ -72,6 +72,21 @@ ModelParameters PrefixSumModel::getParameters()
     return activeModelParams_;
 }
 
+void PrefixSumModel::updateCell_(int col, int row, int previousValue, int neighborCount)
+{
+    if ((previousValue != aliveValue_ && neighborCount == activeModelParams_.rule4) ||
+        (previousValue == aliveValue_ && std::clamp(neighborCount, activeModelParams_.rule1, activeModelParams_.rule3) == neighborCount))
+    {
+        currentGrid_(col, row) = aliveValue_;
+    }
+    else
+    {
+        //Cell is dead, so I decrement the value for a nice visualization where values less than 255 recieve a different color.
+        //a 'normal' GOL would just be setting this to zero, and would use 1 for the alive value.
+        currentGrid_(col, row) = (previousValue >= deadValueDecrement_) ? previousValue - deadValueDecrement_ : 0;
+    }
+}
+
 void PrefixSumModel::update()
 {
     previousGrid_.swap(currentGrid_);
@@ -79,42 +94,164 @@ void PrefixSumModel::update()
     int rowCount = currentGrid_.rows();
     int columnCount = currentGrid_.columns();
     uint8_t cellValue;
-    for (size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-        for (size_t columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+
+    //Process center of matrix, ignoring edges
+    for (size_t rowIndex = 1; rowIndex < rowCount -1; rowIndex++) {
+        for (size_t columnIndex = 1; columnIndex < columnCount -1; columnIndex++) {
             cellValue = previousGrid_(columnIndex , rowIndex);
             livingNeighbors = 0;
 
-            //ignore row wrapping for now. I could have that in the structure itself?
+            livingNeighbors += previousGrid_(columnIndex - 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex, rowIndex - 1) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex + 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex - 1, rowIndex) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex + 1, rowIndex) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex -1, rowIndex + 1) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex, rowIndex + 1) == aliveValue_ ? 1 : 0;
+            livingNeighbors += previousGrid_(columnIndex + 1, rowIndex + 1) == aliveValue_ ? 1 : 0;
 
-            if (rowIndex > 0 && columnIndex > 0 && rowIndex < rowCount-1 && columnIndex < columnCount-1)
-            {
-                livingNeighbors += previousGrid_(columnIndex - 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex, rowIndex - 1) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex - 1, rowIndex) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex -1, rowIndex + 1) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex, rowIndex + 1) == aliveValue_ ? 1 : 0;
-                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex + 1) == aliveValue_ ? 1 : 0;
-            }
-            //For wrapping
-            //else if (rowIndex == 0)
-            //{
-
-            //}
-
-            if ((cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4) ||
-                (cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors))
-            {
-                currentGrid_(columnIndex, rowIndex) = aliveValue_;
-            }
-            else
-            {
-                //Cell is dead, so I decrement the value for a nice visualization where values less than 255 recieve a different color.
-                //a 'normal' GOL would just be setting this to zero, and would use 1 for the alive value.
-                currentGrid_(columnIndex, rowIndex) = (cellValue >= deadValueDecrement_) ? cellValue - deadValueDecrement_ : 0;
-            }
+            updateCell_(columnIndex, rowIndex, cellValue, livingNeighbors);
         }
+    }
+
+    int bottomRowIndex = rowCount - 1;
+    int rightColumnIndex = columnCount - 1;
+    //Top row
+    for (size_t columnIndex = 1; columnIndex < columnCount - 1; columnIndex++) {
+        cellValue = previousGrid_(columnIndex, 0);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(columnIndex - 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex - 1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex - 1, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, 1) == aliveValue_ ? 1 : 0;
+
+        updateCell_(columnIndex, 0, cellValue, livingNeighbors);
+    }
+
+    //Bottom Row
+    for (size_t columnIndex = 1; columnIndex < columnCount - 1; columnIndex++) {
+        cellValue = previousGrid_(columnIndex, bottomRowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(columnIndex - 1, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex - 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex - 1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(columnIndex + 1, 0) == aliveValue_ ? 1 : 0;
+
+        updateCell_(columnIndex, bottomRowIndex, cellValue, livingNeighbors);
+    }
+
+    //Left column
+    for (size_t rowIndex = 1; rowIndex < rowCount - 1; rowIndex++)
+    {
+        cellValue = previousGrid_(0, rowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, rowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, rowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, rowIndex + 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, rowIndex + 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, rowIndex + 1) == aliveValue_ ? 1 : 0;
+
+        updateCell_(0, rowIndex, cellValue, livingNeighbors);
+    }
+
+    //Right column
+    for (size_t rowIndex = 1; rowIndex < rowCount - 1; rowIndex++)
+    {
+        cellValue = previousGrid_(0, rowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex -1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, rowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, rowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, rowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, rowIndex + 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, rowIndex + 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, rowIndex + 1) == aliveValue_ ? 1 : 0;
+
+        updateCell_(rightColumnIndex, rowIndex, cellValue, livingNeighbors);
+    }
+
+    //Top Left
+    {
+        cellValue = previousGrid_(0, 0);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, 1) == aliveValue_ ? 1 : 0;
+
+        updateCell_(0, 0, cellValue, livingNeighbors);
+    }
+
+    //Bottom Left
+    {
+        cellValue = previousGrid_(0, bottomRowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(1, 0) == aliveValue_ ? 1 : 0;
+
+        updateCell_(0, bottomRowIndex, cellValue, livingNeighbors);
+    }
+
+    //Top Right
+    {
+        cellValue = previousGrid_(0, bottomRowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, 1) == aliveValue_ ? 1 : 0;
+
+        updateCell_(rightColumnIndex, 0, cellValue, livingNeighbors);
+    }
+
+    //Bottom Right
+    {
+        cellValue = previousGrid_(0, bottomRowIndex);
+        livingNeighbors = 0;
+
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, bottomRowIndex - 1) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, bottomRowIndex) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex - 1, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(rightColumnIndex, 0) == aliveValue_ ? 1 : 0;
+        livingNeighbors += previousGrid_(0, 0) == aliveValue_ ? 1 : 0;
+
+        updateCell_(rightColumnIndex, bottomRowIndex, cellValue, livingNeighbors);
     }
 }
 

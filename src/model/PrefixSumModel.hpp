@@ -49,6 +49,7 @@ private:
 	void clearGrid_();
 	//Whenever the model size is changed, the backbuffer texture must be reinitialized.
 	void initBackbuffer_(SDL_Renderer* renderer);
+	void updateCell_(int col, int row, int previousValue, int neighborCount);
 
 	struct GridDrawRange
 	{
