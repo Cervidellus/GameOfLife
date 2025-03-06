@@ -4,6 +4,7 @@
 #include <mdspan>
 #include <stdexcept>
 #include <vector>
+#include <cstddef>
 
 //For now using uint8_t. I should template it later.
 struct VectorGrid
@@ -11,70 +12,56 @@ struct VectorGrid
 	VectorGrid() = default;
 	VectorGrid(std::size_t width, std::size_t height) { resize(width, height); }
 
-	std::vector<uint8_t> vector;
-	//view of the vector as a 2D array, expressed underneath in column major order.
-	std::mdspan<uint8_t, std::dextents<std::size_t, 2>> gridView;
-
 	uint8_t& operator()(std::size_t x, std::size_t y) {
-		if (!checkBounds(x, y)) throw std::out_of_range("Index out of bounds in VectorGrid");
-		return gridView[std::array{x, y}];  // Column-major access
+		return data_[y * rows_ + x];
 	}
 
 	const uint8_t& operator()(std::size_t x, std::size_t y) const {
-		if (!checkBounds(x, y)) throw std::out_of_range("Index out of bounds in VectorGrid");
-		return gridView[std::array{ x, y }];  // Column-major access
+		return data_[y * rows_ + x];
 	}
 
-	auto begin() { return vector.begin(); }
-
-	auto end() { return vector.end(); }
-
-	auto begin() const { return vector.begin(); }
-
-	auto end() const { return vector.end(); }
-
-
-	//intended to be called within the struct for getting and setting, but can also be accessed externally.
-	bool checkBounds(std::size_t x, std::size_t y) const
+	void swap(VectorGrid& other) noexcept
 	{
-		return (x < gridView.extent(0) && y < gridView.extent(1));
+		//the "correct" way would be to also swap the cols and rows.
+		//In my case I know they are always the same, so I am going to avoid that.
+		std::swap(data_, other.data_);
 	}
 
-	uint8_t get(std::size_t x, std::size_t y)
-	{
-		if (!checkBounds(x, y)) return 0;
-		return gridView[std::array{ x, y }];
-	}
+	auto begin() { return data_.begin(); }
 
-	void set(std::size_t x, std::size_t y, uint8_t value)
-	{
-		if (!checkBounds(x,y)) throw std::out_of_range("Out of bound values in VectorGrid::set.");
-		gridView[std::array{ x, y }] = value;
-	}
+	auto end() { return data_.end(); }
 
-	//Resize the underlying vector and the view, fill it with zeros. Then make a new mdspan to access a 2d array.
+	auto begin() const { return data_.begin(); }
+
+	auto end() const { return data_.end(); }
+
 	void resize(std::size_t width, std::size_t height)
 	{
-		vector.resize(width * height, 0);
-		gridView = std::mdspan<uint8_t, std::dextents<size_t, 2>>(vector.data(), width, height);
+		data_.resize(width * height, 0);
+		rows_ = height;
+		cols_ = width;
 	}
 
 	void zero()
 	{
-		std::fill(vector.begin(), vector.end(), 0);
+		std::fill(data_.begin(), data_.end(), 0);
 	}
 
-	std::size_t rows()
+	std::size_t rows() const
 	{
-		return gridView.extent(1);
+		return rows_;
 	}
 
-	std::size_t columns()
+	std::size_t columns() const
 	{
-		return gridView.extent(0);
+		return cols_;
 	}
+
+private:
+	std::vector<uint8_t> data_;
+	int cols_ = 0;
+	int rows_ = 0;
 };
-
 
 #endif// VECTOR_GRID
 

@@ -1,14 +1,9 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
-//#include <memory>
-
-//#include "gui\mainwindow.hpp"
-//#include "gui\interface.hpp"
 #include "gui\gui.hpp"
 #include "model\CpuModel.hpp"
 #include "model\PrefixSumModel.hpp"
-//#include "presets\modelpresets.hpp"
 #include "sdl_manager.hpp"
 
 union SDL_Event;
@@ -31,9 +26,7 @@ private:
     bool modelRunning_ = false;
 
     ModelParameters activeModelParams_{
-        //false, 
         true, 
-        //60,
         1260,
         720
     };
@@ -45,6 +38,7 @@ private:
     SDLManager sdlManager_;
     GUI gui_;
     PrefixSumModel cpuModel_;
+    //CpuModel cpuModel_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP

@@ -54,7 +54,7 @@ void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
     gridBackBuffer_.reset(
         SDL_CreateTexture(
             renderer,
-            SDL_PIXELFORMAT_RGB565,
+            pixelFormat_,
             SDL_TEXTUREACCESS_STREAMING,
             activeModelParams_.modelWidth,
             activeModelParams_.modelHeight
@@ -80,9 +80,10 @@ void CpuModel::update()
     int livingNeighbors = 0;
     int rowCount = currentGrid_.size();
     int columnCount = currentGrid_[0].size();
+    uint8_t* cellValue;
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            uint8_t* cellValue = &currentGrid_[rowIndex][columnIndex];
+            cellValue = &currentGrid_[rowIndex][columnIndex];
             livingNeighbors = 0;
 
             //count living neighbors with a naive approach that is PLENTY fast enough!
@@ -94,7 +95,7 @@ void CpuModel::update()
                 if (neighborRowIndex >= rowCount) neighborRowIndex = 0;
 
 
-                //having the color info combined with the alive state has us need to do some unneccessary if statements. 
+                //having the color info combined with the alive state has us need to do some extra if statements. 
                 for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
                     //skip center pixel
                     if (neighborRow == 0 && neighborColumn == 0) continue;
@@ -149,36 +150,103 @@ void CpuModel::draw(SDL_Renderer* renderer)
         std::cout << "Invalid backbuffer!\n";
         return;
     }
-    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
+    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer", false);
 
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
+    int rows = currentGrid_.size();
+    int cols = currentGrid_[0].size();
+
     for (int rowIndex = 0; rowIndex < currentGrid_.size(); rowIndex++)
     {
+        //if (rowIndex = currentGrid_.size() - 1)
+        //{
+        //    int testInt = currentGrid_.size();
+        //}
+
+        //I should be iterating over drawrange instead of the rows/cols... 
         for (int columnIndex = 0; columnIndex < currentGrid_[0].size(); columnIndex++)
         {
             SDL_Color color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
 
-            pixels[(rowIndex ) *currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
-                SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
-                nullptr,
+            pixels[rowIndex *currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
+                SDL_GetPixelFormatDetails(pixelFormat_),
+                NULL,
                 color.r,
                 color.g,
                 color.b);
+
+            if (rowIndex == currentGrid_.size() - 1)
+            {
+                uint8_t gridValue = currentGrid_[rowIndex][columnIndex];
+                SDL_Color pixelValue = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
+                uint8_t newR = 0;
+                uint8_t newG = 0;
+                uint8_t newB = 0;
+
+                int pixelIndex = (rowIndex)*currentGrid_[0].size() + columnIndex;
+
+                SDL_GetRGB(pixels[(rowIndex)*currentGrid_[0].size() + columnIndex],
+                    SDL_GetPixelFormatDetails(pixelFormat_),
+                    NULL,
+                    &newR,
+                    &newG,
+                    &newB);
+
+                auto newColor = pixels[(rowIndex)*currentGrid_[0].size() + columnIndex];
+            }
         }
     }
+    //temp for testing
+    //if (currentGrid_[0].size() == 11)
+    //{
+    //    float width, height;
+    //    SDL_GetTextureSize(gridBackBuffer_.get(), &width, &height);
+
+    //    auto range = drawRange_;
+    //    SDL_Surface* testSurface = SDL_CreateSurfaceFrom(width, height, pixelFormat_, pixels, pitch);//fails
+    //    auto testSuccess = SDL_SaveBMP(testSurface, "C:/Users/acrob/OneDrive/Dokumente/11newpxl.bmp");
+    //    if (!testSuccess)
+    //    {
+    //        std::cout << "wtrf??";
+    //    }
+    //    //SDL_Surface* surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
+    //    //SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_RGBA32, surface->pixels, surface->pitch);
+    //}
 
     SDL_UnlockTexture(gridBackBuffer_.get());
+
+
+
+
+
+    
+
+    //SDL_Surface* testSurface = SDL_LoadBMP("C:/Users/acrob/OneDrive/Dokumente/11pxl.bmp");
+    //
+    //auto testTexture = SDL_CreateTextureFromSurface(renderer, testSurface);
+    //SDL_SetTextureScaleMode(testTexture, SDL_SCALEMODE_NEAREST);
+    //float width, height;
+    //SDL_GetTextureSize(testTexture, &width, &height);
+
+    //SDL_GetTextureSize(gridBackBuffer_.get(), &width, &height);
+
     SDL_SetRenderTarget(renderer, nullptr);
+    //I should change that so this only gets calculated when there is a resize.
     auto destRect = SDL_FRect{
         (float)screenSpaceDisplacementX_,
         (float)screenSpaceDisplacementY_,
         (float)currentGrid_[0].size() * activeModelParams_.zoomLevel,
         (float)currentGrid_.size() * activeModelParams_.zoomLevel };
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+
+
+    //SDL_RenderTexture(renderer, testTexture, nullptr, &destRect);
+
+
     drawBackBufferTimer.reset();
 }
 
@@ -219,7 +287,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
         float mousePosX, mousePosY;
         int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
 
-        if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
+        if (mouseButtonState & SDL_BUTTON_MASK(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
         {
       
             activeModelParams_.displacementX += event.motion.xrel;

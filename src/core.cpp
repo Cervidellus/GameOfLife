@@ -111,14 +111,14 @@ void Core::render_() {
 
     cpuModel_.draw(gui_.mainWindow.sdlRenderer);
 
-    auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui");
+    auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui", false);
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
     cpuModel_.drawImGuiWidgets(modelRunning_);
     ImGuiScope::drawResultsHeader("Timer Results");
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);
     guiDrawTimer.reset();
 
-    auto presentTimer = std::make_optional<ImGuiScope::TimeScope>("renderpresent");
+    auto presentTimer = std::make_optional<ImGuiScope::TimeScope>("renderpresent", false);
     gui_.mainWindow.renderPresent();
     //guiDrawTimer.reset();
 }

@@ -8,13 +8,11 @@
 #include <vector>
 #include <memory>
 
-//Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
-struct SDL_Texture;
+//Like the Naive model, with a few improvements.
+// Stores in a continuous vector for better memory adjacency.
+// Uses a prefix sum to calculate neighbors, reducing the number of addition operations needed a bit.
 
-//typedef std::vector<std::vector<uint8_t>> VectorGrid;
-//I should really use std::mdspan to create a 2dview of a 1d vector. 
-//This keeps things MUCH closer in memory.
-//I think I will make a VectorGrid class that contains this view, as well as some methods for resizing and clearing.
+struct SDL_Texture;
 
 class PrefixSumModel : public AbstractModel
 {
@@ -67,8 +65,6 @@ private:
 	VectorGrid currentGrid_;
 	//used to hold state while we count neighbors to update model
 	VectorGrid previousGrid_;
-	//Used to create the color fading effect in visualization.
-	VectorGrid colorGrid_;
 
 	//Because the SDL_Texture type is obfuscated and requires an SDL deleter, 
 	//we need a template that can accept that deleter.
@@ -76,8 +72,8 @@ private:
 
 	ModelParameters activeModelParams_{
 		true,
-		400,
-		400
+		1000,
+		1000
 	};
 
 	ColorMapper colorMapper_;

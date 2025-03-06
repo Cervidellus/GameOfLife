@@ -58,6 +58,8 @@ private:
 	GridDrawRange getDrawRange_();
 
 private:
+	const SDL_PixelFormat pixelFormat_ = SDL_PIXELFORMAT_RGB565;
+
 	//primary storage of the model
 	std::vector<std::vector<uint8_t>> currentGrid_;
 	//used to hold state while we count neighbors to update model
@@ -71,8 +73,8 @@ private:
 	
 	ModelParameters activeModelParams_{
 		true,
-		400,
-		400
+		1000,
+		1000
 	};
 
 	ColorMapper colorMapper_;

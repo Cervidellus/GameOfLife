@@ -37,8 +37,6 @@ void PrefixSumModel::resizeGrid_()
 {
     currentGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
     previousGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
-    colorGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
-    //I should  switch to std::mdspan rather than the drawRange_.
     recalcDrawRange_ = true;
 }
 
@@ -46,7 +44,6 @@ void PrefixSumModel::clearGrid_()
 {
     currentGrid_.zero();
     previousGrid_.zero();
-    colorGrid_.zero();
 }
 
 void PrefixSumModel::initBackbuffer_(SDL_Renderer* renderer)
@@ -77,53 +74,45 @@ ModelParameters PrefixSumModel::getParameters()
 
 void PrefixSumModel::update()
 {
-    previousGrid_ = currentGrid_;
+    previousGrid_.swap(currentGrid_);
     int livingNeighbors = 0;
     int rowCount = currentGrid_.rows();
     int columnCount = currentGrid_.columns();
+    uint8_t cellValue;
     for (size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
         for (size_t columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            uint8_t& cellValue = currentGrid_(columnIndex, rowIndex);
+            cellValue = previousGrid_(columnIndex , rowIndex);
             livingNeighbors = 0;
 
-            //count living neighbors with a naive approach that is PLENTY fast enough!
-            for (int neighborRow = -1; neighborRow <= 1; neighborRow++) {
-                int neighborRowIndex = rowIndex + neighborRow;
+            //ignore row wrapping for now. I could have that in the structure itself?
 
-                //wrap the rows
-                if (neighborRowIndex < 0) neighborRowIndex = rowCount - 1;
-                if (neighborRowIndex >= rowCount) neighborRowIndex = 0;
-
-
-                //having the color info combined with the alive state has us need to do some unneccessary if statements. 
-                for (int neighborColumn = -1; neighborColumn <= 1; neighborColumn++) {
-                    //skip center pixel
-                    if (neighborRow == 0 && neighborColumn == 0) continue;
-
-                    int neighborColumnIndex = columnIndex + neighborColumn;
-
-                    //wrap the columnsa
-                    if (neighborColumnIndex < 0) neighborColumnIndex = columnCount - 1;
-                    if (neighborColumnIndex >= columnCount) neighborColumnIndex = 0;
-
-                    //count
-                    if (previousGrid_(columnIndex, rowIndex) == aliveValue_) livingNeighbors++;
-                }
-            }
-
-
-
-            if (cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4 ||
-                cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors)
+            if (rowIndex > 0 && columnIndex > 0 && rowIndex < rowCount-1 && columnIndex < columnCount-1)
             {
-                cellValue = aliveValue_;
-                //*cellValue = aliveValue_;
+                livingNeighbors += previousGrid_(columnIndex - 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex, rowIndex - 1) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex - 1) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex - 1, rowIndex) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex -1, rowIndex + 1) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex, rowIndex + 1) == aliveValue_ ? 1 : 0;
+                livingNeighbors += previousGrid_(columnIndex + 1, rowIndex + 1) == aliveValue_ ? 1 : 0;
+            }
+            //For wrapping
+            //else if (rowIndex == 0)
+            //{
+
+            //}
+
+            if ((cellValue != aliveValue_ && livingNeighbors == activeModelParams_.rule4) ||
+                (cellValue == aliveValue_ && std::clamp(livingNeighbors, activeModelParams_.rule1, activeModelParams_.rule3) == livingNeighbors))
+            {
+                currentGrid_(columnIndex, rowIndex) = aliveValue_;
             }
             else
             {
-                //Cell is dead, so I decrement the value for a nice visualization.
+                //Cell is dead, so I decrement the value for a nice visualization where values less than 255 recieve a different color.
                 //a 'normal' GOL would just be setting this to zero, and would use 1 for the alive value.
-                cellValue = (cellValue >= deadValueDecrement_) ? cellValue -= deadValueDecrement_ : 0;
+                currentGrid_(columnIndex, rowIndex) = (cellValue >= deadValueDecrement_) ? cellValue - deadValueDecrement_ : 0;
             }
         }
     }
@@ -147,11 +136,7 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     // NEXT:
     //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
 
-    if (!gridBackBuffer_) {
-        std::cout << "Invalid backbuffer!\n";
-        return;
-    }
-    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer");
+    //auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer", false);
 
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
@@ -181,18 +166,8 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
         (float)currentGrid_.columns() * activeModelParams_.zoomLevel,
         (float)currentGrid_.rows() * activeModelParams_.zoomLevel };
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
-    drawBackBufferTimer.reset();
+    //drawBackBufferTimer.reset();
 }
-
-//typedef struct SDL_FRect
-//{
-//    float x;
-//    float y;
-//    float w;
-//    float h;
-//} SDL_FRect;
-
-
 
 void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
 {
@@ -231,7 +206,7 @@ void PrefixSumModel::handleSDLEvent(const SDL_Event& event)
         float mousePosX, mousePosY;
         int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
 
-        if (mouseButtonState & SDL_BUTTON(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
+        if (mouseButtonState & SDL_BUTTON_MASK(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
         {
 
             activeModelParams_.displacementX += event.motion.xrel;
@@ -285,7 +260,7 @@ void PrefixSumModel::generateModel(const ModelParameters& params) {
         std::mt19937 rng(randomDevice());
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
-        for (auto& cell : currentGrid_.vector)
+        for (auto& cell : currentGrid_)
         {
             cell = distribution(rng) < params.fillFactor ? aliveValue_ : deadValue_;
         }
