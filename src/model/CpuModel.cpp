@@ -145,31 +145,11 @@ void CpuModel::draw(SDL_Renderer* renderer)
             color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
 
             pixels[rowIndex *currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
-                SDL_GetPixelFormatDetails(pixelFormat_),
+                formatDetails_,
                 NULL,
                 color.r,
                 color.g,
                 color.b);
-            //What is this?
-            //if (rowIndex == currentGrid_.size() - 1)
-            //{
-            //    uint8_t gridValue = currentGrid_[rowIndex][columnIndex];
-            //    SDL_Color pixelValue = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
-            //    uint8_t newR = 0;
-            //    uint8_t newG = 0;
-            //    uint8_t newB = 0;
-
-            //    int pixelIndex = (rowIndex)*currentGrid_[0].size() + columnIndex;
-
-            //    SDL_GetRGB(pixels[(rowIndex)*currentGrid_[0].size() + columnIndex],
-            //        SDL_GetPixelFormatDetails(pixelFormat_),
-            //        NULL,
-            //        &newR,
-            //        &newG,
-            //        &newB);
-
-            //    auto newColor = pixels[(rowIndex)*currentGrid_[0].size() + columnIndex];
-            //}
         }
     }
 

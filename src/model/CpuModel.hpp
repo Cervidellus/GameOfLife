@@ -87,6 +87,8 @@ private:
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;
 
+	const SDL_PixelFormatDetails* formatDetails_ = SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565);
+
 	const double MAX_ZOOM = 100.0;
 	const double MIN_ZOOM = 1.0;
 

@@ -270,9 +270,8 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
         {
             color = colorMapper_.getSDLColor(currentGrid_(columnIndex, rowIndex));
 
-            //SDL_Color color({ 100,4,5,1 });
             pixels[(rowIndex)*currentGrid_.columns() + columnIndex] = SDL_MapRGB(
-                SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
+                formatDetails_,
                 nullptr,
                 color.r,
                 color.g,
