@@ -51,15 +51,7 @@ private:
 	void initBackbuffer_(SDL_Renderer* renderer);
 	void updateCell_(int col, int row, int previousValue, int neighborCount);
 
-	struct GridDrawRange
-	{
-		int rowBegin = 0;
-		int rowEnd = 1;
-		int columnBegin = 0;
-		int columnEnd = 1;
-	};
-
-	GridDrawRange getDrawRange_();
+	SDL_Rect getDrawRange_();
 
 private:
 	//primary storage of the model
@@ -88,10 +80,11 @@ private:
 	bool recalcDrawRange_ = true;
 	//On first pass or on resized model, backbuffer needs reinitialized.
 	bool initBackbufferRequired_ = true;
-	////On backbuffer reinitilization or zoom change, complete redraw of 
-	//bool completeBackbufferRedrawRequired_ = true;
 
-	GridDrawRange drawRange_;
+	SDL_Rect drawRange_;
+	SDL_FRect destinationRect_;
+	//Screen displacement from top left corner
+	//Reflects where top left corner of the model will start to display.
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;
 

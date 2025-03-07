@@ -23,7 +23,6 @@ void CpuModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
-    recalcDrawRange_ = true;
 }
 
 void CpuModel::setViewPort(const SDL_Rect& viewPort)

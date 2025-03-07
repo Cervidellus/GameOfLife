@@ -24,7 +24,6 @@ void PrefixSumModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
-    recalcDrawRange_ = true;
 }
 
 void PrefixSumModel::setViewPort(const SDL_Rect& viewPort)
@@ -261,8 +260,11 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     //For that I'll need to grab window resize events.
 
     if (recalcDrawRange_) {
+        //Calc distance of the top left corner of model from top left corner of viewport.
         screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
         screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
+        //screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel  / 2);
+        //screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel  / 2);
         drawRange_ = getDrawRange_();
         recalcDrawRange_ = false;
     }
@@ -279,10 +281,10 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     Uint16* pixels;
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
-
-    for (int rowIndex = 0; rowIndex < currentGrid_.rows(); rowIndex++)
+    
+    for (int rowIndex = drawRange_.y; rowIndex <= drawRange_.h; rowIndex++)
     {
-        for (int columnIndex = 0; columnIndex < currentGrid_.columns(); columnIndex++)
+        for (int columnIndex = drawRange_.x; columnIndex <= drawRange_.w; columnIndex++)
         {
             SDL_Color color = colorMapper_.getSDLColor(currentGrid_(columnIndex, rowIndex));
 
@@ -297,12 +299,24 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
 
     SDL_UnlockTexture(gridBackBuffer_.get());
     SDL_SetRenderTarget(renderer, nullptr);
-    auto destRect = SDL_FRect{
-        (float)screenSpaceDisplacementX_,
-        (float)screenSpaceDisplacementY_,
-        (float)currentGrid_.columns() * activeModelParams_.zoomLevel,
-        (float)currentGrid_.rows() * activeModelParams_.zoomLevel };
-    SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
+    //auto destRect = SDL_FRect{
+    //    (float)screenSpaceDisplacementX_,
+    //    (float)screenSpaceDisplacementY_,
+    //    (float)currentGrid_.columns() * activeModelParams_.zoomLevel,
+    //    (float)currentGrid_.rows() * activeModelParams_.zoomLevel };
+    //TODO: I will just have this calculated once, instead of every frame.
+    destinationRect_ = SDL_FRect{
+    (float)screenSpaceDisplacementX_,//TODO: What about with zoom?
+    (float)screenSpaceDisplacementY_,
+    (float)activeModelParams_.modelWidth * activeModelParams_.zoomLevel,
+    (float)activeModelParams_.modelHeight * activeModelParams_.zoomLevel };
+
+
+    //if (destinationRect_.h > drawRange_.h) destinationRect_.h = drawRange_.h;
+    //Make sure that the rect is not bigger in height than what is being drawn.
+
+
+    SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
     //drawBackBufferTimer.reset();
 }
 
@@ -537,21 +551,18 @@ void PrefixSumModel::populateFromRLEString_(const std::string& rleString)
 }
 
 //I should only be calculating this when it changes.
-PrefixSumModel::GridDrawRange PrefixSumModel::getDrawRange_()
+SDL_Rect PrefixSumModel::getDrawRange_()
 {
-    PrefixSumModel::GridDrawRange drawRange;
-    drawRange.rowBegin = -(screenSpaceDisplacementY_ + activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
-    drawRange.rowEnd = drawRange.rowBegin + (viewPort_.h / activeModelParams_.zoomLevel);
-    drawRange.columnBegin = -(screenSpaceDisplacementX_ + activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
-    drawRange.columnEnd = drawRange.columnBegin + (viewPort_.w / activeModelParams_.zoomLevel);
-
-    //Don't try and draw something not in grid_
-    int gridRows = currentGrid_.rows();
-    int gridColumns = currentGrid_.columns();
-    if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
-    if (drawRange.columnEnd >= gridColumns) drawRange.columnEnd = gridColumns - 1;
-    if (drawRange.rowBegin < 0) drawRange.rowBegin = 0;
-    if (drawRange.columnBegin < 0) drawRange.columnBegin = 0;
+    //TODO:I should change this to calcDrawRange_() and have it just edit the member, rather than allocating new.
+    //displacement is distance of model from the center of the viewport.
+    //screenDisplacement is the distance between the upper left corner of hte model from the upper left corner of the viewport.
+    SDL_Rect drawRange;
+    drawRange.x = (screenSpaceDisplacementX_ < 0) ? -screenSpaceDisplacementX_ / activeModelParams_.zoomLevel  : 0;//I think this is right but need to incorporate zoom
+    drawRange.y = (screenSpaceDisplacementY_ < 0) ? -screenSpaceDisplacementY_ / activeModelParams_.zoomLevel : 0;
+    drawRange.w = (viewPort_.w - screenSpaceDisplacementX_ <= activeModelParams_.modelWidth) ? viewPort_.w - screenSpaceDisplacementX_ - 1 : activeModelParams_.modelWidth - 1;
+    drawRange.h = (viewPort_.h - screenSpaceDisplacementY_ <= activeModelParams_.modelHeight) ? viewPort_.h - screenSpaceDisplacementY_ - 1 : activeModelParams_.modelHeight - 1;
+    drawRange_.w = std::clamp(drawRange_.w, 0, activeModelParams_.modelWidth - 1);
+    drawRange_.y = std::clamp(drawRange_.y, 0, activeModelParams_.modelHeight - 1);
 
     return drawRange;
 }
