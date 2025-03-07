@@ -29,14 +29,14 @@ void PrefixSumModel::initialize(const SDL_Rect& viewport)
 void PrefixSumModel::setViewPort(const SDL_Rect& viewPort)
 {
     viewPort_ = viewPort;
-    recalcDrawRange_ = true;
+    drawRangeRecalcNeeded_ = true;
 }
 
 void PrefixSumModel::resizeGrid_()
 {
     currentGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
     previousGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
-    recalcDrawRange_ = true;
+    drawRangeRecalcNeeded_ = true;
 }
 
 void PrefixSumModel::clearGrid_()
@@ -256,26 +256,8 @@ void PrefixSumModel::update()
 
 void PrefixSumModel::draw(SDL_Renderer* renderer)
 {
-    //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
-    //For that I'll need to grab window resize events.
-
-    if (recalcDrawRange_) {
-        //Calc distance of the top left corner of model from top left corner of viewport.
-        screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
-        screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
-        //screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel  / 2);
-        //screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel  / 2);
-        drawRange_ = getDrawRange_();
-        recalcDrawRange_ = false;
-    }
-
+    if (drawRangeRecalcNeeded_) recalcDrawRange_();
     if (initBackbufferRequired_) initBackbuffer_(renderer);
-
-    //****Drawing by swapping my backbuffer****
-    // NEXT:
-    //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
-
-    //auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer", false);
 
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
@@ -299,25 +281,7 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
 
     SDL_UnlockTexture(gridBackBuffer_.get());
     SDL_SetRenderTarget(renderer, nullptr);
-    //auto destRect = SDL_FRect{
-    //    (float)screenSpaceDisplacementX_,
-    //    (float)screenSpaceDisplacementY_,
-    //    (float)currentGrid_.columns() * activeModelParams_.zoomLevel,
-    //    (float)currentGrid_.rows() * activeModelParams_.zoomLevel };
-    //TODO: I will just have this calculated once, instead of every frame.
-    destinationRect_ = SDL_FRect{
-    (float)screenSpaceDisplacementX_,//TODO: What about with zoom?
-    (float)screenSpaceDisplacementY_,
-    (float)activeModelParams_.modelWidth * activeModelParams_.zoomLevel,
-    (float)activeModelParams_.modelHeight * activeModelParams_.zoomLevel };
-
-
-    //if (destinationRect_.h > drawRange_.h) destinationRect_.h = drawRange_.h;
-    //Make sure that the rect is not bigger in height than what is being drawn.
-
-
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
-    //drawBackBufferTimer.reset();
 }
 
 void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -331,7 +295,7 @@ void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
         activeModelParams_,
         colorMapper_,
         deadValueDecrement_,
-        recalcDrawRange_,
+        drawRangeRecalcNeeded_,
         isModelRunning);
 
     WidgetFunctions::drawPresetsHeader(
@@ -363,7 +327,7 @@ void PrefixSumModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.displacementX += event.motion.xrel;
             activeModelParams_.displacementY += event.motion.yrel;
             //TODO:Check that it is within bounds of a maximum displacement
-            recalcDrawRange_ = true;
+            drawRangeRecalcNeeded_ = true;
         }
         else if (event.type == SDL_EventType::SDL_EVENT_MOUSE_WHEEL)
         {
@@ -378,7 +342,7 @@ void PrefixSumModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w) / 2;
             activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
 
-            recalcDrawRange_ = true;
+            drawRangeRecalcNeeded_ = true;
         }
     }
 }
@@ -417,7 +381,7 @@ void PrefixSumModel::generateModel(const ModelParameters& params) {
         }
 
         std::cout << "Random model generated" << std::endl;
-        recalcDrawRange_ = true;
+        drawRangeRecalcNeeded_ = true;
         initBackbufferRequired_ = true;
         return;
     }
@@ -529,7 +493,7 @@ void PrefixSumModel::populateFromRLE_(std::istream& modelStream)
         }
     }
 
-    recalcDrawRange_ = true;
+    drawRangeRecalcNeeded_ = true;
     initBackbufferRequired_ = true;
 }
 
@@ -550,19 +514,22 @@ void PrefixSumModel::populateFromRLEString_(const std::string& rleString)
     populateFromRLE_(rleStream);
 }
 
-//I should only be calculating this when it changes.
-SDL_Rect PrefixSumModel::getDrawRange_()
+void PrefixSumModel::recalcDrawRange_()
 {
-    //TODO:I should change this to calcDrawRange_() and have it just edit the member, rather than allocating new.
-    //displacement is distance of model from the center of the viewport.
-    //screenDisplacement is the distance between the upper left corner of hte model from the upper left corner of the viewport.
-    SDL_Rect drawRange;
-    drawRange.x = (screenSpaceDisplacementX_ < 0) ? -screenSpaceDisplacementX_ / activeModelParams_.zoomLevel  : 0;//I think this is right but need to incorporate zoom
-    drawRange.y = (screenSpaceDisplacementY_ < 0) ? -screenSpaceDisplacementY_ / activeModelParams_.zoomLevel : 0;
-    drawRange.w = (viewPort_.w - screenSpaceDisplacementX_ <= activeModelParams_.modelWidth) ? viewPort_.w - screenSpaceDisplacementX_ - 1 : activeModelParams_.modelWidth - 1;
-    drawRange.h = (viewPort_.h - screenSpaceDisplacementY_ <= activeModelParams_.modelHeight) ? viewPort_.h - screenSpaceDisplacementY_ - 1 : activeModelParams_.modelHeight - 1;
+    screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
+    screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
+    drawRange_.x = (screenSpaceDisplacementX_ < 0) ? -screenSpaceDisplacementX_ / activeModelParams_.zoomLevel  : 0;//I think this is right but need to incorporate zoom
+    drawRange_.y = (screenSpaceDisplacementY_ < 0) ? -screenSpaceDisplacementY_ / activeModelParams_.zoomLevel : 0;
+    drawRange_.w = (viewPort_.w - screenSpaceDisplacementX_ <= activeModelParams_.modelWidth) ? viewPort_.w - screenSpaceDisplacementX_ - 1 : activeModelParams_.modelWidth - 1;
+    drawRange_.h = (viewPort_.h - screenSpaceDisplacementY_ <= activeModelParams_.modelHeight) ? viewPort_.h - screenSpaceDisplacementY_ - 1 : activeModelParams_.modelHeight - 1;
     drawRange_.w = std::clamp(drawRange_.w, 0, activeModelParams_.modelWidth - 1);
     drawRange_.y = std::clamp(drawRange_.y, 0, activeModelParams_.modelHeight - 1);
 
-    return drawRange;
+    destinationRect_ = SDL_FRect{
+        (float)screenSpaceDisplacementX_,
+        (float)screenSpaceDisplacementY_,
+        (float)activeModelParams_.modelWidth * activeModelParams_.zoomLevel,
+        (float)activeModelParams_.modelHeight * activeModelParams_.zoomLevel };
+
+    drawRangeRecalcNeeded_ = false;
 }

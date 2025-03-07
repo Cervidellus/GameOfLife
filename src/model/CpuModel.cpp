@@ -28,7 +28,7 @@ void CpuModel::initialize(const SDL_Rect& viewport)
 void CpuModel::setViewPort(const SDL_Rect& viewPort)
 {
 	viewPort_ = viewPort;
-	recalcDrawRange_ = true;
+	drawRangeRecalcNeeded_ = true;
 }
 
 void CpuModel::resizeGrid_()
@@ -37,7 +37,7 @@ void CpuModel::resizeGrid_()
     for (auto& row : currentGrid_) {
 		row.resize(activeModelParams_.modelWidth, 0);
 	}
-    recalcDrawRange_ = true;
+    drawRangeRecalcNeeded_ = true;
 }
 
 void CpuModel::clearGrid_()
@@ -129,45 +129,17 @@ void CpuModel::update()
 
 void CpuModel::draw(SDL_Renderer* renderer)
 {
-    //This should just be what is written to activeModelParams_.displacementX and activeModelParams_.displacementY
-    //For that I'll need to grab window resize events.
-    
-    if (recalcDrawRange_) {
-        screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
-        screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
-		drawRange_ = getDrawRange_();
-		recalcDrawRange_ = false;
-	}
-
+    if (drawRangeRecalcNeeded_) recalcDrawRange_();
     if (initBackbufferRequired_) initBackbuffer_(renderer);
-
-    //****Drawing by swapping my backbuffer****
-    // NEXT:
-    //-I should have it check for changes in model, so I can skip rendering step when rendering is higher frequency than model.
-
-    if (!gridBackBuffer_) {
-        std::cout << "Invalid backbuffer!\n";
-        return;
-    }
-    auto drawBackBufferTimer = std::make_optional<ImGuiScope::TimeScope>("Draw My Backbuffer", false);
 
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
-    int rows = currentGrid_.size();
-    int cols = currentGrid_[0].size();
-
-    for (int rowIndex = 0; rowIndex < currentGrid_.size(); rowIndex++)
+    for (int rowIndex = drawRange_.y; rowIndex <= drawRange_.h; rowIndex++)
     {
-        //if (rowIndex = currentGrid_.size() - 1)
-        //{
-        //    int testInt = currentGrid_.size();
-        //}
-
-        //I should be iterating over drawrange instead of the rows/cols... 
-        for (int columnIndex = 0; columnIndex < currentGrid_[0].size(); columnIndex++)
+        for (int columnIndex = drawRange_.x; columnIndex <= drawRange_.w; columnIndex++)
         {
             SDL_Color color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
 
@@ -199,54 +171,11 @@ void CpuModel::draw(SDL_Renderer* renderer)
             }
         }
     }
-    //temp for testing
-    //if (currentGrid_[0].size() == 11)
-    //{
-    //    float width, height;
-    //    SDL_GetTextureSize(gridBackBuffer_.get(), &width, &height);
-
-    //    auto range = drawRange_;
-    //    SDL_Surface* testSurface = SDL_CreateSurfaceFrom(width, height, pixelFormat_, pixels, pitch);//fails
-    //    auto testSuccess = SDL_SaveBMP(testSurface, "C:/Users/acrob/OneDrive/Dokumente/11newpxl.bmp");
-    //    if (!testSuccess)
-    //    {
-    //        std::cout << "wtrf??";
-    //    }
-    //    //SDL_Surface* surface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
-    //    //SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_RGBA32, surface->pixels, surface->pitch);
-    //}
 
     SDL_UnlockTexture(gridBackBuffer_.get());
 
-
-
-
-
-    
-
-    //SDL_Surface* testSurface = SDL_LoadBMP("C:/Users/acrob/OneDrive/Dokumente/11pxl.bmp");
-    //
-    //auto testTexture = SDL_CreateTextureFromSurface(renderer, testSurface);
-    //SDL_SetTextureScaleMode(testTexture, SDL_SCALEMODE_NEAREST);
-    //float width, height;
-    //SDL_GetTextureSize(testTexture, &width, &height);
-
-    //SDL_GetTextureSize(gridBackBuffer_.get(), &width, &height);
-
     SDL_SetRenderTarget(renderer, nullptr);
-    //I should change that so this only gets calculated when there is a resize.
-    auto destRect = SDL_FRect{
-        (float)screenSpaceDisplacementX_,
-        (float)screenSpaceDisplacementY_,
-        (float)currentGrid_[0].size() * activeModelParams_.zoomLevel,
-        (float)currentGrid_.size() * activeModelParams_.zoomLevel };
-    SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destRect);
-
-
-    //SDL_RenderTexture(renderer, testTexture, nullptr, &destRect);
-
-
-    drawBackBufferTimer.reset();
+    SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
 }
 
 void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
@@ -260,7 +189,7 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
 		activeModelParams_,
 		colorMapper_,
 		deadValueDecrement_,
-        recalcDrawRange_,
+        drawRangeRecalcNeeded_,
 		isModelRunning);
     
     WidgetFunctions::drawPresetsHeader(
@@ -292,7 +221,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.displacementX += event.motion.xrel;
             activeModelParams_.displacementY += event.motion.yrel;
             //TODO:Check that it is within bounds of a maximum displacement
-            recalcDrawRange_ = true;
+            drawRangeRecalcNeeded_ = true;
         }
         else if (event.type == SDL_EventType::SDL_EVENT_MOUSE_WHEEL)
         {
@@ -307,7 +236,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
             activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX  + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w )/ 2;
             activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY  + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
 
-            recalcDrawRange_ = true;
+            drawRangeRecalcNeeded_ = true;
         }
     }
 }
@@ -346,7 +275,7 @@ void CpuModel::generateModel(const ModelParameters& params) {
 			}
 		}
         std::cout << "Random model generated" << std::endl;
-        recalcDrawRange_ = true;
+        drawRangeRecalcNeeded_ = true;
         initBackbufferRequired_ = true;
         return;
     }
@@ -458,7 +387,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
         }
     }
 
-    recalcDrawRange_ = true;
+    drawRangeRecalcNeeded_ = true;
     initBackbufferRequired_ = true;
 }
 
@@ -479,22 +408,23 @@ void CpuModel::populateFromRLEString_(const std::string& rleString)
 	populateFromRLE_(rleStream);
 }
 
-//I should only be calculating this when it changes.
-CpuModel::GridDrawRange CpuModel::getDrawRange_()
+void CpuModel::recalcDrawRange_()
 {
-    CpuModel::GridDrawRange drawRange;
-    drawRange.rowBegin = -(screenSpaceDisplacementY_ + activeModelParams_.displacementY) / activeModelParams_.zoomLevel;
-    drawRange.rowEnd = drawRange.rowBegin + (viewPort_.h / activeModelParams_.zoomLevel);
-    drawRange.columnBegin = -(screenSpaceDisplacementX_ + activeModelParams_.displacementX) / activeModelParams_.zoomLevel;
-    drawRange.columnEnd = drawRange.columnBegin + (viewPort_.w / activeModelParams_.zoomLevel);
+    //Recalculate screen drawing position and subset of model to draw
+    screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
+    screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;
+    drawRange_.x = (screenSpaceDisplacementX_ < 0) ? -screenSpaceDisplacementX_ / activeModelParams_.zoomLevel : 0;//I think this is right but need to incorporate zoom
+    drawRange_.y = (screenSpaceDisplacementY_ < 0) ? -screenSpaceDisplacementY_ / activeModelParams_.zoomLevel : 0;
+    drawRange_.w = (viewPort_.w - screenSpaceDisplacementX_ <= activeModelParams_.modelWidth) ? viewPort_.w - screenSpaceDisplacementX_ - 1 : activeModelParams_.modelWidth - 1;
+    drawRange_.h = (viewPort_.h - screenSpaceDisplacementY_ <= activeModelParams_.modelHeight) ? viewPort_.h - screenSpaceDisplacementY_ - 1 : activeModelParams_.modelHeight - 1;
+    drawRange_.w = std::clamp(drawRange_.w, 0, activeModelParams_.modelWidth - 1);
+    drawRange_.y = std::clamp(drawRange_.y, 0, activeModelParams_.modelHeight - 1);
 
-    //Don't try and draw something not in grid_
-    int gridRows = currentGrid_.size();
-    int gridColumns = currentGrid_[0].size();
-    if (drawRange.rowEnd >= gridRows) drawRange.rowEnd = gridRows - 1;
-    if (drawRange.columnEnd >= gridColumns) drawRange.columnEnd = gridColumns - 1;
-    if (drawRange.rowBegin < 0) drawRange.rowBegin = 0;
-    if (drawRange.columnBegin < 0) drawRange.columnBegin = 0;
+    destinationRect_ = SDL_FRect{
+    (float)screenSpaceDisplacementX_,
+    (float)screenSpaceDisplacementY_,
+    (float)currentGrid_[0].size() * activeModelParams_.zoomLevel,
+    (float)currentGrid_.size() * activeModelParams_.zoomLevel };
 
-    return drawRange;
+    drawRangeRecalcNeeded_ = false;
 }

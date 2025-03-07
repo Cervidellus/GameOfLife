@@ -47,15 +47,7 @@ private:
 	//Whenever the model size is changed, the backbuffer texture must be reinitialized.
 	void initBackbuffer_(SDL_Renderer* renderer);
 
-	struct GridDrawRange
-	{
-		int rowBegin = 0;
-		int rowEnd = 1;
-		int columnBegin = 0;
-		int columnEnd = 1;
-	};
-
-	GridDrawRange getDrawRange_();
+	void recalcDrawRange_();
 
 private:
 	const SDL_PixelFormat pixelFormat_ = SDL_PIXELFORMAT_RGB565;
@@ -85,13 +77,13 @@ private:
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 
 	//If the zoom level or displacement changes, recalculates the draw range.
-	bool recalcDrawRange_ = true;
+	bool drawRangeRecalcNeeded_ = true;
 	//On first pass or on resized model, backbuffer needs reinitialized.
 	bool initBackbufferRequired_ = true;
-	////On backbuffer reinitilization or zoom change, complete redraw of 
-	//bool completeBackbufferRedrawRequired_ = true;
 
-	GridDrawRange drawRange_;
+	SDL_Rect drawRange_;
+	SDL_FRect destinationRect_;
+
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;
 

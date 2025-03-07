@@ -51,7 +51,7 @@ private:
 	void initBackbuffer_(SDL_Renderer* renderer);
 	void updateCell_(int col, int row, int previousValue, int neighborCount);
 
-	SDL_Rect getDrawRange_();
+	void recalcDrawRange_();
 
 private:
 	//primary storage of the model
@@ -77,7 +77,7 @@ private:
 	int deadValueDecrement_ = 10;//how fast does teh dead value decrement
 
 	//If the zoom level or displacement changes, recalculates the draw range.
-	bool recalcDrawRange_ = true;
+	bool drawRangeRecalcNeeded_ = true;
 	//On first pass or on resized model, backbuffer needs reinitialized.
 	bool initBackbufferRequired_ = true;
 
