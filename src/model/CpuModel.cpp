@@ -135,13 +135,14 @@ void CpuModel::draw(SDL_Renderer* renderer)
     SDL_SetRenderTarget(renderer, gridBackBuffer_.get());
     Uint16* pixels;
     int pitch = 0;
+    SDL_Color color;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
 
     for (int rowIndex = drawRange_.y; rowIndex <= drawRange_.h; rowIndex++)
     {
         for (int columnIndex = drawRange_.x; columnIndex <= drawRange_.w; columnIndex++)
         {
-            SDL_Color color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
+            color = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
 
             pixels[rowIndex *currentGrid_[0].size() + columnIndex] = SDL_MapRGB(
                 SDL_GetPixelFormatDetails(pixelFormat_),
@@ -149,26 +150,26 @@ void CpuModel::draw(SDL_Renderer* renderer)
                 color.r,
                 color.g,
                 color.b);
+            //What is this?
+            //if (rowIndex == currentGrid_.size() - 1)
+            //{
+            //    uint8_t gridValue = currentGrid_[rowIndex][columnIndex];
+            //    SDL_Color pixelValue = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
+            //    uint8_t newR = 0;
+            //    uint8_t newG = 0;
+            //    uint8_t newB = 0;
 
-            if (rowIndex == currentGrid_.size() - 1)
-            {
-                uint8_t gridValue = currentGrid_[rowIndex][columnIndex];
-                SDL_Color pixelValue = colorMapper_.getSDLColor(currentGrid_[rowIndex][columnIndex]);
-                uint8_t newR = 0;
-                uint8_t newG = 0;
-                uint8_t newB = 0;
+            //    int pixelIndex = (rowIndex)*currentGrid_[0].size() + columnIndex;
 
-                int pixelIndex = (rowIndex)*currentGrid_[0].size() + columnIndex;
+            //    SDL_GetRGB(pixels[(rowIndex)*currentGrid_[0].size() + columnIndex],
+            //        SDL_GetPixelFormatDetails(pixelFormat_),
+            //        NULL,
+            //        &newR,
+            //        &newG,
+            //        &newB);
 
-                SDL_GetRGB(pixels[(rowIndex)*currentGrid_[0].size() + columnIndex],
-                    SDL_GetPixelFormatDetails(pixelFormat_),
-                    NULL,
-                    &newR,
-                    &newG,
-                    &newB);
-
-                auto newColor = pixels[(rowIndex)*currentGrid_[0].size() + columnIndex];
-            }
+            //    auto newColor = pixels[(rowIndex)*currentGrid_[0].size() + columnIndex];
+            //}
         }
     }
 

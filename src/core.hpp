@@ -37,8 +37,8 @@ private:
 
     SDLManager sdlManager_;
     GUI gui_;
-    PrefixSumModel cpuModel_;
-    //CpuModel cpuModel_;
+    //PrefixSumModel cpuModel_;
+    CpuModel cpuModel_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP

@@ -263,13 +263,14 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     Uint16* pixels;
     int pitch = 0;
     SDL_LockTexture(gridBackBuffer_.get(), nullptr, (void**)&pixels, &pitch);
-    
+    SDL_Color color;
     for (int rowIndex = drawRange_.y; rowIndex <= drawRange_.h; rowIndex++)
     {
         for (int columnIndex = drawRange_.x; columnIndex <= drawRange_.w; columnIndex++)
         {
-            SDL_Color color = colorMapper_.getSDLColor(currentGrid_(columnIndex, rowIndex));
+            color = colorMapper_.getSDLColor(currentGrid_(columnIndex, rowIndex));
 
+            //SDL_Color color({ 100,4,5,1 });
             pixels[(rowIndex)*currentGrid_.columns() + columnIndex] = SDL_MapRGB(
                 SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGB565),
                 nullptr,
