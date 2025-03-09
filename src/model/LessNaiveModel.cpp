@@ -1,4 +1,4 @@
-#include "model/PrefixSumModel.hpp"
+#include "model/LessNaiveModel.hpp"
 #include "presets/modelpresets.hpp"
 #include "gui/WidgetFunctions.hpp"
 #include "../submodules/ImGuiScope/ImguiScope.hpp"
@@ -15,37 +15,37 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 
-PrefixSumModel::PrefixSumModel() :
+LessNaiveModel::LessNaiveModel() :
     gridBackBuffer_(nullptr, SDL_DestroyTexture)
 {
 }
 
-void PrefixSumModel::initialize(const SDL_Rect& viewport)
+void LessNaiveModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
 }
 
-void PrefixSumModel::setViewPort(const SDL_Rect& viewPort)
+void LessNaiveModel::setViewPort(const SDL_Rect& viewPort)
 {
     viewPort_ = viewPort;
     drawRangeRecalcNeeded_ = true;
 }
 
-void PrefixSumModel::resizeGrid_()
+void LessNaiveModel::resizeGrid_()
 {
     currentGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
     previousGrid_.resize(activeModelParams_.modelWidth, activeModelParams_.modelHeight);
     drawRangeRecalcNeeded_ = true;
 }
 
-void PrefixSumModel::clearGrid_()
+void LessNaiveModel::clearGrid_()
 {
     currentGrid_.zero();
     previousGrid_.zero();
 }
 
-void PrefixSumModel::initBackbuffer_(SDL_Renderer* renderer)
+void LessNaiveModel::initBackbuffer_(SDL_Renderer* renderer)
 {
 
     gridBackBuffer_.reset(
@@ -61,17 +61,17 @@ void PrefixSumModel::initBackbuffer_(SDL_Renderer* renderer)
     initBackbufferRequired_ = false;
 }
 
-void PrefixSumModel::setParameters(const ModelParameters& modelParameters)
+void LessNaiveModel::setParameters(const ModelParameters& modelParameters)
 {
     activeModelParams_ = modelParameters;
 }
 
-ModelParameters PrefixSumModel::getParameters()
+ModelParameters LessNaiveModel::getParameters()
 {
     return activeModelParams_;
 }
 
-void PrefixSumModel::updateCell_(int col, int row, int previousValue, int neighborCount)
+void LessNaiveModel::updateCell_(int col, int row, int previousValue, int neighborCount)
 {
     if ((previousValue != aliveValue_ && neighborCount == activeModelParams_.rule4) ||
         (previousValue == aliveValue_ && std::clamp(neighborCount, activeModelParams_.rule1, activeModelParams_.rule3) == neighborCount))
@@ -86,7 +86,7 @@ void PrefixSumModel::updateCell_(int col, int row, int previousValue, int neighb
     }
 }
 
-void PrefixSumModel::update()
+void LessNaiveModel::update()
 {
     previousGrid_.swap(currentGrid_);
     int livingNeighbors = 0;
@@ -254,7 +254,7 @@ void PrefixSumModel::update()
     }
 }
 
-void PrefixSumModel::draw(SDL_Renderer* renderer)
+void LessNaiveModel::draw(SDL_Renderer* renderer)
 {
     if (drawRangeRecalcNeeded_) recalcDrawRange_();
     if (initBackbufferRequired_) initBackbuffer_(renderer);
@@ -284,7 +284,7 @@ void PrefixSumModel::draw(SDL_Renderer* renderer)
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
 }
 
-void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
+void LessNaiveModel::drawImGuiWidgets(const bool& isModelRunning)
 {
     WidgetFunctions::drawGOLRulesHeader(
         activeModelParams_,
@@ -308,7 +308,7 @@ void PrefixSumModel::drawImGuiWidgets(const bool& isModelRunning)
     );
 }
 
-void PrefixSumModel::handleSDLEvent(const SDL_Event& event)
+void LessNaiveModel::handleSDLEvent(const SDL_Event& event)
 {
     //TODO:: Rather than if else statements I might have a map? Or a switch statement
         //I should profile it to see if it would make a difference before changing though. 
@@ -347,7 +347,7 @@ void PrefixSumModel::handleSDLEvent(const SDL_Event& event)
     }
 }
 
-void PrefixSumModel::generateModel(const ModelParameters& params) {
+void LessNaiveModel::generateModel(const ModelParameters& params) {
     //First set the members to correspond with the parameters
     activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, params.minWidth);
     activeModelParams_.modelHeight = std::max<int>(activeModelParams_.modelHeight, params.minHeight);
@@ -396,7 +396,7 @@ void PrefixSumModel::generateModel(const ModelParameters& params) {
     initBackbufferRequired_ = true;
 }
 
-void PrefixSumModel::populateFromRLE_(std::istream& modelStream)
+void LessNaiveModel::populateFromRLE_(std::istream& modelStream)
 {
     std::string line = "";
     std::string RLEstring = "";
@@ -497,7 +497,7 @@ void PrefixSumModel::populateFromRLE_(std::istream& modelStream)
     initBackbufferRequired_ = true;
 }
 
-void PrefixSumModel::loadRLE_(const std::string& filePath)
+void LessNaiveModel::loadRLE_(const std::string& filePath)
 {
     std::ifstream filestream(filePath);
     if (filestream.is_open())
@@ -508,13 +508,13 @@ void PrefixSumModel::loadRLE_(const std::string& filePath)
     }
 }
 
-void PrefixSumModel::populateFromRLEString_(const std::string& rleString)
+void LessNaiveModel::populateFromRLEString_(const std::string& rleString)
 {
     std::stringstream rleStream(rleString);
     populateFromRLE_(rleStream);
 }
 
-void PrefixSumModel::recalcDrawRange_()
+void LessNaiveModel::recalcDrawRange_()
 {
     screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;
     screenSpaceDisplacementY_ = (viewPort_.h / 2) - (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementY;

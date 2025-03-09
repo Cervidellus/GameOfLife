@@ -1,24 +1,21 @@
-#ifndef PREFIX_SUM_MODEL_H
-#define PREFIX_SUM_MODEL_H
+#ifndef Naive_MODEL_H
+#define Naive_MODEL_H
 
 #include "abstract_model.hpp"
 #include "ColorMapper.hpp"
-#include "VectorGrid.hpp"
+
 
 #include <vector>
 #include <memory>
 
-//Like the Naive model, with a few improvements.
-// Stores in a continuous vector for better memory adjacency.
-// Uses a prefix sum to calculate neighbors, reducing the number of addition operations needed a bit.
-
+//Next:: make and sdl texture backbuffer system. Only modify the buffer if there has been a change.
 struct SDL_Texture;
 
-class PrefixSumModel : public AbstractModel
+class NaiveModel : public AbstractModel 
 {
 public:
-	PrefixSumModel();
-	~PrefixSumModel() = default;
+	NaiveModel();
+	~NaiveModel() = default;
 
 	void initialize(const SDL_Rect& viewport) override;
 
@@ -38,7 +35,7 @@ public:
 	void generateModel(const ModelParameters& modelParameters);
 
 private:
-
+	
 	//Take a stream representing the RLE encoded model and populate board.
 	void populateFromRLE_(std::istream& modelStream);
 	//Load an RLE file and populate the board. Intended as a callback sent to gui.
@@ -49,20 +46,23 @@ private:
 	void clearGrid_();
 	//Whenever the model size is changed, the backbuffer texture must be reinitialized.
 	void initBackbuffer_(SDL_Renderer* renderer);
-	void updateCell_(int col, int row, int previousValue, int neighborCount);
 
 	void recalcDrawRange_();
 
 private:
+	const SDL_PixelFormat pixelFormat_ = SDL_PIXELFORMAT_RGB565;
+
 	//primary storage of the model
-	VectorGrid currentGrid_;
+	std::vector<std::vector<uint8_t>> currentGrid_;
 	//used to hold state while we count neighbors to update model
-	VectorGrid previousGrid_;
+	std::vector<std::vector<uint8_t>> previousGrid_;
+	//Used to create the color fading effect in visualization.
+	std::vector<std::vector<uint8_t>> colorGrid_;
 
 	//Because the SDL_Texture type is obfuscated and requires an SDL deleter, 
 	//we need a template that can accept that deleter.
 	std::unique_ptr<SDL_Texture, void(*)(SDL_Texture*)> gridBackBuffer_;
-
+	
 	ModelParameters activeModelParams_{
 		true,
 		1000,
@@ -83,8 +83,7 @@ private:
 
 	SDL_Rect drawRange_;
 	SDL_FRect destinationRect_;
-	//Screen displacement from top left corner
-	//Reflects where top left corner of the model will start to display.
+
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;
 
@@ -97,4 +96,4 @@ private:
 	std::string inputString_ = "";
 };
 
-#endif // PREFIX_SUM_MODEL_H
+#endif // CPU_MODEL_H

@@ -1,4 +1,4 @@
-#include "CpuModel.hpp"
+#include "NaiveModel.hpp"
 #include "presets/modelpresets.hpp"
 #include "gui/WidgetFunctions.hpp"
 #include "../submodules/ImGuiScope/ImguiScope.hpp"
@@ -15,23 +15,23 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 
-CpuModel::CpuModel() :
+NaiveModel::NaiveModel() :
     gridBackBuffer_(nullptr, SDL_DestroyTexture)
 {}
 
-void CpuModel::initialize(const SDL_Rect& viewport)
+void NaiveModel::initialize(const SDL_Rect& viewport)
 {
     setViewPort(viewport);
     generateModel(activeModelParams_);
 }
 
-void CpuModel::setViewPort(const SDL_Rect& viewPort)
+void NaiveModel::setViewPort(const SDL_Rect& viewPort)
 {
 	viewPort_ = viewPort;
 	drawRangeRecalcNeeded_ = true;
 }
 
-void CpuModel::resizeGrid_()
+void NaiveModel::resizeGrid_()
 {
 	currentGrid_.resize(activeModelParams_.modelHeight, std::vector<uint8_t>(activeModelParams_.modelWidth, 0));
     for (auto& row : currentGrid_) {
@@ -40,14 +40,14 @@ void CpuModel::resizeGrid_()
     drawRangeRecalcNeeded_ = true;
 }
 
-void CpuModel::clearGrid_()
+void NaiveModel::clearGrid_()
 {
     for (auto& row : currentGrid_) {
         row.assign(row.size(), 0);
 	}
 }
 
-void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
+void NaiveModel::initBackbuffer_(SDL_Renderer* renderer)
 {
     
     gridBackBuffer_.reset(
@@ -63,17 +63,17 @@ void CpuModel::initBackbuffer_(SDL_Renderer* renderer)
     initBackbufferRequired_ = false;
 }
 
-void CpuModel::setParameters(const ModelParameters& modelParameters)
+void NaiveModel::setParameters(const ModelParameters& modelParameters)
 {
 	activeModelParams_ = modelParameters;
 }
 
-ModelParameters CpuModel::getParameters()
+ModelParameters NaiveModel::getParameters()
 {
 	return activeModelParams_;
 }
 
-void CpuModel::update()
+void NaiveModel::update()
 {
     previousGrid_ = currentGrid_;
     int livingNeighbors = 0;
@@ -127,7 +127,7 @@ void CpuModel::update()
     }
 }
 
-void CpuModel::draw(SDL_Renderer* renderer)
+void NaiveModel::draw(SDL_Renderer* renderer)
 {
     if (drawRangeRecalcNeeded_) recalcDrawRange_();
     if (initBackbufferRequired_) initBackbuffer_(renderer);
@@ -159,7 +159,7 @@ void CpuModel::draw(SDL_Renderer* renderer)
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
 }
 
-void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
+void NaiveModel::drawImGuiWidgets(const bool& isModelRunning)
 {
     WidgetFunctions::drawGOLRulesHeader(
         activeModelParams_, 
@@ -183,7 +183,7 @@ void CpuModel::drawImGuiWidgets(const bool& isModelRunning)
         );
 }
 
-void CpuModel::handleSDLEvent(const SDL_Event& event)
+void NaiveModel::handleSDLEvent(const SDL_Event& event)
 {
 //TODO:: Rather than if else statements I might have a map? Or a switch statement
     //I should profile it to see if it would make a difference before changing though. 
@@ -222,7 +222,7 @@ void CpuModel::handleSDLEvent(const SDL_Event& event)
     }
 }
 
-void CpuModel::generateModel(const ModelParameters& params) {
+void NaiveModel::generateModel(const ModelParameters& params) {
     //First set the members to correspond with the parameters
     activeModelParams_.modelWidth = std::max<int>(activeModelParams_.modelWidth, params.minWidth);
     activeModelParams_.modelHeight = std::max<int>(activeModelParams_.modelHeight, params.minHeight);
@@ -271,7 +271,7 @@ void CpuModel::generateModel(const ModelParameters& params) {
     initBackbufferRequired_ = true;
 }
 
-void CpuModel::populateFromRLE_(std::istream& modelStream)
+void NaiveModel::populateFromRLE_(std::istream& modelStream)
 {
     std::string line = "";
     std::string RLEstring = "";
@@ -372,7 +372,7 @@ void CpuModel::populateFromRLE_(std::istream& modelStream)
     initBackbufferRequired_ = true;
 }
 
-void CpuModel::loadRLE_(const std::string& filePath)
+void NaiveModel::loadRLE_(const std::string& filePath)
 {
 	std::ifstream filestream(filePath);
 	if (filestream.is_open())
@@ -383,13 +383,13 @@ void CpuModel::loadRLE_(const std::string& filePath)
 	}
 }
 
-void CpuModel::populateFromRLEString_(const std::string& rleString)
+void NaiveModel::populateFromRLEString_(const std::string& rleString)
 {
 	std::stringstream rleStream(rleString);
 	populateFromRLE_(rleStream);
 }
 
-void CpuModel::recalcDrawRange_()
+void NaiveModel::recalcDrawRange_()
 {
     //Recalculate screen drawing position and subset of model to draw
     screenSpaceDisplacementX_ = (viewPort_.w / 2) - (activeModelParams_.modelWidth * activeModelParams_.zoomLevel / 2) + activeModelParams_.displacementX;

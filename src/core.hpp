@@ -2,7 +2,7 @@
 #define GAMEOFLIFE_CORE_HPP
 
 #include "gui\gui.hpp"
-#include "model\CpuModel.hpp"
+#include "model\NaiveModel.hpp"
 #include "model\PrefixSumModel.hpp"
 #include "sdl_manager.hpp"
 
@@ -38,7 +38,7 @@ private:
     SDLManager sdlManager_;
     GUI gui_;
     //PrefixSumModel cpuModel_;
-    CpuModel cpuModel_;
+    NaiveModel cpuModel_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
