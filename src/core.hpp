@@ -3,7 +3,7 @@
 
 #include "gui\gui.hpp"
 #include "model\NaiveModel.hpp"
-#include "model\PrefixSumModel.hpp"
+#include "model\LessNaiveModel.hpp"
 #include "sdl_manager.hpp"
 
 union SDL_Event;
@@ -37,8 +37,8 @@ private:
 
     SDLManager sdlManager_;
     GUI gui_;
-    //PrefixSumModel cpuModel_;
-    NaiveModel cpuModel_;
+    LessNaiveModel cpuModel_;
+    //NaiveModel cpuModel_;
 };
 
 #endif //GAMEOFLIFE_CORE_HPP

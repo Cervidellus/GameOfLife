@@ -19,10 +19,10 @@ add_executable(gameoflife
     src/model/modelparameters.hpp
     src/model/ColorMapper.hpp
     src/model/ColorMapper.cpp
-    src/model/CpuModel.cpp
-    src/model/CpuModel.hpp
-    src/model/PrefixSumModel.hpp
-    src/model/PrefixSumModel.cpp
+    src/model/NaiveModel.cpp
+    src/model/NaiveModel.hpp
+    src/model/LessNaiveModel.hpp
+    src/model/LessNaiveModel.cpp
     src/model/VectorGrid.hpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
