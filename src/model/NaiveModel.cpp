@@ -1,6 +1,5 @@
 #include "NaiveModel.hpp"
 #include "presets/modelpresets.hpp"
-#include "gui/WidgetFunctions.hpp"
 #include "../submodules/ImGuiScope/ImguiScope.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
 
@@ -134,30 +133,6 @@ void NaiveModel::draw(SDL_Renderer* renderer)
 
     SDL_SetRenderTarget(renderer, nullptr);
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
-}
-
-void NaiveModel::drawImGuiWidgets(const bool& isModelRunning)
-{
-    WidgetFunctions::drawGOLRulesHeader(
-        activeModelParams_, 
-        [this](const ModelParameters& params) {generateModel(params);},
-        isModelRunning);
-
-    WidgetFunctions::drawVisualizationHeader(
-		activeModelParams_,
-		colorMapper_,
-		deadValueDecrement_,
-        drawRangeRecalcNeeded_,
-		isModelRunning);
-    
-    WidgetFunctions::drawPresetsHeader(
-		activeModelParams_,
-		[this](const ModelParameters& params) {generateModel(params);},
-		[this](std::string filePath) {loadRLE_(filePath);},
-        [this]() {populateFromRLEString_(inputString_);},
-        inputString_,
-        isModelRunning
-        );
 }
 
 void NaiveModel::handleSDLEvent(const SDL_Event& event)

@@ -1,8 +1,9 @@
 #include <core.hpp>
+#include "gui/WidgetFunctions.hpp"
+
 #include <imgui.h>
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
-
 #include "../submodules/ImGuiScope/ImGuiScope.hpp"
 
 #include <iostream>
@@ -113,6 +114,7 @@ void Core::render_() {
 
     auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui", false);
     gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
+
     cpuModel_.drawImGuiWidgets(modelRunning_);
     ImGuiScope::drawResultsHeader("Timer Results");
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);

@@ -35,9 +35,9 @@ public:
 
 	virtual void draw(SDL_Renderer* renderer) = 0;
 
-	virtual void drawImGuiWidgets(const bool& isModelRunning) = 0;
+	virtual void drawImGuiWidgets(const bool& isModelRunning);
 
-	virtual void handleSDLEvent(const SDL_Event& event){};
+	virtual void handleSDLEvent(const SDL_Event& event);
 
 	void setParameters(const ModelParameters& modelParameters);
 
@@ -69,9 +69,9 @@ protected:
 	};
 
 	SDL_Rect viewPort_ = SDL_Rect(0,0,0,0);
-	SDL_Rect drawRange_;
+	SDL_Rect drawRange_ = SDL_Rect(0,0,0,0);
 	bool drawRangeRecalcNeeded_ = true;
-	SDL_FRect destinationRect_;
+	SDL_FRect destinationRect_ = SDL_FRect(0,0,0,0);
 	//Reflects where top left corner of the model will start to display.
 	int screenSpaceDisplacementX_ = 0;
 	int screenSpaceDisplacementY_ = 0;

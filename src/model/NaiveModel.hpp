@@ -21,11 +21,7 @@ public:
 
 	void update() override;
 
-	void handleSDLEvent(const SDL_Event& event) override;
-
 	void draw(SDL_Renderer* renderer) override;
-
-	void drawImGuiWidgets(const bool& isModelRunning) override;
 
 private:
 	void resizeGrid_();

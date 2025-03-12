@@ -22,6 +22,7 @@ void Interface::startDraw(
     ImGui::Begin("Options");
     ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 1000);
     ImGui::Text("Measured FPS: %d", measuredModelFPS);
+
     if (modelRunning) {
         if (ImGui::Button("Pause Model")) {
             modelRunning = false;
