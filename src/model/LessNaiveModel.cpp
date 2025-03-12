@@ -1,10 +1,7 @@
 #include "model/LessNaiveModel.hpp"
 #include "presets/modelpresets.hpp"
-//#include "gui/WidgetFunctions.hpp"
 #include "../submodules/ImGuiScope/ImguiScope.hpp"
 #include "../submodules/portable-file-dialogs/portable-file-dialogs.h"
-
-//#include <imgui.h>
 
 #include <algorithm>
 #include <iostream>
@@ -255,66 +252,3 @@ void LessNaiveModel::draw(SDL_Renderer* renderer)
     SDL_SetRenderTarget(renderer, nullptr);
     SDL_RenderTexture(renderer, gridBackBuffer_.get(), nullptr, &destinationRect_);
 }
-
-//void LessNaiveModel::drawImGuiWidgets(const bool& isModelRunning)
-//{
-//    WidgetFunctions::drawGOLRulesHeader(
-//        activeModelParams_,
-//        [this](const ModelParameters& params) {generateModel(params); },
-//        isModelRunning);
-//
-//    WidgetFunctions::drawVisualizationHeader(
-//        activeModelParams_,
-//        colorMapper_,
-//        deadValueDecrement_,
-//        drawRangeRecalcNeeded_,
-//        isModelRunning);
-//
-//    WidgetFunctions::drawPresetsHeader(
-//        activeModelParams_,
-//        [this](const ModelParameters& params) {generateModel(params); },
-//        [this](std::string filePath) {loadRLE_(filePath); },
-//        [this]() {populateFromRLEString_(inputString_); },
-//        inputString_,
-//        isModelRunning
-//    );
-//}
-
-//void LessNaiveModel::handleSDLEvent(const SDL_Event& event)
-//{
-//    //TODO:: Rather than if else statements I might have a map? Or a switch statement
-//        //I should profile it to see if it would make a difference before changing though. 
-//
-//        //TODO:
-//        //We only want to get the mouse state if the right events have been called.
-//
-//    if (!ImGui::IsWindowHovered(4) && !ImGui::IsAnyItemActive())
-//    {
-//        float mousePosX, mousePosY;
-//        int mouseButtonState = SDL_GetMouseState(&mousePosX, &mousePosY);
-//
-//        if (mouseButtonState & SDL_BUTTON_MASK(SDL_BUTTON_LEFT) && event.type == SDL_EVENT_MOUSE_MOTION)
-//        {
-//
-//            activeModelParams_.displacementX += event.motion.xrel;
-//            activeModelParams_.displacementY += event.motion.yrel;
-//            //TODO:Check that it is within bounds of a maximum displacement
-//            drawRangeRecalcNeeded_ = true;
-//        }
-//        else if (event.type == SDL_EventType::SDL_EVENT_MOUSE_WHEEL)
-//        {
-//            int cursorModelIndexX = (mousePosX - screenSpaceDisplacementX_) / activeModelParams_.zoomLevel;
-//            int cursorModelIndexY = (mousePosY - screenSpaceDisplacementY_) / activeModelParams_.zoomLevel;
-//
-//            //Zoom
-//            if (event.wheel.y > 0) activeModelParams_.zoomLevel += 1;
-//            else if (event.wheel.y < 0)  activeModelParams_.zoomLevel -= 1;
-//            activeModelParams_.zoomLevel = std::clamp<double>(activeModelParams_.zoomLevel, MIN_ZOOM, MAX_ZOOM);
-//
-//            activeModelParams_.displacementX = -cursorModelIndexX * activeModelParams_.zoomLevel + mousePosX + (activeModelParams_.modelWidth * activeModelParams_.zoomLevel - viewPort_.w) / 2;
-//            activeModelParams_.displacementY = -cursorModelIndexY * activeModelParams_.zoomLevel + mousePosY + (activeModelParams_.modelHeight * activeModelParams_.zoomLevel / 2) - (viewPort_.h / 2);
-//
-//            drawRangeRecalcNeeded_ = true;
-//        }
-//    }
-//}
