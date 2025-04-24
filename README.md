@@ -47,7 +47,6 @@ cmake ..
 cmake --build . --config Release
 ```
 
-A Binary for Windows is available in the latest release.
    
   
 
