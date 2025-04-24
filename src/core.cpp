@@ -1,8 +1,9 @@
 #include <core.hpp>
+#include "gui/WidgetFunctions.hpp"
+
 #include <imgui.h>
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
-
 #include "../submodules/ImGuiScope/ImGuiScope.hpp"
 
 #include <iostream>
@@ -22,9 +23,9 @@ bool Core::init_() {
         return false;
     }
 
-    SDL_Rect modelViewport = { 0, 0, 1260, 720 };
-    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
-    cpuModel_.initialize(modelViewport);
+    SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport_.w, &modelViewport_.h);
+
+    selectModel_();
 
     gui_.initialize("Game of Life");
 
@@ -80,52 +81,52 @@ void Core::processEvents_() {
                 break;
             case SDL_EventType::SDL_EVENT_WINDOW_RESIZED:
             {
-                SDL_Rect modelViewport = { 0, 0, 1260, 720 };
-                SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport.w, &modelViewport.h);
-                cpuModel_.setViewPort(modelViewport);
+                SDL_GetWindowSize(gui_.mainWindow.sdlWindow, &modelViewport_.w, &modelViewport_.h);
+                if (cpuModel_) cpuModel_.get()->setViewPort(modelViewport_);
             }
                 break;
             case SDL_EventType::SDL_EVENT_KEY_DOWN:
                 handleSDL_KEYDOWN(event);
                 break;
         }
-        //In the future, I would like an event manager where you can register objects to receive events.
-        //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
-        //e.g. so that something not processing a mouse movement event won't have to process it. 
 
-        cpuModel_.handleSDLEvent(event);
+        if(cpuModel_) cpuModel_.get()->handleSDLEvent(event);
 
         gui_.mainWindow.processEvent(event);
     }
 }
 
 void Core::update_() {
-    //I might also have a model manager where I can register models, and have the manager call update on all models.
     auto timer = ImGuiScope::TimeScope("update", false);
-    cpuModel_.update();
+    if (cpuModel_) cpuModel_.get()->update();
 }
 
 void Core::render_() {
     auto timer = ImGuiScope::TimeScope("render", false);
-    gui_.mainWindow.clear();//I should have it pass in the color
+    gui_.mainWindow.clear();
 
-    cpuModel_.draw(gui_.mainWindow.sdlRenderer);
+    if (cpuModel_) cpuModel_.get()->draw(gui_.mainWindow.sdlRenderer);
 
-    auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui");
-    gui_.interface.startDraw(modelRunning_, desiredModelFPS_, measuredModelFPS_);
-    cpuModel_.drawImGuiWidgets(modelRunning_);
+    auto guiDrawTimer = std::make_optional<ImGuiScope::TimeScope>("Draw Gui", false);
+    gui_.interface.startDraw(modelRunning_, modelNames_, selectedModel_, desiredModelFPS_, measuredModelFPS_);
+
+    if (selectedModel_ != activeModel_)
+    {
+        modelRunning_ = false;
+        selectModel_();
+    }
+
+    if (cpuModel_) cpuModel_.get()->drawImGuiWidgets(modelRunning_);
     ImGuiScope::drawResultsHeader("Timer Results");
     gui_.interface.endDraw(gui_.mainWindow.sdlRenderer);
     guiDrawTimer.reset();
 
-    auto presentTimer = std::make_optional<ImGuiScope::TimeScope>("renderpresent");
+    auto presentTimer = std::make_optional<ImGuiScope::TimeScope>("renderpresent", false);
     gui_.mainWindow.renderPresent();
-    //guiDrawTimer.reset();
 }
 
 void Core::handleSDL_KEYDOWN(SDL_Event& event) {
     switch(event.key.key)
-    //switch(event.key.keysym.sym)
     {
         case SDLK_ESCAPE:
             coreAppRunning_ = false;
@@ -134,6 +135,25 @@ void Core::handleSDL_KEYDOWN(SDL_Event& event) {
         default:
             break;
     }
+}
+
+void Core::selectModel_()
+{
+    switch (selectedModel_)
+    {
+    case 0: 
+        cpuModel_ = std::make_unique<NaiveModel>();
+        break;
+    case 1:
+        cpuModel_ = std::make_unique<LessNaiveModel>();
+        break;
+    default:
+        cpuModel_ = std::make_unique<NaiveModel>();
+        break;
+    }
+
+    if (cpuModel_) cpuModel_.get()->initialize(modelViewport_);
+    activeModel_ = selectedModel_;
 }
 
 Core::~Core() {

@@ -2,14 +2,13 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 project(gameoflife LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add submodules
 add_subdirectory(submodules/sdl3)
 #imgui does not provide a CMakeLists.txt file, so we need to add it manually
 add_subdirectory(cmake/imgui)
-
 
 # Add the executable
 add_executable(gameoflife  
@@ -20,12 +19,11 @@ add_executable(gameoflife
     src/model/modelparameters.hpp
     src/model/ColorMapper.hpp
     src/model/ColorMapper.cpp
-    src/model/CpuModel.cpp
-    src/model/CpuModel.hpp
-    src/model/LifeQuadTree.hpp
-    src/model/LifeQuadTree.cpp
-    src/model/LifeQuadTreeModel.hpp
-    src/model/LifeQuadTreeModel.cpp
+    src/model/NaiveModel.cpp
+    src/model/NaiveModel.hpp
+    src/model/LessNaiveModel.hpp
+    src/model/LessNaiveModel.cpp
+    src/model/VectorGrid.hpp
     src/presets/modelpresets.hpp
     src/sdl_manager.cpp
     src/sdl_manager.hpp
@@ -73,11 +71,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy
     $<IF:$<CONFIG:Debug>,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll,${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
     $<TARGET_FILE_DIR:gameoflife>
-
- #   COMMAND ${CMAKE_COMMAND} -E copy
- #          $<IF:$<CONFIG:Release>, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Debug/SDL3.dll, ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll>
- #           ${CMAKE_SOURCE_DIR}/build/submodules/sdl3/Release/SDL3.dll
- #           $<TARGET_FILE_DIR:gameoflife>
 )
 
 #copy imgui 
@@ -92,12 +85,35 @@ add_custom_command(
     $<TARGET_FILE_DIR:gameoflife>
 )
 
+#configure the .sln file
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT gameoflife)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+# Set runtime library for Debug and Release configurations
+target_compile_options(gameoflife PRIVATE
+    $<$<CONFIG:Debug>:/MTd>  # Multi-threaded Debug DLL
+    $<$<CONFIG:Release>:/MT> # Multi-threaded DLL
+)
 
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#    message(STATUS "Debug: YES")
-#else()
-#    message(STATUS "Debug: NO")
-#endif()
+#if debug, also compile the tests
+#isDebug is set correctly in either a visual studio or normal cmake build.
+if(CMAKE_CONFIGURATION_TYPES)
+    foreach(config ${CMAKE_CONFIGURATION_TYPES})
+        if(config STREQUAL "Debug")
+            set(isDebug TRUE)
+        endif()
+    endforeach()
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(isDebug TRUE)
+endif()
+
+if(isDebug)
+    message(STATUS "Debug: YES")
+    add_subdirectory(tests)
+else()
+    message(STATUS "Debug: NO")
+endif()
+
 
 # Uncomment if you need to add another executable
 # add_executable(quadtreetest

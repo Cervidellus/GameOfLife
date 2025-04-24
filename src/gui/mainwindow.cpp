@@ -2,6 +2,11 @@
 
 #include <iostream>
 
+//Needed until ImGui updates their use of SDL_True
+#ifndef SDL_TRUE_renamed_true
+#define SDL_TRUE_renamed_true true
+#endif SDL_TRUE_renamed_true
+
 #include <imgui.h>"
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>

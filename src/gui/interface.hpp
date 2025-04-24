@@ -20,6 +20,8 @@ class Interface {
 
 		void startDraw(
 			bool& modelRunning,
+			const char* const* modelNames,
+			int& selectedModel,
 			int& desiredModelFPS,
 			const int measuredModelFPS = 0
 		);

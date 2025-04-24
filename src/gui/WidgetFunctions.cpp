@@ -246,6 +246,12 @@ void WidgetFunctions::drawPresetsHeader(
             generateModelCallback(ModelPresets::vexStabilisation);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stabilization of Vex, a pattern discovered by Achim Flammenkamp in 1994.");
+
+        if (ImGui::Button("Lightweight Spaceship")) {
+            generateModelCallback(ModelPresets::lightweightSpaceship);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Lightweight Spaceship, a common spaceship discovered by Conway.");
+
     }
     //ImDrawData* draw_data = ImGui::GetDrawData();//null
 }

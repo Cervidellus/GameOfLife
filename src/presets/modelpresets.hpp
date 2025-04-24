@@ -535,6 +535,19 @@ const ModelParameters gabrielsPOneThirtyEightParams = {
 		"2obobo59bobob2obo$35bo3bo2bo59bo2bo3bo$34b2o3bobo61bobo3b2o$40bo63bo!"
 	};
 
+	const ModelParameters lightweightSpaceship = {
+	false,
+	-1,
+	-1,
+	-1,
+	2,
+	3,
+	3,
+	5,
+	4,
+	"bo2bo$o4b$o3bo$4o!"
+	};
+
 }
 
 

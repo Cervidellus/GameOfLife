@@ -10,7 +10,7 @@ SDLManager::SDLManager() {
 }
 
 bool SDLManager::initialize_() {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
+	if (SDL_Init(SDL_INIT_VIDEO)) {
 		isInitialized_ = true;
 		std::cout << "SDL3 video initialized..." << std::endl;
 	}

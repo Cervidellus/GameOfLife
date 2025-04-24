@@ -12,6 +12,8 @@
 
 void Interface::startDraw(
     bool& modelRunning,
+    const char* const* modelNames,
+    int& selectedModel,
     int& desiredModelFPS,
     const int measuredModelFPS) 
 {
@@ -22,6 +24,9 @@ void Interface::startDraw(
     ImGui::Begin("Options");
     ImGui::SliderInt("Desired Model FPS", &desiredModelFPS, 1, 1000);
     ImGui::Text("Measured FPS: %d", measuredModelFPS);
+
+    ImGui::Combo("Model", &selectedModel, modelNames, 2);
+
     if (modelRunning) {
         if (ImGui::Button("Pause Model")) {
             modelRunning = false;

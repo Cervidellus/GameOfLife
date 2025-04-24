@@ -1,13 +1,9 @@
 #ifndef GAMEOFLIFE_CORE_HPP
 #define GAMEOFLIFE_CORE_HPP
 
-//#include <memory>
-
-//#include "gui\mainwindow.hpp"
-//#include "gui\interface.hpp"
 #include "gui\gui.hpp"
-#include "model\CpuModel.hpp"
-//#include "presets\modelpresets.hpp"
+#include "model\NaiveModel.hpp"
+#include "model\LessNaiveModel.hpp"
 #include "sdl_manager.hpp"
 
 union SDL_Event;
@@ -23,6 +19,8 @@ private:
     void processEvents_();
     void update_();
     void render_();
+    //When the GUI makes a change, change model to the selected index
+    void selectModel_();
 
     void handleSDL_KEYDOWN(SDL_Event& event);
 
@@ -30,12 +28,12 @@ private:
     bool modelRunning_ = false;
 
     ModelParameters activeModelParams_{
-        //false, 
         true, 
-        //60,
         1260,
         720
     };
+
+    SDL_Rect modelViewport_ = { 0, 0, 1260, 720 };
 
     const int displayFPS_ = 60;
     int desiredModelFPS_ = 60;
@@ -43,7 +41,22 @@ private:
 
     SDLManager sdlManager_;
     GUI gui_;
-    CpuModel cpuModel_;
+    std::unique_ptr<AbstractModel> cpuModel_;
+    
+    //AbstractModel cpuModel_ = NaiveModel();
+    //NaiveModel cpuModel_;
+
+    enum class AvailableModels
+    {
+        Naive = 0, LessNaive = 1
+    };
+
+    //Model currently selected in the GUI
+    int selectedModel_ = 0;
+    //Model currently running
+    int activeModel_ = 0;
+
+    constexpr static const char* modelNames_[] = {"Naive", "Less Naive"};
 };
 
 #endif //GAMEOFLIFE_CORE_HPP
