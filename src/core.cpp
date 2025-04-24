@@ -89,9 +89,6 @@ void Core::processEvents_() {
                 handleSDL_KEYDOWN(event);
                 break;
         }
-        //In the future, I would like an event manager where you can register objects to receive events.
-        //When I have an event manager, objects can register for WHICH events they want to receive to make it run a little better. 
-        //e.g. so that something not processing a mouse movement event won't have to process it. 
 
         if(cpuModel_) cpuModel_.get()->handleSDLEvent(event);
 

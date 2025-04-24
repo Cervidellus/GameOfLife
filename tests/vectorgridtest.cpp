@@ -23,7 +23,7 @@ namespace VectorGridTest
         grid.resize(3, 3);
         for (std::size_t i = 0; i < 3; ++i) {
             for (std::size_t j = 0; j < 3; ++j) {
-                grid.set(i, j, static_cast<uint8_t>(i * 3 + j));
+                grid(i, j) = i * 3 + j;
             }
         }
 
@@ -34,7 +34,7 @@ namespace VectorGridTest
         for (std::size_t i = x - 1; i <= x + 1; ++i) {
             for (std::size_t j = y - 1; j <= y + 1; ++j) {
                 if (i == x && j == y) continue;
-                neighbors.push_back(grid.get(i, j));
+                neighbors.push_back(grid(i, j));
             }
         }
 
@@ -53,7 +53,7 @@ namespace VectorGridTest
         bool passed = true;
         for (std::size_t i = 0; i < grid.rows(); ++i) {
             for (std::size_t j = 0; j < grid.columns(); ++j) {
-                if (grid.get(i, j) != 0) {
+                if (grid(i, j) != 0) {
                     passed = false;
                     break;
                 }
@@ -70,7 +70,7 @@ namespace VectorGridTest
     static void testOperatorAccess() {
         VectorGrid grid;
         grid.resize(3, 3);
-        grid.set(2, 2, 42);
+        grid(2, 2) = 42;
         if (grid(2, 2) == 42) {
             std::cout << "Operator access test passed.\n";
         }
